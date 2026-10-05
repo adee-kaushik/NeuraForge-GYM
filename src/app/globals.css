@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sora: 'Sora', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+
+  --color-surface-container-lowest: #010f1f;
+  --color-surface-container-low: #0d1c2d;
+  --color-surface-container: #122131;
+  --color-surface-container-high: #1c2b3c;
+  --color-surface-container-highest: #273647;
+  --color-surface-bright: #2c3a4c;
+  --color-surface: #051424;
+  --color-background: #051424;
+
+  --color-on-surface: #d4e4fa;
+  --color-on-surface-variant: #c9c4d8;
+  --color-outline: #938ea1;
+  --color-outline-variant: #484555;
+
+  --color-primary: #cabeff;
+  --color-primary-container: #947dff;
+  --color-primary-fixed: #e6deff;
+  --color-on-primary-container: #2a0088;
+  --color-on-primary: #31009a;
+
+  --color-secondary: #7bd0ff;
+  --color-secondary-container: #00a6e0;
+  --color-secondary-fixed: #c4e7ff;
+  --color-secondary-fixed-dim: #7bd0ff;
+
+  --color-tertiary: #4edea3;
+  --color-tertiary-container: #00a572;
+  --color-on-tertiary: #003824;
+
+  --color-error: #ffb4ab;
+  --color-error-container: #93000a;
+  --color-on-error-container: #ffdad6;
+  --color-on-error: #690005;
+}
+
+
+/* Light mode: same tokens, light values. Toggled by the "light" class on <html>. */
+:root { color-scheme: dark; }
+html.light {
+  color-scheme: light;
+  --color-background: #f2f5fa;
+  --color-surface: #f2f5fa;
+  --color-surface-bright: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f6f8fc;
+  --color-surface-container: #eef2f8;
+  --color-surface-container-high: #e4eaf3;
+  --color-surface-container-highest: #d9e1ee;
+  --color-on-surface: #0f1b2d;
+  --color-on-surface-variant: #3d4759;
+  --color-outline: #596377;
+  --color-outline-variant: #c3cad7;
+  --color-primary: #5a3fd1;
+  --color-primary-fixed: #4b2fb8;
+  --color-secondary: #00668f;
+  --color-secondary-fixed: #003b55;
+  --color-tertiary: #007a55;
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-inter);
+    background-color: var(--color-background);
+    color: var(--color-on-surface);
+  }
+
+  h1, h2, h3, h4, h5, h6, .font-sora {
+    font-family: var(--font-sora);
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-surface-container-lowest);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-surface-container-high);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-surface-container-highest);
+}
+
+/* Material symbols outlined helper */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Corner ticks HUD accent */
+.hud-corner-tl {
+  border-top: 1.5px solid rgba(123, 208, 255, 0.7);
+  border-left: 1.5px solid rgba(123, 208, 255, 0.7);
+}
+.hud-corner-tr {
+  border-top: 1.5px solid rgba(123, 208, 255, 0.7);
+  border-right: 1.5px solid rgba(123, 208, 255, 0.7);
+}
+.hud-corner-bl {
+  border-bottom: 1.5px solid rgba(148, 125, 255, 0.7);
+  border-left: 1.5px solid rgba(148, 125, 255, 0.7);
+}
+.hud-corner-br {
+  border-bottom: 1.5px solid rgba(148, 125, 255, 0.7);
+  border-right: 1.5px solid rgba(148, 125, 255, 0.7);
+}

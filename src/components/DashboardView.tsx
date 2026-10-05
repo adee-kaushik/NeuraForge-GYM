@@ -1,0 +1,695 @@
+import React, { useState } from 'react';
+import { Member, Transaction, CheckInLog } from '../types';
+
+interface DashboardViewProps {
+  members: Member[];
+  transactions: Transaction[];
+  checkIns: CheckInLog[];
+  onOpenBulkWhatsApp: () => void;
+  onOpenTerminalScanner: () => void;
+  onViewAllExpiring: () => void;
+  onSelectMember: (member: Member) => void;
+  onSendSingleReminder: (member: Member) => void;
+}
+
+export const DashboardView: React.FC<DashboardViewProps> = ({
+  members,
+  transactions,
+  checkIns,
+  onOpenBulkWhatsApp,
+  onOpenTerminalScanner,
+  onViewAllExpiring,
+  onSelectMember,
+  onSendSingleReminder,
+}) => {
+  const [noticeDismissed, setNoticeDismissed] = useState(false);
+  const [paymentFilter, setPaymentFilter] = useState<'All' | 'UPI' | 'Cash' | 'Card' | 'Pending'>('All');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Filter transactions
+  const filteredTransactions = transactions.filter((t) => {
+    if (paymentFilter === 'All') return true;
+    if (paymentFilter === 'UPI') return t.paymentMode.includes('UPI');
+    if (paymentFilter === 'Cash') return t.paymentMode.includes('Cash');
+    if (paymentFilter === 'Card') return t.paymentMode.includes('Card');
+    if (paymentFilter === 'Pending') return t.status === 'PENDING';
+    return true;
+  });
+
+  const expiringMembers = members.filter((m) => m.status === 'expiring').slice(0, 5);
+  const recentCheckIns = checkIns.slice(0, 4);
+
+  return (
+    <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+      {/* 1. SYSTEM ALERT STRIP */}
+      {!noticeDismissed && (
+        <section className="relative w-full overflow-hidden bg-surface-container-low rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.45)] border border-surface-container-high">
+          {/* Neon Accent Lines */}
+          <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-[#7bd0ff] to-transparent opacity-80"></div>
+          <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-transparent via-[#cabeff] to-transparent opacity-60"></div>
+
+          {/* Manhwa Corner Ticks */}
+          <div className="absolute top-1 left-1 w-2.5 h-2.5 border-t border-l border-secondary opacity-90"></div>
+          <div className="absolute top-1 right-1 w-2.5 h-2.5 border-t border-r border-secondary opacity-90"></div>
+          <div className="absolute bottom-1 left-1 w-2.5 h-2.5 border-b border-l border-primary opacity-90"></div>
+          <div className="absolute bottom-1 right-1 w-2.5 h-2.5 border-b border-r border-primary opacity-90"></div>
+
+          <div className="px-4 py-3 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-primary-container/10 via-surface-container-low to-secondary-container/10">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-container-high text-secondary shadow-[0_0_12px_rgba(123,208,255,0.35)] shrink-0 border border-secondary/30">
+                <span className="material-symbols-outlined text-lg animate-pulse">terminal</span>
+              </div>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span className="font-sans text-[0.6875rem] uppercase tracking-widest text-secondary font-bold bg-secondary/15 px-2 py-0.5 rounded border border-secondary/30">
+                  System Notice
+                </span>
+                <span className="font-sans text-xs text-on-surface">
+                  Biometric reader at <span className="text-secondary font-medium">Gate 2</span> synced successfully at 08:30 AM IST.
+                </span>
+                <span className="font-sans text-xs text-error font-medium flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-error inline-block animate-ping"></span>
+                  14 memberships expiring in the next 48 hours require manual follow-up.
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4 self-end sm:self-auto shrink-0">
+              <button
+                onClick={onOpenBulkWhatsApp}
+                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366]/35 text-[#25D366] transition-all shadow-[0_0_12px_rgba(37,211,102,0.25)] border border-[#25D366]/40 cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-base">chat</span>
+                <span className="font-sans text-[0.6875rem] font-bold tracking-wide">
+                  Send Bulk Reminder [WhatsApp]
+                </span>
+                <span className="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">
+                  arrow_forward
+                </span>
+              </button>
+
+              <button
+                onClick={() => setNoticeDismissed(true)}
+                className="text-outline hover:text-on-surface p-1 transition-colors cursor-pointer"
+                title="Dismiss Notice"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* 2. ROW OF 6 STAT CARDS */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        {/* Card 1: Total Cadre */}
+        <div className="relative bg-surface-container-low rounded-xl p-4 flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-all shadow-[0_4px_20px_rgba(0,0,0,0.3)] border border-surface-container-high hover:border-secondary/40">
+          <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-secondary opacity-70"></div>
+          <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-secondary opacity-70"></div>
+          <div className="flex items-center justify-between text-on-surface-variant mb-2">
+            <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">Total Cadre</span>
+            <span className="material-symbols-outlined text-xl text-secondary">groups</span>
+          </div>
+          <div>
+            <div className="font-sora text-3xl font-bold text-on-surface tracking-tight group-hover:text-secondary-fixed transition-colors">
+              312
+            </div>
+            <div className="flex items-center gap-1 mt-1 text-tertiary text-[0.6875rem] font-semibold">
+              <span className="material-symbols-outlined text-sm">trending_up</span>
+              <span>+12 this month</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Active Members */}
+        <div className="relative bg-surface-container-low rounded-xl p-4 flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-all shadow-[0_4px_20px_rgba(0,0,0,0.3)] border border-surface-container-high hover:border-tertiary/40">
+          <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-tertiary opacity-70"></div>
+          <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-tertiary opacity-70"></div>
+          <div className="flex items-center justify-between text-on-surface-variant mb-2">
+            <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">Active Roster</span>
+            <span className="px-2 py-0.5 rounded bg-tertiary/15 text-tertiary text-[0.6875rem] font-bold tracking-wider flex items-center gap-1 border border-tertiary/30">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse"></span> ONLINE
+            </span>
+          </div>
+          <div>
+            <div className="font-sora text-3xl font-bold text-on-surface tracking-tight">268</div>
+            <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-[0.6875rem]">
+              <span>86% retention rate</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Expiring This Week */}
+        <div className="relative bg-surface-container-low rounded-xl p-4 flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-all shadow-[0_4px_20px_rgba(0,0,0,0.3)] border border-surface-container-high hover:border-error/40">
+          <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-error opacity-70"></div>
+          <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-error opacity-70"></div>
+          <div className="flex items-center justify-between text-on-surface-variant mb-2">
+            <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">Expiring Week</span>
+            <span className="px-2 py-0.5 rounded bg-error-container/40 text-error text-[0.6875rem] font-bold tracking-wider border border-error/30">
+              CRITICAL
+            </span>
+          </div>
+          <div>
+            <div className="font-sora text-3xl font-bold text-error tracking-tight drop-shadow-[0_0_10px_rgba(255,180,171,0.3)]">
+              19
+            </div>
+            <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-[0.6875rem]">
+              <span>Requires intervention</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Pending Payments */}
+        <div className="relative bg-surface-container-low rounded-xl p-4 flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-all shadow-[0_4px_20px_rgba(0,0,0,0.3)] border border-surface-container-high hover:border-secondary/40">
+          <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-secondary opacity-70"></div>
+          <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-secondary opacity-70"></div>
+          <div className="flex items-center justify-between text-on-surface-variant mb-2">
+            <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">Pending Due</span>
+            <span className="material-symbols-outlined text-xl text-primary">pending_actions</span>
+          </div>
+          <div>
+            <div className="font-sora text-2xl lg:text-3xl font-bold text-on-surface tracking-tight">₹42,500</div>
+            <div className="flex items-center gap-1 mt-1 text-secondary text-[0.6875rem]">
+              <span>8 invoices unresolved</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 5: Today's Attendance */}
+        <div className="relative bg-surface-container-low rounded-xl p-4 flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-all shadow-[0_4px_20px_rgba(0,0,0,0.3)] border border-surface-container-high hover:border-tertiary/40">
+          <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-tertiary opacity-70"></div>
+          <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-tertiary opacity-70"></div>
+          <div className="flex items-center justify-between text-on-surface-variant mb-2">
+            <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">Floor Entries</span>
+            <span className="material-symbols-outlined text-xl text-tertiary">how_to_reg</span>
+          </div>
+          <div>
+            <div className="font-sora text-3xl font-bold text-on-surface tracking-tight">74</div>
+            <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-xs">
+              <span className="truncate">Peak: 06:00 - 08:30 AM</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 6: Revenue This Month */}
+        <div className="relative bg-surface-container-low rounded-xl p-4 flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-all shadow-[0_4px_20px_rgba(0,0,0,0.3)] border border-surface-container-high hover:border-primary/40">
+          <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-primary opacity-70"></div>
+          <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-primary opacity-70"></div>
+          <div className="flex items-center justify-between text-on-surface-variant mb-2">
+            <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">Net Revenue</span>
+            <span className="material-symbols-outlined text-xl text-primary">account_balance_wallet</span>
+          </div>
+          <div>
+            <div className="font-sora text-2xl lg:text-3xl font-bold text-primary tracking-tight drop-shadow-[0_0_12px_rgba(202,190,255,0.4)]">
+              ₹3,86,000
+            </div>
+            <div className="flex items-center gap-1 mt-1 text-tertiary text-[0.6875rem] font-semibold">
+              <span className="material-symbols-outlined text-sm">north_east</span>
+              <span>+18.4% MoM</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. WIDE CARD: MONTHLY REVENUE GOAL (XP PROGRESS BAR - SOLO LEVELING SYSTEM VIBE) */}
+      <section className="relative bg-surface-container-low rounded-xl p-5 sm:p-6 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-surface-container-high">
+        {/* Glow ambient background */}
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-primary-container/10 blur-3xl pointer-events-none"></div>
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-secondary/10 blur-3xl pointer-events-none"></div>
+
+        {/* System Window Corner Ticks */}
+        <div className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-secondary/70"></div>
+        <div className="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-secondary/70"></div>
+        <div className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-primary/70"></div>
+        <div className="absolute bottom-2 right-2 w-3.5 h-3.5 border-b-2 border-r-2 border-primary/70"></div>
+
+        <div className="relative z-10 flex flex-col gap-4">
+          {/* Card Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary shadow-[0_0_16px_rgba(148,125,255,0.3)] border border-primary-container/30">
+                <span className="material-symbols-outlined text-2xl">swords</span>
+              </div>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-sora text-lg font-semibold text-on-surface">
+                    Monthly Revenue Quest
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded bg-primary-container/20 text-primary text-[0.6875rem] font-bold tracking-widest uppercase shadow-[0_0_8px_rgba(202,190,255,0.25)] border border-primary/30">
+                    LEVEL 4: TITAN TIER
+                  </span>
+                </div>
+                <p className="text-xs text-on-surface-variant mt-0.5">
+                  System Guild Benchmark · Indiranagar Domain
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-baseline gap-2 self-start md:self-auto bg-surface-container px-4 py-2 rounded-lg border border-surface-container-high">
+              <span className="font-sora text-xl font-bold text-primary">₹3,86,000</span>
+              <span className="text-sm text-outline">/ ₹5,00,000 XP</span>
+              <span className="ml-2 text-xs text-secondary font-bold">(77.2%)</span>
+            </div>
+          </div>
+
+          {/* The Hunter XP Progress Bar */}
+          <div className="flex flex-col gap-2 pt-2">
+            <div className="relative w-full h-5 rounded-full bg-surface-container-lowest overflow-hidden p-0.5 border border-surface-container-high">
+              {/* Progress Fill */}
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-[#cabeff] via-[#947dff] to-[#7bd0ff] shadow-[0_0_20px_rgba(123,208,255,0.6)] relative flex items-center justify-end transition-all duration-1000"
+                style={{ width: '77.2%' }}
+              >
+                <div className="w-2 h-full bg-white rounded-full animate-ping opacity-75"></div>
+              </div>
+              {/* Tick Markers */}
+              <div className="absolute inset-0 flex justify-between px-[25%] pointer-events-none">
+                <div className="h-full w-0.5 bg-surface-container-highest/80"></div>
+                <div className="h-full w-0.5 bg-surface-container-highest/80"></div>
+              </div>
+            </div>
+
+            {/* Milestones Metadata */}
+            <div className="flex justify-between text-[0.6875rem] text-outline px-1 font-medium">
+              <span>LVL 3 CLEAR (₹2.5L)</span>
+              <span>50% (₹2.5L)</span>
+              <span className="text-secondary font-semibold">CURRENT RANK (77.2%)</span>
+              <span className="text-primary font-bold">TITAN V (₹5.0L)</span>
+            </div>
+          </div>
+
+          {/* Quest Rewards Footer */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2 bg-surface-container/60 p-3 rounded-lg border border-surface-container-high">
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-secondary text-lg">military_tech</span>
+              <span className="text-xs text-on-surface">
+                <strong className="text-secondary font-semibold">Next Unlock at Level 5:</strong> Unlock Trainer Incentive Pool &amp; Bengaluru North Leaderboard placement.
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 text-outline text-[0.6875rem] shrink-0">
+              <span className="material-symbols-outlined text-sm">schedule</span>
+              <span>7 days remaining in billing epoch</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. TWO-COLUMN SPLIT SECTION */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* LEFT COLUMN: Expiring Memberships (~60% = 7 cols on 12-col grid) */}
+        <div className="lg:col-span-7 bg-surface-container-low rounded-xl p-4 sm:p-6 flex flex-col justify-between shadow-[0_4px_24px_rgba(0,0,0,0.35)] relative border border-surface-container-high">
+          <div className="absolute top-2 right-2 w-2.5 h-2.5 border-t border-r border-error/50"></div>
+          <div className="absolute bottom-2 left-2 w-2.5 h-2.5 border-b border-l border-error/50"></div>
+
+          <div>
+            {/* Title & Subtitle */}
+            <div className="flex items-start justify-between pb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-error text-xl">event_busy</span>
+                  <h2 className="font-sora text-lg font-semibold text-on-surface">Expiring Memberships</h2>
+                </div>
+                <p className="text-xs text-outline mt-0.5">
+                  Requires immediate gym owner outreach | 1-Tap WhatsApp dispatch
+                </p>
+              </div>
+              <span className="px-2.5 py-1 rounded bg-error-container/30 text-error text-[0.6875rem] font-bold border border-error/30">
+                19 PENDING
+              </span>
+            </div>
+
+            {/* Table Container */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-on-surface text-xs">
+                <thead>
+                  <tr className="text-outline uppercase text-[0.6875rem] bg-surface-container-lowest/50 rounded-lg">
+                    <th className="py-2.5 px-3">Member</th>
+                    <th className="py-2.5 px-2">Rank / Tier</th>
+                    <th className="py-2.5 px-2">Expiry</th>
+                    <th className="py-2.5 px-2">Time Left</th>
+                    <th className="py-2.5 px-3 text-right">Quick Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-surface-container-high/60">
+                  {expiringMembers.map((member) => (
+                    <tr
+                      key={member.id}
+                      className="hover:bg-surface-container/60 transition-colors group cursor-pointer"
+                      onClick={() => onSelectMember(member)}
+                    >
+                      <td className="py-3 px-3">
+                        <div className="font-medium text-on-surface group-hover:text-secondary transition-colors">
+                          {member.name}
+                        </div>
+                        <div className="text-[0.6875rem] text-outline">{member.phone}</div>
+                      </td>
+                      <td className="py-3 px-2">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[0.6875rem] font-semibold tracking-wider ${
+                            member.rank === 'RANK A'
+                              ? 'bg-primary/15 text-primary border border-primary/30'
+                              : member.rank === 'RANK B'
+                              ? 'bg-secondary/15 text-secondary border border-secondary/30'
+                              : 'bg-surface-container-high text-on-surface-variant'
+                          }`}
+                        >
+                          {member.rank} · {member.planDuration}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-on-surface-variant font-mono text-[0.75rem]">
+                        {member.expiryDate}
+                      </td>
+                      <td className="py-3 px-2">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[0.6875rem] font-bold ${
+                            member.daysLeft <= 3
+                              ? 'bg-error-container/50 text-error border border-error/30'
+                              : member.daysLeft <= 5
+                              ? 'bg-secondary-container/20 text-secondary'
+                              : 'bg-surface-container-high text-on-surface-variant'
+                          }`}
+                        >
+                          {member.daysLeft} Days Left
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => onSendSingleReminder(member)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] text-[0.6875rem] font-bold transition-all shadow-[0_0_8px_rgba(37,211,102,0.15)] border border-[#25D366]/30 cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-sm">chat</span>
+                          <span>Remind</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Table Footer */}
+          <div className="flex items-center justify-between pt-4 mt-4 bg-surface-container-lowest/40 px-3 py-2.5 rounded-lg border border-surface-container-high">
+            <span className="text-xs text-outline">Showing 5 of 19 expiring members</span>
+            <button
+              onClick={onViewAllExpiring}
+              className="text-[0.6875rem] text-secondary hover:text-secondary-fixed flex items-center gap-1 font-bold group cursor-pointer"
+            >
+              <span>View All Expiring Members</span>
+              <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">
+                arrow_forward
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Today's Attendance & Velocity (~40% = 5 cols on 12-col grid) */}
+        <div className="lg:col-span-5 bg-surface-container-low rounded-xl p-4 sm:p-6 flex flex-col justify-between shadow-[0_4px_24px_rgba(0,0,0,0.35)] relative border border-surface-container-high">
+          <div className="absolute top-2 right-2 w-2.5 h-2.5 border-t border-r border-tertiary/60"></div>
+          <div className="absolute bottom-2 left-2 w-2.5 h-2.5 border-b border-l border-tertiary/60"></div>
+
+          <div>
+            {/* Header */}
+            <div className="flex items-center justify-between pb-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#4edea3] animate-ping"></span>
+                  <h2 className="font-sora text-lg font-semibold text-on-surface">Floor Velocity</h2>
+                </div>
+                <p className="text-xs text-outline">
+                  Live check-ins: <strong className="text-tertiary">74 members today</strong>
+                </p>
+              </div>
+              <span className="text-[0.6875rem] text-secondary bg-secondary/15 px-2.5 py-1 rounded font-semibold border border-secondary/30">
+                7-Day Trajectory
+              </span>
+            </div>
+
+            {/* 7-Day Attendance Mini Bar Chart */}
+            <div className="bg-surface-container-lowest/60 p-4 rounded-xl my-4 border border-surface-container-high">
+              <div className="flex items-end justify-between h-28 gap-2 pt-2">
+                {/* Mon */}
+                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
+                  <span className="text-[0.6875rem] text-outline group-hover:text-primary transition-colors">
+                    82
+                  </span>
+                  <div
+                    className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
+                    style={{ height: '75%' }}
+                  ></div>
+                  <span className="text-[0.6875rem] text-outline">M</span>
+                </div>
+                {/* Tue */}
+                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
+                  <span className="text-[0.6875rem] text-outline group-hover:text-primary transition-colors">
+                    91
+                  </span>
+                  <div
+                    className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
+                    style={{ height: '84%' }}
+                  ></div>
+                  <span className="text-[0.6875rem] text-outline">T</span>
+                </div>
+                {/* Wed */}
+                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
+                  <span className="text-[0.6875rem] text-outline group-hover:text-primary transition-colors">
+                    88
+                  </span>
+                  <div
+                    className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
+                    style={{ height: '80%' }}
+                  ></div>
+                  <span className="text-[0.6875rem] text-outline">W</span>
+                </div>
+                {/* Thu */}
+                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
+                  <span className="text-[0.6875rem] text-outline group-hover:text-primary transition-colors">
+                    95
+                  </span>
+                  <div
+                    className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
+                    style={{ height: '88%' }}
+                  ></div>
+                  <span className="text-[0.6875rem] text-outline">T</span>
+                </div>
+                {/* Fri */}
+                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
+                  <span className="text-[0.6875rem] text-outline group-hover:text-primary transition-colors">
+                    84
+                  </span>
+                  <div
+                    className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
+                    style={{ height: '77%' }}
+                  ></div>
+                  <span className="text-[0.6875rem] text-outline">F</span>
+                </div>
+                {/* Sat */}
+                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
+                  <span className="text-[0.6875rem] text-secondary font-bold">104</span>
+                  <div
+                    className="w-full bg-secondary-container rounded-t shadow-[0_0_8px_rgba(0,166,224,0.4)]"
+                    style={{ height: '100%' }}
+                  ></div>
+                  <span className="text-[0.6875rem] text-secondary font-bold">S</span>
+                </div>
+                {/* Sun / Today */}
+                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
+                  <span className="text-[0.6875rem] text-tertiary font-bold">74</span>
+                  <div
+                    className="w-full bg-gradient-to-t from-[#947dff] to-[#4edea3] rounded-t shadow-[0_0_12px_rgba(78,222,163,0.5)]"
+                    style={{ height: '68%' }}
+                  ></div>
+                  <span className="text-[0.6875rem] text-tertiary font-bold">TOD</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Live Check-in list (Recent 4 entries) */}
+            <div className="flex flex-col gap-2">
+              <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">
+                Recent Gate Ingress
+              </span>
+
+              {recentCheckIns.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-2 rounded-lg bg-surface-container/60 hover:bg-surface-container transition-colors border border-surface-container-high/50"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs border border-primary/30">
+                      {item.memberName
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')}
+                    </div>
+                    <div>
+                      <div className="font-medium text-on-surface leading-tight text-xs">
+                        {item.memberName}
+                      </div>
+                      <div className="text-[0.6875rem] text-outline">
+                        Checked in at {item.time}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[0.6875rem] font-semibold border border-primary/20">
+                    {item.rank} · {item.planDuration}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-3 mt-3 text-center">
+            <button
+              onClick={onOpenTerminalScanner}
+              className="w-full py-2.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-secondary hover:text-secondary-fixed text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-secondary/30 shadow-[0_0_12px_rgba(123,208,255,0.15)] cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">sensors</span>
+              <span>Live Terminal Scanner Feed</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. BOTTOM FULL-WIDTH CARD: RECENT TREASURY OPERATIONS */}
+      <section className="relative bg-surface-container-low rounded-xl p-4 sm:p-6 overflow-hidden shadow-[0_4px_32px_rgba(0,0,0,0.4)] border border-surface-container-high">
+        {/* Manhwa Corner Brackets */}
+        <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/60"></div>
+        <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/60"></div>
+        <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-primary/60"></div>
+        <div className="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-primary/60"></div>
+
+        <div className="flex flex-col gap-4">
+          {/* Section Header with Filter Chips */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-surface-container-high">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary text-xl">receipt_long</span>
+                <h2 className="font-sora text-lg font-semibold text-on-surface">
+                  Recent Treasury Operations
+                </h2>
+              </div>
+              <p className="text-xs text-outline mt-0.5">
+                Real-time settlement stream across Razorpay, UPI &amp; Cash Desks
+              </p>
+            </div>
+
+            {/* Filter Chips */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
+              {(['All', 'UPI', 'Cash', 'Card', 'Pending'] as const).map((filter) => {
+                const count =
+                  filter === 'All'
+                    ? transactions.length
+                    : transactions.filter((t) =>
+                        filter === 'Pending'
+                          ? t.status === 'PENDING'
+                          : t.paymentMode.includes(filter)
+                      ).length;
+
+                const isActive = paymentFilter === filter;
+
+                return (
+                  <button
+                    key={filter}
+                    onClick={() => setPaymentFilter(filter)}
+                    className={`px-3 py-1 rounded text-[0.6875rem] font-bold transition-all cursor-pointer whitespace-nowrap ${
+                      isActive
+                        ? 'bg-primary-container text-on-primary-container shadow-[0_0_8px_rgba(148,125,255,0.3)]'
+                        : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant border border-surface-container-high'
+                    }`}
+                  >
+                    {filter} {filter === 'All' ? `(${transactions.length})` : `(${count})`}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Payments Data Table */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-on-surface text-xs">
+              <thead>
+                <tr className="text-outline uppercase text-[0.6875rem] bg-surface-container-lowest/50 rounded-lg">
+                  <th className="py-2.5 px-3">Transaction ID</th>
+                  <th className="py-2.5 px-3">Member</th>
+                  <th className="py-2.5 px-3">Plan / Category</th>
+                  <th className="py-2.5 px-3">Amount</th>
+                  <th className="py-2.5 px-3">Payment Mode</th>
+                  <th className="py-2.5 px-3">Timestamp</th>
+                  <th className="py-2.5 px-3 text-right">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-surface-container-high/60">
+                {filteredTransactions.slice(0, 5).map((txn) => (
+                  <tr key={txn.id} className="hover:bg-surface-container/60 transition-colors">
+                    <td className="py-3 px-3 font-mono text-secondary font-medium">
+                      {txn.id}
+                    </td>
+                    <td className="py-3 px-3">
+                      <div className="font-medium text-on-surface">{txn.memberName}</div>
+                      <div className="text-[0.6875rem] text-outline">{txn.memberEmail}</div>
+                    </td>
+                    <td className="py-3 px-3">
+                      <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[0.6875rem] font-semibold border border-primary/20">
+                        {txn.planCategory}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 font-sora text-base font-semibold text-on-surface">
+                      ₹{txn.amount.toLocaleString('en-IN')}
+                    </td>
+                    <td className="py-3 px-3">
+                      <div className="flex items-center gap-1.5 text-on-surface-variant">
+                        <span className="material-symbols-outlined text-secondary text-base">
+                          {txn.paymentMode.includes('UPI')
+                            ? 'qr_code_2'
+                            : txn.paymentMode.includes('Cash')
+                            ? 'payments'
+                            : 'credit_card'}
+                        </span>
+                        <span>{txn.paymentMode}</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-3 text-on-surface-variant font-mono text-[0.75rem]">
+                      {txn.timestamp}
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      {txn.status === 'PAID' ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary text-[0.6875rem] font-bold shadow-[0_0_8px_rgba(78,222,163,0.2)] border border-tertiary/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span> PAID
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-error-container/40 text-error text-[0.6875rem] font-bold shadow-[0_0_8px_rgba(255,180,171,0.2)] border border-error/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span> PENDING
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination & Summary */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-outline text-[0.6875rem] border-t border-surface-container-high/60">
+            <span>Reconciled through Razorpay Core API Node · GST Ready (18% applied)</span>
+            <div className="flex items-center gap-2">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="px-2.5 py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed border border-surface-container-high"
+              >
+                Previous
+              </button>
+              <span className="text-on-surface font-mono">Page {currentPage} of 9</span>
+              <button
+                onClick={() => setCurrentPage((p) => p + 1)}
+                className="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors border border-surface-container-high cursor-pointer"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+};
