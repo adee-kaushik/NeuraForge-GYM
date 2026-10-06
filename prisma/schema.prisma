@@ -1,0 +1,147 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  OWNER
+  STAFF
+}
+
+enum PaymentMode {
+  UPI
+  Card
+  Cash
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+}
+
+model Gym {
+  id                 String   @id @default(cuid())
+  name               String
+  slug               String   @unique // gym code members type at login
+  address            String?
+  gstNumber          String?
+  gstRatePercent     Int      @default(18)
+  monthlyRevenueGoal Int      @default(0)
+  createdAt          DateTime @default(now())
+
+  users       User[]
+  members     Member[]
+  plans       Plan[]
+  memberships Membership[]
+  payments    Payment[]
+  attendances Attendance[]
+}
+
+model User {
+  id         String   @id @default(cuid())
+  gymId      String
+  authUserId String   @unique @db.Uuid // Supabase Auth user id
+  name       String
+  email      String   @unique
+  phone      String?
+  role       Role
+  createdAt  DateTime @default(now())
+
+  gym Gym @relation(fields: [gymId], references: [id])
+
+  @@index([gymId])
+}
+
+model Plan {
+  id             String   @id @default(cuid())
+  gymId          String
+  name           String
+  durationMonths Int
+  price          Int
+  originalPrice  Int?
+  features       String[]
+  popular        Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  gym         Gym          @relation(fields: [gymId], references: [id])
+  memberships Membership[]
+
+  @@index([gymId])
+}
+
+model Member {
+  id         String   @id @default(cuid())
+  gymId      String
+  authUserId String?  @unique @db.Uuid // Supabase Auth user id, set when the login is created
+  memberCode String
+  name       String
+  phone      String
+  email      String?
+  joinedAt   DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  gym         Gym          @relation(fields: [gymId], references: [id])
+  memberships Membership[]
+  payments    Payment[]
+  attendances Attendance[]
+
+  @@unique([gymId, memberCode])
+  @@index([gymId])
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  gymId     String
+  memberId  String
+  planId    String
+  startsAt  DateTime
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  gym      Gym       @relation(fields: [gymId], references: [id])
+  member   Member    @relation(fields: [memberId], references: [id])
+  plan     Plan      @relation(fields: [planId], references: [id])
+  payments Payment[]
+
+  @@index([gymId, expiresAt])
+  @@index([memberId])
+}
+
+model Payment {
+  id           String        @id @default(cuid())
+  gymId        String
+  memberId     String
+  membershipId String?
+  amount       Int
+  gstAmount    Int
+  mode         PaymentMode
+  status       PaymentStatus
+  invoiceNo    String
+  createdAt    DateTime      @default(now())
+
+  gym        Gym         @relation(fields: [gymId], references: [id])
+  member     Member      @relation(fields: [memberId], references: [id])
+  membership Membership? @relation(fields: [membershipId], references: [id])
+
+  @@unique([gymId, invoiceNo])
+  @@index([gymId, createdAt])
+}
+
+model Attendance {
+  id          String   @id @default(cuid())
+  gymId       String
+  memberId    String
+  checkedInAt DateTime @default(now())
+
+  gym    Gym    @relation(fields: [gymId], references: [id])
+  member Member @relation(fields: [memberId], references: [id])
+
+  @@index([gymId, checkedInAt])
+  @@index([memberId])
+}
