@@ -16,9 +16,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
   const [showManualModal, setShowManualModal] = useState(false);
   const [memberName, setMemberName] = useState('');
   const [amount, setAmount] = useState('6200');
-  const [mode, setMode] = useState<
-    'Google Pay UPI' | 'PhonePe UPI' | 'Paytm UPI' | 'Cash Settlement' | 'Credit Card'
-  >('Cash Settlement');
+  const [mode, setMode] = useState<Transaction['paymentMode']>('Cash');
   const [selectedReceipt, setSelectedReceipt] = useState<Transaction | null>(null);
 
   const totalRevenue = transactions
@@ -47,7 +45,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
       memberId: `MEM-${Math.floor(100 + Math.random() * 900)}`,
       memberName,
       memberEmail: `${memberName.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
-      planCategory: amt >= 18000 ? 'Yearly Elite' : amt >= 10000 ? 'Half-Yearly Surge' : 'Quarterly Warrior',
+      planCategory: amt >= 18000 ? 'Yearly' : amt >= 10000 ? 'Half-Yearly' : 'Quarterly',
       amount: amt,
       paymentMode: mode,
       timestamp: 'Today, Just Now',
@@ -314,17 +312,13 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                 <select
                   value={mode}
                   onChange={(e) =>
-                    setMode(
-                      e.target.value as 'Google Pay UPI' | 'PhonePe UPI' | 'Cash Settlement' | 'Credit Card'
-                    )
+                    setMode(e.target.value as Transaction['paymentMode'])
                   }
                   className="w-full bg-surface-container-lowest border border-surface-container-high rounded-lg p-2 text-on-surface focus:outline-none"
                 >
-                  <option value="Cash Settlement">Cash Desk Settlement</option>
-                  <option value="Google Pay UPI">Google Pay UPI</option>
-                  <option value="PhonePe UPI">PhonePe UPI</option>
-                  <option value="Paytm UPI">Paytm UPI</option>
-                  <option value="Credit Card">HDFC Card Swipe</option>
+                  <option value="Cash">Cash</option>
+                  <option value="UPI">UPI</option>
+                  <option value="Card">Card</option>
                 </select>
               </div>
 
