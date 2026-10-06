@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Member, HunterRank } from '../types';
+import { Member } from '../types';
 
 interface MembersViewProps {
   members: Member[];
@@ -19,38 +19,37 @@ export const MembersView: React.FC<MembersViewProps> = ({
   initialFilter = 'all',
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRank, setSelectedRank] = useState<string>('ALL');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'EXPIRING'>('ALL');
+  const [selectedPlan, setSelectedPlan] = useState<string>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Expiring'>('All');
 
   const filtered = members.filter((m) => {
     const matchesSearch =
       m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.phone.includes(searchQuery) ||
-      m.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.rfidTag.toLowerCase().includes(searchQuery.toLowerCase());
+      m.email.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesRank = selectedRank === 'ALL' || m.rank === selectedRank;
+    const matchesPlan = selectedPlan === 'All' || m.planDuration === selectedPlan;
     const matchesStatus =
-      statusFilter === 'ALL' ||
-      (statusFilter === 'EXPIRING' && (m.status === 'expiring' || m.daysLeft <= 7)) ||
-      (statusFilter === 'ACTIVE' && m.status === 'active' && m.daysLeft > 7);
+      statusFilter === 'All' ||
+      (statusFilter === 'Expiring' && (m.status === 'expiring' || m.daysLeft <= 7)) ||
+      (statusFilter === 'Active' && m.status === 'active' && m.daysLeft > 7);
 
-    return matchesSearch && matchesRank && matchesStatus;
+    return matchesSearch && matchesPlan && matchesStatus;
   });
 
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
-      {/* Top Header & Enlist Button */}
+      {/* Top Header & Add Member Button */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <span className="material-symbols-outlined text-secondary text-2xl">groups</span>
             <h1 className="font-sora text-xl sm:text-2xl font-bold text-on-surface">
-              Cadre Roster Management
+              Members
             </h1>
           </div>
           <p className="text-xs text-outline mt-1">
-            Registered gym hunters, biometric tokens, and membership tenure
+            All gym members, their plans and expiry dates
           </p>
         </div>
 
@@ -60,7 +59,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] text-xs font-bold border border-[#25D366]/40 transition-all cursor-pointer shadow-[0_0_12px_rgba(37,211,102,0.2)]"
           >
             <span className="material-symbols-outlined text-base">chat</span>
-            <span>Bulk WhatsApp Alert</span>
+            <span>Send Reminders</span>
           </button>
 
           <button
@@ -68,39 +67,39 @@ export const MembersView: React.FC<MembersViewProps> = ({
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold transition-all shadow-[0_0_16px_rgba(148,125,255,0.35)] cursor-pointer"
           >
             <span className="material-symbols-outlined text-base">person_add</span>
-            <span>Enlist Hunter</span>
+            <span>Add Member</span>
           </button>
         </div>
       </div>
 
-      {/* Cadre Tier Quick Summary Cards */}
+      {/* Quick Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high flex items-center justify-between">
           <div>
-            <span className="text-[0.625rem] font-bold uppercase tracking-wider text-outline">
-              Total Roster
+            <span className="text-xs font-bold uppercase tracking-wider text-outline">
+              Total Members
             </span>
             <p className="font-sora text-2xl font-bold text-on-surface mt-1">{members.length}</p>
           </div>
-          <span className="material-symbols-outlined text-secondary text-2xl">shield</span>
+          <span className="material-symbols-outlined text-secondary text-2xl">groups</span>
         </div>
 
         <div className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high flex items-center justify-between">
           <div>
-            <span className="text-[0.625rem] font-bold uppercase tracking-wider text-outline">
-              Titan / A-Rank
+            <span className="text-xs font-bold uppercase tracking-wider text-outline">
+              Yearly &amp; VIP
             </span>
             <p className="font-sora text-2xl font-bold text-primary mt-1">
-              {members.filter((m) => m.rank === 'RANK S' || m.rank === 'RANK A').length}
+              {members.filter((m) => m.planDuration === 'Yearly' || m.planDuration === 'VIP').length}
             </p>
           </div>
-          <span className="material-symbols-outlined text-primary text-2xl">swords</span>
+          <span className="material-symbols-outlined text-primary text-2xl">workspace_premium</span>
         </div>
 
         <div className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high flex items-center justify-between">
           <div>
-            <span className="text-[0.625rem] font-bold uppercase tracking-wider text-outline">
-              Expiring Week
+            <span className="text-xs font-bold uppercase tracking-wider text-outline">
+              Expiring This Week
             </span>
             <p className="font-sora text-2xl font-bold text-error mt-1">
               {members.filter((m) => m.daysLeft <= 7).length}
@@ -111,8 +110,8 @@ export const MembersView: React.FC<MembersViewProps> = ({
 
         <div className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high flex items-center justify-between">
           <div>
-            <span className="text-[0.625rem] font-bold uppercase tracking-wider text-outline">
-              Active Today
+            <span className="text-xs font-bold uppercase tracking-wider text-outline">
+              Here Today
             </span>
             <p className="font-sora text-2xl font-bold text-tertiary mt-1">74</p>
           </div>
@@ -131,35 +130,35 @@ export const MembersView: React.FC<MembersViewProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search cadre by name, mobile, RFID tag..."
+            placeholder="Search by name or phone number"
             className="w-full bg-surface-container-lowest pl-9 pr-3 py-2 rounded-lg text-xs text-on-surface border border-surface-container-high focus:border-secondary focus:outline-none"
           />
         </div>
 
         {/* Filter Chips */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
-          <span className="text-[0.6875rem] text-outline font-bold uppercase mr-1">Rank:</span>
-          {(['ALL', 'RANK S', 'RANK A', 'RANK B', 'RANK C', 'RANK E'] as const).map((rank) => (
+          <span className="text-xs text-outline font-bold uppercase mr-1">Plan:</span>
+          {(['All', 'VIP', 'Yearly', 'Half-Yearly', 'Quarterly', 'Monthly'] as const).map((plan) => (
             <button
-              key={rank}
-              onClick={() => setSelectedRank(rank)}
-              className={`px-2.5 py-1 rounded text-[0.6875rem] font-semibold whitespace-nowrap transition-colors cursor-pointer ${
-                selectedRank === rank
+              key={plan}
+              onClick={() => setSelectedPlan(plan)}
+              className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                selectedPlan === plan
                   ? 'bg-primary-container text-on-primary-container font-bold'
                   : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container border border-surface-container-high'
               }`}
             >
-              {rank}
+              {plan}
             </button>
           ))}
 
           <div className="h-4 w-px bg-surface-container-highest mx-1"></div>
 
-          {(['ALL', 'ACTIVE', 'EXPIRING'] as const).map((status) => (
+          {(['All', 'Active', 'Expiring'] as const).map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status)}
-              className={`px-2.5 py-1 rounded text-[0.6875rem] font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-2.5 py-1 rounded text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                 statusFilter === status
                   ? 'bg-[#7bd0ff] text-[#001e2c] font-bold'
                   : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container border border-surface-container-high'
@@ -171,19 +170,18 @@ export const MembersView: React.FC<MembersViewProps> = ({
         </div>
       </div>
 
-      {/* Cadre Table */}
+      {/* Members Table */}
       <div className="rounded-xl bg-surface-container-low border border-surface-container-high overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-on-surface text-xs">
             <thead>
-              <tr className="text-outline uppercase text-[0.6875rem] bg-surface-container-lowest border-b border-surface-container-high">
-                <th className="py-3 px-4">Cadre Member</th>
-                <th className="py-3 px-3">Rank Tier</th>
-                <th className="py-3 px-3">Biometric RFID</th>
+              <tr className="text-outline uppercase text-xs bg-surface-container-lowest border-b border-surface-container-high">
+                <th className="py-3 px-4">Member</th>
+                <th className="py-3 px-3">Plan</th>
                 <th className="py-3 px-3">Expiry Date</th>
                 <th className="py-3 px-3">Status</th>
-                <th className="py-3 px-3">Streak (Mo)</th>
-                <th className="py-3 px-4 text-right">Tactical Action</th>
+                <th className="py-3 px-3">Visits This Month</th>
+                <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-container-high">
@@ -202,34 +200,31 @@ export const MembersView: React.FC<MembersViewProps> = ({
                         <div className="font-semibold text-on-surface group-hover:text-secondary transition-colors">
                           {member.name}
                         </div>
-                        <div className="text-[0.6875rem] text-outline">{member.phone}</div>
+                        <div className="text-xs text-outline">{member.phone}</div>
                       </div>
                     </div>
                   </td>
                   <td className="py-3.5 px-3">
                     <span
-                      className={`px-2 py-0.5 rounded text-[0.6875rem] font-bold ${
-                        member.rank === 'RANK S'
+                      className={`px-2 py-0.5 rounded text-xs font-bold ${
+                        member.planDuration === 'VIP'
                           ? 'bg-primary-fixed/20 text-primary-fixed border border-primary-fixed/30'
-                          : member.rank === 'RANK A'
+                          : member.planDuration === 'Yearly'
                           ? 'bg-primary/15 text-primary border border-primary/30'
-                          : member.rank === 'RANK B'
+                          : member.planDuration === 'Half-Yearly'
                           ? 'bg-secondary/15 text-secondary border border-secondary/30'
                           : 'bg-surface-container-high text-on-surface-variant'
                       }`}
                     >
-                      {member.rank} · {member.planDuration}
+                      {member.planDuration}
                     </span>
-                  </td>
-                  <td className="py-3.5 px-3 font-mono text-xs text-secondary">
-                    {member.rfidTag}
                   </td>
                   <td className="py-3.5 px-3 text-on-surface-variant font-mono">
                     {member.expiryDate}
                   </td>
                   <td className="py-3.5 px-3">
                     <span
-                      className={`px-2 py-0.5 rounded text-[0.6875rem] font-bold ${
+                      className={`px-2 py-0.5 rounded text-xs font-bold ${
                         member.daysLeft <= 3
                           ? 'bg-error-container/50 text-error border border-error/30'
                           : member.daysLeft <= 7
@@ -237,18 +232,18 @@ export const MembersView: React.FC<MembersViewProps> = ({
                           : 'bg-tertiary-container/20 text-tertiary'
                       }`}
                     >
-                      {member.daysLeft}d left
+                      {member.daysLeft} days left
                     </span>
                   </td>
                   <td className="py-3.5 px-3 text-on-surface">
-                    <span className="font-semibold">{member.attendanceCountThisMonth}</span> sessions
+                    <span className="font-semibold">{member.attendanceCountThisMonth}</span> visits
                   </td>
                   <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => onSendSingleReminder(member)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] text-[0.6875rem] font-bold transition-all border border-[#25D366]/30 cursor-pointer"
-                        title="Send WhatsApp Message"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] text-xs font-bold transition-all border border-[#25D366]/30 cursor-pointer"
+                        title="Send WhatsApp reminder"
                       >
                         <span className="material-symbols-outlined text-sm">chat</span>
                         <span>Remind</span>
@@ -257,7 +252,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       <button
                         onClick={() => onSelectMember(member)}
                         className="p-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border border-surface-container-high cursor-pointer"
-                        title="Inspect Hunter Dossier"
+                        title="View member"
                       >
                         <span className="material-symbols-outlined text-base">visibility</span>
                       </button>
@@ -272,7 +267,6 @@ export const MembersView: React.FC<MembersViewProps> = ({
         {/* Table summary bar */}
         <div className="p-3 bg-surface-container-lowest border-t border-surface-container-high flex items-center justify-between text-xs text-outline">
           <span>Showing {filtered.length} of {members.length} members</span>
-          <span>Indiranagar Domain Tactical Registry</span>
         </div>
       </div>
     </div>

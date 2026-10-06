@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Member, ActiveScreen } from '../types';
 
@@ -8,7 +7,6 @@ interface QuickSearchModalProps {
   members: Member[];
   onSelectMember: (member: Member) => void;
   onNavigateScreen: (screen: ActiveScreen) => void;
-  onOpenScanner: () => void;
 }
 
 export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({
@@ -17,16 +15,11 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({
   members,
   onSelectMember,
   onNavigateScreen,
-  onOpenScanner,
 }) => {
   const [query, setQuery] = useState('');
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        // Handled by parent toggle
-      }
       if (e.key === 'Escape' && isOpen) {
         onClose();
       }
@@ -41,7 +34,6 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({
     (m) =>
       m.name.toLowerCase().includes(query.toLowerCase()) ||
       m.phone.includes(query) ||
-      m.rfidTag.toLowerCase().includes(query.toLowerCase()) ||
       m.email.toLowerCase().includes(query.toLowerCase())
   );
 
@@ -56,10 +48,10 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Type a member name, phone (+91), RFID token, or screen..."
+            placeholder="Search by member name or phone number"
             className="flex-1 bg-transparent border-none text-sm text-on-surface placeholder-outline focus:outline-none"
           />
-          <span className="px-2 py-0.5 rounded bg-surface-container-high text-[0.625rem] font-bold text-on-surface-variant border border-surface-container-highest">
+          <span className="px-2 py-0.5 rounded bg-surface-container-high text-xs font-bold text-on-surface-variant border border-surface-container-highest">
             ESC to close
           </span>
         </div>
@@ -68,17 +60,17 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({
         <div className="p-3 max-h-96 overflow-y-auto space-y-4">
           {/* Quick Screen Jumps */}
           <div>
-            <span className="text-[0.625rem] uppercase font-bold tracking-wider text-outline px-2">
-              Tactical Operations Shortcuts
+            <span className="text-xs uppercase font-bold tracking-wider text-outline px-2">
+              Go to
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 mt-1.5">
               {[
                 { label: 'Dashboard', screen: 'dashboard' as ActiveScreen, icon: 'dashboard' },
-                { label: 'Cadre Roster', screen: 'members' as ActiveScreen, icon: 'group' },
+                { label: 'Members', screen: 'members' as ActiveScreen, icon: 'group' },
                 { label: 'Membership Plans', screen: 'memberships' as ActiveScreen, icon: 'card_membership' },
-                { label: 'Live Attendance', screen: 'attendance' as ActiveScreen, icon: 'fact_check' },
-                { label: 'Treasury Desks', screen: 'payments' as ActiveScreen, icon: 'payments' },
-                { label: 'System Settings', screen: 'settings' as ActiveScreen, icon: 'settings' },
+                { label: 'Attendance', screen: 'attendance' as ActiveScreen, icon: 'fact_check' },
+                { label: 'Payments', screen: 'payments' as ActiveScreen, icon: 'payments' },
+                { label: 'Settings', screen: 'settings' as ActiveScreen, icon: 'settings' },
               ].map((item) => (
                 <button
                   key={item.label}
@@ -95,27 +87,10 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({
             </div>
           </div>
 
-          {/* Quick Action: Live Scanner */}
-          <div>
-            <button
-              onClick={() => {
-                onOpenScanner();
-                onClose();
-              }}
-              className="w-full flex items-center justify-between p-2.5 rounded-lg bg-secondary-container/10 hover:bg-secondary-container/20 border border-secondary/30 text-secondary text-xs font-semibold cursor-pointer transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-lg">sensors</span>
-                <span>Open Live Biometric Turnstile Scanner</span>
-              </div>
-              <span className="text-[0.625rem] uppercase font-mono">FEED READY</span>
-            </button>
-          </div>
-
           {/* Member Search Results */}
           <div>
-            <span className="text-[0.625rem] uppercase font-bold tracking-wider text-outline px-2">
-              Cadre Members ({filteredMembers.length})
+            <span className="text-xs uppercase font-bold tracking-wider text-outline px-2">
+              Members ({filteredMembers.length})
             </span>
             <div className="divide-y divide-surface-container-high mt-1.5 border border-surface-container-high rounded-lg bg-surface-container-lowest">
               {filteredMembers.length > 0 ? (
@@ -134,23 +109,23 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({
                       </div>
                       <div>
                         <div className="font-semibold text-xs text-on-surface">{member.name}</div>
-                        <div className="text-[0.625rem] text-outline">
-                          {member.phone} · {member.rfidTag}
+                        <div className="text-xs text-outline">
+                          {member.phone}
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[0.6875rem] px-2 py-0.5 rounded bg-primary/15 text-primary font-semibold">
-                        {member.rank}
+                      <span className="text-xs px-2 py-0.5 rounded bg-primary/15 text-primary font-semibold">
+                        {member.planDuration}
                       </span>
                       <span
-                        className={`text-[0.6875rem] px-2 py-0.5 rounded font-bold ${
+                        className={`text-xs px-2 py-0.5 rounded font-bold ${
                           member.status === 'expiring'
                             ? 'bg-error-container/40 text-error'
                             : 'bg-tertiary-container/20 text-tertiary'
                         }`}
                       >
-                        {member.daysLeft}d left
+                        {member.daysLeft} days left
                       </span>
                     </div>
                   </div>

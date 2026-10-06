@@ -6,7 +6,6 @@ interface DashboardViewProps {
   transactions: Transaction[];
   checkIns: CheckInLog[];
   onOpenBulkWhatsApp: () => void;
-  onOpenTerminalScanner: () => void;
   onViewAllExpiring: () => void;
   onSelectMember: (member: Member) => void;
   onSendSingleReminder: (member: Member) => void;
@@ -17,7 +16,6 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   transactions,
   checkIns,
   onOpenBulkWhatsApp,
-  onOpenTerminalScanner,
   onViewAllExpiring,
   onSelectMember,
   onSendSingleReminder,
@@ -41,14 +39,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
-      {/* 1. SYSTEM ALERT STRIP */}
+      {/* 1. ALERT STRIP */}
       {!noticeDismissed && (
         <section className="relative w-full overflow-hidden bg-surface-container-low rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.45)] border border-surface-container-high">
           {/* Neon Accent Lines */}
           <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-[#7bd0ff] to-transparent opacity-80"></div>
           <div className="absolute inset-x-0 bottom-0 h-0.5 bg-gradient-to-r from-transparent via-[#cabeff] to-transparent opacity-60"></div>
 
-          {/* Manhwa Corner Ticks */}
+          {/* Corner accents */}
           <div className="absolute top-1 left-1 w-2.5 h-2.5 border-t border-l border-secondary opacity-90"></div>
           <div className="absolute top-1 right-1 w-2.5 h-2.5 border-t border-r border-secondary opacity-90"></div>
           <div className="absolute bottom-1 left-1 w-2.5 h-2.5 border-b border-l border-primary opacity-90"></div>
@@ -57,14 +55,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="px-4 py-3 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-gradient-to-r from-primary-container/10 via-surface-container-low to-secondary-container/10">
             <div className="flex items-center gap-3">
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-surface-container-high text-secondary shadow-[0_0_12px_rgba(123,208,255,0.35)] shrink-0 border border-secondary/30">
-                <span className="material-symbols-outlined text-lg animate-pulse">terminal</span>
+                <span className="material-symbols-outlined text-lg animate-pulse">notifications_active</span>
               </div>
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="font-sans text-[0.6875rem] uppercase tracking-widest text-secondary font-bold bg-secondary/15 px-2 py-0.5 rounded border border-secondary/30">
-                  System Notice
-                </span>
-                <span className="font-sans text-xs text-on-surface">
-                  Biometric reader at <span className="text-secondary font-medium">Gate 2</span> synced successfully at 08:30 AM IST.
+                <span className="font-sans text-xs uppercase tracking-widest text-secondary font-bold bg-secondary/15 px-2 py-0.5 rounded border border-secondary/30">
+                  Reminder
                 </span>
                 <span className="font-sans text-xs text-error font-medium flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-error inline-block animate-ping"></span>
@@ -79,7 +74,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 className="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366]/35 text-[#25D366] transition-all shadow-[0_0_12px_rgba(37,211,102,0.25)] border border-[#25D366]/40 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-base">chat</span>
-                <span className="font-sans text-[0.6875rem] font-bold tracking-wide">
+                <span className="font-sans text-xs font-bold tracking-wide">
                   Send Bulk Reminder [WhatsApp]
                 </span>
                 <span className="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">
@@ -101,19 +96,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* 2. ROW OF 6 STAT CARDS */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {/* Card 1: Total Cadre */}
+        {/* Card 1: Total Members */}
         <div className="relative bg-surface-container-low rounded-xl p-4 flex flex-col justify-between overflow-hidden group hover:bg-surface-container transition-all shadow-[0_4px_20px_rgba(0,0,0,0.3)] border border-surface-container-high hover:border-secondary/40">
           <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-secondary opacity-70"></div>
           <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-secondary opacity-70"></div>
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">Total Cadre</span>
+            <span className="font-sans text-xs uppercase tracking-wider text-outline">Total Members</span>
             <span className="material-symbols-outlined text-xl text-secondary">groups</span>
           </div>
           <div>
             <div className="font-sora text-3xl font-bold text-on-surface tracking-tight group-hover:text-secondary-fixed transition-colors">
               312
             </div>
-            <div className="flex items-center gap-1 mt-1 text-tertiary text-[0.6875rem] font-semibold">
+            <div className="flex items-center gap-1 mt-1 text-tertiary text-xs font-semibold">
               <span className="material-symbols-outlined text-sm">trending_up</span>
               <span>+12 this month</span>
             </div>
@@ -125,14 +120,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-tertiary opacity-70"></div>
           <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-tertiary opacity-70"></div>
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">Active Roster</span>
-            <span className="px-2 py-0.5 rounded bg-tertiary/15 text-tertiary text-[0.6875rem] font-bold tracking-wider flex items-center gap-1 border border-tertiary/30">
+            <span className="font-sans text-xs uppercase tracking-wider text-outline">Active Roster</span>
+            <span className="px-2 py-0.5 rounded bg-tertiary/15 text-tertiary text-xs font-bold tracking-wider flex items-center gap-1 border border-tertiary/30">
               <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse"></span> ONLINE
             </span>
           </div>
           <div>
             <div className="font-sora text-3xl font-bold text-on-surface tracking-tight">268</div>
-            <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-[0.6875rem]">
+            <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-xs">
               <span>86% retention rate</span>
             </div>
           </div>
@@ -143,8 +138,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-error opacity-70"></div>
           <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-error opacity-70"></div>
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">Expiring Week</span>
-            <span className="px-2 py-0.5 rounded bg-error-container/40 text-error text-[0.6875rem] font-bold tracking-wider border border-error/30">
+            <span className="font-sans text-xs uppercase tracking-wider text-outline">Expiring This Week</span>
+            <span className="px-2 py-0.5 rounded bg-error-container/40 text-error text-xs font-bold tracking-wider border border-error/30">
               CRITICAL
             </span>
           </div>
@@ -152,7 +147,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="font-sora text-3xl font-bold text-error tracking-tight drop-shadow-[0_0_10px_rgba(255,180,171,0.3)]">
               19
             </div>
-            <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-[0.6875rem]">
+            <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-xs">
               <span>Requires intervention</span>
             </div>
           </div>
@@ -163,12 +158,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-secondary opacity-70"></div>
           <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-secondary opacity-70"></div>
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">Pending Due</span>
+            <span className="font-sans text-xs uppercase tracking-wider text-outline">Pending Due</span>
             <span className="material-symbols-outlined text-xl text-primary">pending_actions</span>
           </div>
           <div>
             <div className="font-sora text-2xl lg:text-3xl font-bold text-on-surface tracking-tight">₹42,500</div>
-            <div className="flex items-center gap-1 mt-1 text-secondary text-[0.6875rem]">
+            <div className="flex items-center gap-1 mt-1 text-secondary text-xs">
               <span>8 invoices unresolved</span>
             </div>
           </div>
@@ -179,7 +174,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-tertiary opacity-70"></div>
           <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-tertiary opacity-70"></div>
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">Floor Entries</span>
+            <span className="font-sans text-xs uppercase tracking-wider text-outline">Floor Entries</span>
             <span className="material-symbols-outlined text-xl text-tertiary">how_to_reg</span>
           </div>
           <div>
@@ -195,14 +190,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-primary opacity-70"></div>
           <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-primary opacity-70"></div>
           <div className="flex items-center justify-between text-on-surface-variant mb-2">
-            <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">Net Revenue</span>
+            <span className="font-sans text-xs uppercase tracking-wider text-outline">Net Revenue</span>
             <span className="material-symbols-outlined text-xl text-primary">account_balance_wallet</span>
           </div>
           <div>
             <div className="font-sora text-2xl lg:text-3xl font-bold text-primary tracking-tight drop-shadow-[0_0_12px_rgba(202,190,255,0.4)]">
               ₹3,86,000
             </div>
-            <div className="flex items-center gap-1 mt-1 text-tertiary text-[0.6875rem] font-semibold">
+            <div className="flex items-center gap-1 mt-1 text-tertiary text-xs font-semibold">
               <span className="material-symbols-outlined text-sm">north_east</span>
               <span>+18.4% MoM</span>
             </div>
@@ -210,13 +205,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       </section>
 
-      {/* 3. WIDE CARD: MONTHLY REVENUE GOAL (XP PROGRESS BAR - SOLO LEVELING SYSTEM VIBE) */}
+      {/* 3. WIDE CARD: MONTHLY REVENUE GOAL */}
       <section className="relative bg-surface-container-low rounded-xl p-5 sm:p-6 overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-surface-container-high">
         {/* Glow ambient background */}
         <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-primary-container/10 blur-3xl pointer-events-none"></div>
         <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-secondary/10 blur-3xl pointer-events-none"></div>
 
-        {/* System Window Corner Ticks */}
+        {/* Corner accents */}
         <div className="absolute top-2 left-2 w-3.5 h-3.5 border-t-2 border-l-2 border-secondary/70"></div>
         <div className="absolute top-2 right-2 w-3.5 h-3.5 border-t-2 border-r-2 border-secondary/70"></div>
         <div className="absolute bottom-2 left-2 w-3.5 h-3.5 border-b-2 border-l-2 border-primary/70"></div>
@@ -227,31 +222,28 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary shadow-[0_0_16px_rgba(148,125,255,0.3)] border border-primary-container/30">
-                <span className="material-symbols-outlined text-2xl">swords</span>
+                <span className="material-symbols-outlined text-2xl">trending_up</span>
               </div>
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-sora text-lg font-semibold text-on-surface">
-                    Monthly Revenue Quest
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded bg-primary-container/20 text-primary text-[0.6875rem] font-bold tracking-widest uppercase shadow-[0_0_8px_rgba(202,190,255,0.25)] border border-primary/30">
-                    LEVEL 4: TITAN TIER
+                    Monthly Revenue Goal
                   </span>
                 </div>
                 <p className="text-xs text-on-surface-variant mt-0.5">
-                  System Guild Benchmark · Indiranagar Domain
+                  Target for this month
                 </p>
               </div>
             </div>
 
             <div className="flex items-baseline gap-2 self-start md:self-auto bg-surface-container px-4 py-2 rounded-lg border border-surface-container-high">
               <span className="font-sora text-xl font-bold text-primary">₹3,86,000</span>
-              <span className="text-sm text-outline">/ ₹5,00,000 XP</span>
+              <span className="text-sm text-outline">/ ₹5,00,000 goal</span>
               <span className="ml-2 text-xs text-secondary font-bold">(77.2%)</span>
             </div>
           </div>
 
-          {/* The Hunter XP Progress Bar */}
+          {/* Progress bar */}
           <div className="flex flex-col gap-2 pt-2">
             <div className="relative w-full h-5 rounded-full bg-surface-container-lowest overflow-hidden p-0.5 border border-surface-container-high">
               {/* Progress Fill */}
@@ -268,26 +260,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             </div>
 
-            {/* Milestones Metadata */}
-            <div className="flex justify-between text-[0.6875rem] text-outline px-1 font-medium">
-              <span>LVL 3 CLEAR (₹2.5L)</span>
-              <span>50% (₹2.5L)</span>
-              <span className="text-secondary font-semibold">CURRENT RANK (77.2%)</span>
-              <span className="text-primary font-bold">TITAN V (₹5.0L)</span>
+            {/* Milestones */}
+            <div className="flex justify-between text-xs text-outline px-1 font-medium">
+              <span>₹0</span>
+              <span>₹2.5L (50%)</span>
+              <span className="text-secondary font-semibold">Now: 77.2%</span>
+              <span className="text-primary font-bold">Goal ₹5.0L</span>
             </div>
           </div>
 
-          {/* Quest Rewards Footer */}
+          {/* Goal footer */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 pt-2 bg-surface-container/60 p-3 rounded-lg border border-surface-container-high">
             <div className="flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary text-lg">military_tech</span>
+              <span className="material-symbols-outlined text-secondary text-lg">flag</span>
               <span className="text-xs text-on-surface">
-                <strong className="text-secondary font-semibold">Next Unlock at Level 5:</strong> Unlock Trainer Incentive Pool &amp; Bengaluru North Leaderboard placement.
-              </span>
+                <strong className="text-secondary font-semibold">₹1,14,000 left</strong> to reach this month's goal</span>
             </div>
-            <div className="flex items-center gap-1.5 text-outline text-[0.6875rem] shrink-0">
+            <div className="flex items-center gap-1.5 text-outline text-xs shrink-0">
               <span className="material-symbols-outlined text-sm">schedule</span>
-              <span>7 days remaining in billing epoch</span>
+              <span>7 days left this month</span>
             </div>
           </div>
         </div>
@@ -309,10 +300,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <h2 className="font-sora text-lg font-semibold text-on-surface">Expiring Memberships</h2>
                 </div>
                 <p className="text-xs text-outline mt-0.5">
-                  Requires immediate gym owner outreach | 1-Tap WhatsApp dispatch
+                  Follow up with these members. One tap sends a WhatsApp reminder.
                 </p>
               </div>
-              <span className="px-2.5 py-1 rounded bg-error-container/30 text-error text-[0.6875rem] font-bold border border-error/30">
+              <span className="px-2.5 py-1 rounded bg-error-container/30 text-error text-xs font-bold border border-error/30">
                 19 PENDING
               </span>
             </div>
@@ -321,9 +312,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-on-surface text-xs">
                 <thead>
-                  <tr className="text-outline uppercase text-[0.6875rem] bg-surface-container-lowest/50 rounded-lg">
+                  <tr className="text-outline uppercase text-xs bg-surface-container-lowest/50 rounded-lg">
                     <th className="py-2.5 px-3">Member</th>
-                    <th className="py-2.5 px-2">Rank / Tier</th>
+                    <th className="py-2.5 px-2">Plan</th>
                     <th className="py-2.5 px-2">Expiry</th>
                     <th className="py-2.5 px-2">Time Left</th>
                     <th className="py-2.5 px-3 text-right">Quick Action</th>
@@ -340,19 +331,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <div className="font-medium text-on-surface group-hover:text-secondary transition-colors">
                           {member.name}
                         </div>
-                        <div className="text-[0.6875rem] text-outline">{member.phone}</div>
+                        <div className="text-xs text-outline">{member.phone}</div>
                       </td>
                       <td className="py-3 px-2">
                         <span
-                          className={`px-2 py-0.5 rounded text-[0.6875rem] font-semibold tracking-wider ${
-                            member.rank === 'RANK A'
-                              ? 'bg-primary/15 text-primary border border-primary/30'
-                              : member.rank === 'RANK B'
-                              ? 'bg-secondary/15 text-secondary border border-secondary/30'
-                              : 'bg-surface-container-high text-on-surface-variant'
-                          }`}
+                          className="px-2 py-0.5 rounded text-xs font-semibold bg-primary/15 text-primary border border-primary/30"
                         >
-                          {member.rank} · {member.planDuration}
+                          {member.planDuration}
                         </span>
                       </td>
                       <td className="py-3 px-2 text-on-surface-variant font-mono text-[0.75rem]">
@@ -360,7 +345,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       </td>
                       <td className="py-3 px-2">
                         <span
-                          className={`px-2 py-0.5 rounded text-[0.6875rem] font-bold ${
+                          className={`px-2 py-0.5 rounded text-xs font-bold ${
                             member.daysLeft <= 3
                               ? 'bg-error-container/50 text-error border border-error/30'
                               : member.daysLeft <= 5
@@ -374,7 +359,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <td className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => onSendSingleReminder(member)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] text-[0.6875rem] font-bold transition-all shadow-[0_0_8px_rgba(37,211,102,0.15)] border border-[#25D366]/30 cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] text-xs font-bold transition-all shadow-[0_0_8px_rgba(37,211,102,0.15)] border border-[#25D366]/30 cursor-pointer"
                         >
                           <span className="material-symbols-outlined text-sm">chat</span>
                           <span>Remind</span>
@@ -392,7 +377,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="text-xs text-outline">Showing 5 of 19 expiring members</span>
             <button
               onClick={onViewAllExpiring}
-              className="text-[0.6875rem] text-secondary hover:text-secondary-fixed flex items-center gap-1 font-bold group cursor-pointer"
+              className="text-xs text-secondary hover:text-secondary-fixed flex items-center gap-1 font-bold group cursor-pointer"
             >
               <span>View All Expiring Members</span>
               <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">
@@ -419,7 +404,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   Live check-ins: <strong className="text-tertiary">74 members today</strong>
                 </p>
               </div>
-              <span className="text-[0.6875rem] text-secondary bg-secondary/15 px-2.5 py-1 rounded font-semibold border border-secondary/30">
+              <span className="text-xs text-secondary bg-secondary/15 px-2.5 py-1 rounded font-semibold border border-secondary/30">
                 7-Day Trajectory
               </span>
             </div>
@@ -429,84 +414,84 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="flex items-end justify-between h-28 gap-2 pt-2">
                 {/* Mon */}
                 <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-[0.6875rem] text-outline group-hover:text-primary transition-colors">
+                  <span className="text-xs text-outline group-hover:text-primary transition-colors">
                     82
                   </span>
                   <div
                     className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
                     style={{ height: '75%' }}
                   ></div>
-                  <span className="text-[0.6875rem] text-outline">M</span>
+                  <span className="text-xs text-outline">M</span>
                 </div>
                 {/* Tue */}
                 <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-[0.6875rem] text-outline group-hover:text-primary transition-colors">
+                  <span className="text-xs text-outline group-hover:text-primary transition-colors">
                     91
                   </span>
                   <div
                     className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
                     style={{ height: '84%' }}
                   ></div>
-                  <span className="text-[0.6875rem] text-outline">T</span>
+                  <span className="text-xs text-outline">T</span>
                 </div>
                 {/* Wed */}
                 <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-[0.6875rem] text-outline group-hover:text-primary transition-colors">
+                  <span className="text-xs text-outline group-hover:text-primary transition-colors">
                     88
                   </span>
                   <div
                     className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
                     style={{ height: '80%' }}
                   ></div>
-                  <span className="text-[0.6875rem] text-outline">W</span>
+                  <span className="text-xs text-outline">W</span>
                 </div>
                 {/* Thu */}
                 <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-[0.6875rem] text-outline group-hover:text-primary transition-colors">
+                  <span className="text-xs text-outline group-hover:text-primary transition-colors">
                     95
                   </span>
                   <div
                     className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
                     style={{ height: '88%' }}
                   ></div>
-                  <span className="text-[0.6875rem] text-outline">T</span>
+                  <span className="text-xs text-outline">T</span>
                 </div>
                 {/* Fri */}
                 <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-[0.6875rem] text-outline group-hover:text-primary transition-colors">
+                  <span className="text-xs text-outline group-hover:text-primary transition-colors">
                     84
                   </span>
                   <div
                     className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
                     style={{ height: '77%' }}
                   ></div>
-                  <span className="text-[0.6875rem] text-outline">F</span>
+                  <span className="text-xs text-outline">F</span>
                 </div>
                 {/* Sat */}
                 <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-[0.6875rem] text-secondary font-bold">104</span>
+                  <span className="text-xs text-secondary font-bold">104</span>
                   <div
                     className="w-full bg-secondary-container rounded-t shadow-[0_0_8px_rgba(0,166,224,0.4)]"
                     style={{ height: '100%' }}
                   ></div>
-                  <span className="text-[0.6875rem] text-secondary font-bold">S</span>
+                  <span className="text-xs text-secondary font-bold">S</span>
                 </div>
                 {/* Sun / Today */}
                 <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-[0.6875rem] text-tertiary font-bold">74</span>
+                  <span className="text-xs text-tertiary font-bold">74</span>
                   <div
                     className="w-full bg-gradient-to-t from-[#947dff] to-[#4edea3] rounded-t shadow-[0_0_12px_rgba(78,222,163,0.5)]"
                     style={{ height: '68%' }}
                   ></div>
-                  <span className="text-[0.6875rem] text-tertiary font-bold">TOD</span>
+                  <span className="text-xs text-tertiary font-bold">TOD</span>
                 </div>
               </div>
             </div>
 
             {/* Live Check-in list (Recent 4 entries) */}
             <div className="flex flex-col gap-2">
-              <span className="font-sans text-[0.6875rem] uppercase tracking-wider text-outline">
-                Recent Gate Ingress
+              <span className="font-sans text-xs uppercase tracking-wider text-outline">
+                Recent Check-ins
               </span>
 
               {recentCheckIns.map((item) => (
@@ -525,34 +510,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <div className="font-medium text-on-surface leading-tight text-xs">
                         {item.memberName}
                       </div>
-                      <div className="text-[0.6875rem] text-outline">
+                      <div className="text-xs text-outline">
                         Checked in at {item.time}
                       </div>
                     </div>
                   </div>
-                  <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[0.6875rem] font-semibold border border-primary/20">
-                    {item.rank} · {item.planDuration}
+                  <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-semibold border border-primary/20">
+                    {item.planDuration}
                   </span>
                 </div>
               ))}
             </div>
           </div>
-
-          <div className="pt-3 mt-3 text-center">
-            <button
-              onClick={onOpenTerminalScanner}
-              className="w-full py-2.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-secondary hover:text-secondary-fixed text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-secondary/30 shadow-[0_0_12px_rgba(123,208,255,0.15)] cursor-pointer"
-            >
-              <span className="material-symbols-outlined text-base">sensors</span>
-              <span>Live Terminal Scanner Feed</span>
-            </button>
-          </div>
         </div>
       </section>
 
-      {/* 5. BOTTOM FULL-WIDTH CARD: RECENT TREASURY OPERATIONS */}
+      {/* 5. BOTTOM FULL-WIDTH CARD: RECENT PAYMENTS */}
       <section className="relative bg-surface-container-low rounded-xl p-4 sm:p-6 overflow-hidden shadow-[0_4px_32px_rgba(0,0,0,0.4)] border border-surface-container-high">
-        {/* Manhwa Corner Brackets */}
+        {/* Corner accents */}
         <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-secondary/60"></div>
         <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-secondary/60"></div>
         <div className="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-primary/60"></div>
@@ -565,7 +540,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-primary text-xl">receipt_long</span>
                 <h2 className="font-sora text-lg font-semibold text-on-surface">
-                  Recent Treasury Operations
+                  Recent Payments
                 </h2>
               </div>
               <p className="text-xs text-outline mt-0.5">
@@ -591,7 +566,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <button
                     key={filter}
                     onClick={() => setPaymentFilter(filter)}
-                    className={`px-3 py-1 rounded text-[0.6875rem] font-bold transition-all cursor-pointer whitespace-nowrap ${
+                    className={`px-3 py-1 rounded text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                       isActive
                         ? 'bg-primary-container text-on-primary-container shadow-[0_0_8px_rgba(148,125,255,0.3)]'
                         : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant border border-surface-container-high'
@@ -608,7 +583,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-on-surface text-xs">
               <thead>
-                <tr className="text-outline uppercase text-[0.6875rem] bg-surface-container-lowest/50 rounded-lg">
+                <tr className="text-outline uppercase text-xs bg-surface-container-lowest/50 rounded-lg">
                   <th className="py-2.5 px-3">Transaction ID</th>
                   <th className="py-2.5 px-3">Member</th>
                   <th className="py-2.5 px-3">Plan / Category</th>
@@ -626,10 +601,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </td>
                     <td className="py-3 px-3">
                       <div className="font-medium text-on-surface">{txn.memberName}</div>
-                      <div className="text-[0.6875rem] text-outline">{txn.memberEmail}</div>
+                      <div className="text-xs text-outline">{txn.memberEmail}</div>
                     </td>
                     <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-[0.6875rem] font-semibold border border-primary/20">
+                      <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-semibold border border-primary/20">
                         {txn.planCategory}
                       </span>
                     </td>
@@ -653,11 +628,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     </td>
                     <td className="py-3 px-3 text-right">
                       {txn.status === 'PAID' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary text-[0.6875rem] font-bold shadow-[0_0_8px_rgba(78,222,163,0.2)] border border-tertiary/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary text-xs font-bold shadow-[0_0_8px_rgba(78,222,163,0.2)] border border-tertiary/30">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span> PAID
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-error-container/40 text-error text-[0.6875rem] font-bold shadow-[0_0_8px_rgba(255,180,171,0.2)] border border-error/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-error-container/40 text-error text-xs font-bold shadow-[0_0_8px_rgba(255,180,171,0.2)] border border-error/30">
                           <span className="w-1.5 h-1.5 rounded-full bg-error animate-pulse"></span> PENDING
                         </span>
                       )}
@@ -669,7 +644,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Pagination & Summary */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-outline text-[0.6875rem] border-t border-surface-container-high/60">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-outline text-xs border-t border-surface-container-high/60">
             <span>Reconciled through Razorpay Core API Node · GST Ready (18% applied)</span>
             <div className="flex items-center gap-2">
               <button

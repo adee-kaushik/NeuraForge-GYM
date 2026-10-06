@@ -2,12 +2,12 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 const description =
-  'Tactical gym management system OS with biometric gates, hunter rank tiers, revenue quests, and automated WhatsApp dispatch.';
+  'Gym management software for members, attendance, payments and renewals.';
 
 export const metadata: Metadata = {
-  title: 'Iron Pulse Gym OS',
+  title: 'Iron Pulse Gym',
   description,
-  openGraph: { title: 'Iron Pulse Gym OS', description, type: 'website' },
+  openGraph: { title: 'Iron Pulse Gym', description, type: 'website' },
   twitter: { card: 'summary_large_image' },
 };
 

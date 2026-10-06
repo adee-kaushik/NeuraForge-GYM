@@ -1,18 +1,16 @@
-export type HunterRank = 'RANK S' | 'RANK A' | 'RANK B' | 'RANK C' | 'RANK E';
+export type PlanDuration = 'Yearly' | 'Half-Yearly' | 'Quarterly' | 'Monthly' | 'VIP';
 
 export interface Member {
   id: string;
   name: string;
   phone: string;
   email: string;
-  rank: HunterRank;
   planName: string;
-  planDuration: 'Yearly' | 'Half-Yr' | 'Quarterly' | 'Monthly' | 'VIP';
-  expiryDate: string; // e.g. '2024-10-26'
+  planDuration: PlanDuration;
+  expiryDate: string; // e.g. '26 Oct 2024'
   daysLeft: number;
   status: 'active' | 'expiring' | 'expired';
   avatarInitials: string;
-  rfidTag: string;
   joinDate: string;
   attendanceCountThisMonth: number;
   lastCheckIn?: string;
@@ -26,7 +24,7 @@ export interface Transaction {
   memberEmail: string;
   planCategory: string;
   amount: number;
-  paymentMode: 'Google Pay UPI' | 'PhonePe UPI' | 'Paytm UPI' | 'HDFC Debit Card' | 'Cash Settlement' | 'Credit Card';
+  paymentMode: 'UPI' | 'Card' | 'Cash';
   timestamp: string;
   status: 'PAID' | 'PENDING' | 'FAILED';
   invoiceNo: string;
@@ -37,17 +35,12 @@ export interface CheckInLog {
   id: string;
   memberId: string;
   memberName: string;
-  rank: HunterRank;
   planDuration: string;
   time: string;
-  gate: 'Gate 1 (Turnstile)' | 'Gate 2 (Iron Zone)';
-  status: 'GRANTED' | 'DENIED' | 'RE-ENTRY';
-  temperature?: string;
 }
 
 export interface MembershipPlan {
   id: string;
-  rank: HunterRank;
   name: string;
   durationLabel: string;
   durationMonths: number;
@@ -56,7 +49,6 @@ export interface MembershipPlan {
   activeCount: number;
   features: string[];
   popular?: boolean;
-  color: string;
 }
 
 export type ActiveScreen = 'dashboard' | 'members' | 'memberships' | 'attendance' | 'payments' | 'settings';

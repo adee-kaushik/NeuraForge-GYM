@@ -71,7 +71,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
               account_balance_wallet
             </span>
             <h1 className="font-sora text-xl sm:text-2xl font-bold text-on-surface">
-              Treasury &amp; Cash Desks
+              Payments
             </h1>
           </div>
           <p className="text-xs text-outline mt-1">
@@ -94,7 +94,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col justify-between">
           <div className="flex items-center justify-between text-outline">
-            <span className="text-[0.625rem] font-bold uppercase tracking-wider">
+            <span className="text-xs font-bold uppercase tracking-wider">
               Net Settled (MoM)
             </span>
             <span className="material-symbols-outlined text-tertiary text-xl">payments</span>
@@ -103,7 +103,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
             <span className="font-sora text-2xl font-bold text-tertiary">
               ₹{totalRevenue.toLocaleString('en-IN')}
             </span>
-            <p className="text-[0.6875rem] text-outline mt-0.5">
+            <p className="text-xs text-outline mt-0.5">
               +18.4% ahead of September baseline
             </p>
           </div>
@@ -111,7 +111,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
 
         <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col justify-between">
           <div className="flex items-center justify-between text-outline">
-            <span className="text-[0.625rem] font-bold uppercase tracking-wider">
+            <span className="text-xs font-bold uppercase tracking-wider">
               Pending Desks Due
             </span>
             <span className="material-symbols-outlined text-error text-xl">
@@ -122,7 +122,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
             <span className="font-sora text-2xl font-bold text-error">
               ₹{totalPending.toLocaleString('en-IN')}
             </span>
-            <p className="text-[0.6875rem] text-error mt-0.5">
+            <p className="text-xs text-error mt-0.5">
               Requires counter collection
             </p>
           </div>
@@ -130,7 +130,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
 
         <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col justify-between">
           <div className="flex items-center justify-between text-outline">
-            <span className="text-[0.625rem] font-bold uppercase tracking-wider">
+            <span className="text-xs font-bold uppercase tracking-wider">
               GST Collected (18%)
             </span>
             <span className="material-symbols-outlined text-secondary text-xl">receipt</span>
@@ -139,7 +139,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
             <span className="font-sora text-2xl font-bold text-secondary">
               ₹{gstCollected.toLocaleString('en-IN')}
             </span>
-            <p className="text-[0.6875rem] text-outline mt-0.5">
+            <p className="text-xs text-outline mt-0.5">
               CGST (9%) + SGST (9%) split
             </p>
           </div>
@@ -147,7 +147,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
 
         <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col justify-between">
           <div className="flex items-center justify-between text-outline">
-            <span className="text-[0.625rem] font-bold uppercase tracking-wider">
+            <span className="text-xs font-bold uppercase tracking-wider">
               Razorpay API Status
             </span>
             <span className="w-2.5 h-2.5 rounded-full bg-[#4edea3] animate-pulse"></span>
@@ -156,7 +156,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
             <span className="font-mono text-sm font-bold text-on-surface">
               NODE: BLR-SRV-01
             </span>
-            <p className="text-[0.6875rem] text-tertiary mt-0.5">
+            <p className="text-xs text-tertiary mt-0.5">
               Instant T+0 settlement enabled
             </p>
           </div>
@@ -178,7 +178,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
               <button
                 key={modeKey}
                 onClick={() => setFilterMode(modeKey)}
-                className={`px-3 py-1 rounded text-[0.6875rem] font-bold transition-all cursor-pointer whitespace-nowrap ${
+                className={`px-3 py-1 rounded text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   filterMode === modeKey
                     ? 'bg-primary-container text-on-primary-container shadow-[0_0_8px_rgba(148,125,255,0.3)]'
                     : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'
@@ -193,9 +193,9 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-on-surface text-xs">
             <thead>
-              <tr className="text-outline uppercase text-[0.6875rem] bg-surface-container-lowest/50 border-b border-surface-container-high">
+              <tr className="text-outline uppercase text-xs bg-surface-container-lowest/50 border-b border-surface-container-high">
                 <th className="py-3 px-4">Transaction ID</th>
-                <th className="py-3 px-4">Cadre Member</th>
+                <th className="py-3 px-4">Member</th>
                 <th className="py-3 px-4">Plan Category</th>
                 <th className="py-3 px-4">Amount</th>
                 <th className="py-3 px-4">Mode</th>
@@ -211,10 +211,10 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                   </td>
                   <td className="py-3 px-4">
                     <div className="font-medium text-on-surface">{txn.memberName}</div>
-                    <div className="text-[0.6875rem] text-outline">{txn.memberEmail}</div>
+                    <div className="text-xs text-outline">{txn.memberEmail}</div>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded bg-primary/15 text-primary text-[0.6875rem] font-semibold">
+                    <span className="px-2 py-0.5 rounded bg-primary/15 text-primary text-xs font-semibold">
                       {txn.planCategory}
                     </span>
                   </td>
@@ -240,7 +240,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                     {txn.status === 'PAID' ? (
                       <button
                         onClick={() => setSelectedReceipt(txn)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-tertiary-container/20 hover:bg-tertiary-container/35 text-tertiary text-[0.6875rem] font-bold border border-tertiary/30 cursor-pointer transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-tertiary-container/20 hover:bg-tertiary-container/35 text-tertiary text-xs font-bold border border-tertiary/30 cursor-pointer transition-colors"
                         title="View Invoice"
                       >
                         <span className="material-symbols-outlined text-sm">print</span>
@@ -249,7 +249,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                     ) : (
                       <button
                         onClick={() => onMarkPaid(txn.id)}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded bg-error-container/50 hover:bg-error-container text-on-error-container text-[0.6875rem] font-bold border border-error/40 cursor-pointer transition-colors shadow-[0_0_8px_rgba(255,180,171,0.2)]"
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded bg-error-container/50 hover:bg-error-container text-on-error-container text-xs font-bold border border-error/40 cursor-pointer transition-colors shadow-[0_0_8px_rgba(255,180,171,0.2)]"
                       >
                         <span className="material-symbols-outlined text-sm">check_circle</span>
                         <span>Collect Cash</span>
@@ -281,7 +281,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
 
             <form onSubmit={handleCreateManual} className="space-y-4 text-xs">
               <div>
-                <label className="block text-[0.6875rem] font-bold text-outline mb-1">
+                <label className="block text-xs font-bold text-outline mb-1">
                   Member Name
                 </label>
                 <input
@@ -295,7 +295,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-[0.6875rem] font-bold text-outline mb-1">
+                <label className="block text-xs font-bold text-outline mb-1">
                   Amount (₹ INR)
                 </label>
                 <input
@@ -308,7 +308,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-[0.6875rem] font-bold text-outline mb-1">
+                <label className="block text-xs font-bold text-outline mb-1">
                   Payment Mode
                 </label>
                 <select
@@ -357,8 +357,8 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                 <h3 className="font-sora text-base font-bold text-on-surface">
                   TAX INVOICE / RECEIPT
                 </h3>
-                <p className="text-[0.6875rem] text-outline">
-                  Iron Pulse Gym · Indiranagar Domain #1 · GSTIN 29AAAAA0000A1Z5
+                <p className="text-xs text-outline">
+                  Iron Pulse Gym · GSTIN 29AAAAA0000A1Z5
                 </p>
               </div>
               <button
@@ -379,7 +379,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                 <span className="font-mono">{selectedReceipt.id}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-outline">Cadre Hunter:</span>
+                <span className="text-outline">Member:</span>
                 <span className="font-bold">{selectedReceipt.memberName}</span>
               </div>
               <div className="flex justify-between">
@@ -394,7 +394,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                 <span>Total Amount:</span>
                 <span className="text-tertiary">₹{selectedReceipt.amount.toLocaleString('en-IN')}</span>
               </div>
-              <div className="text-[0.625rem] text-outline text-right">
+              <div className="text-xs text-outline text-right">
                 Includes 18% GST (₹{selectedReceipt.gstAmount.toLocaleString('en-IN')})
               </div>
             </div>

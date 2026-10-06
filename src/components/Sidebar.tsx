@@ -20,7 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems: { id: ActiveScreen; label: string; icon: string; badge?: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
     { id: 'members', label: 'Members', icon: 'group' },
-    { id: 'memberships', label: 'Memberships', icon: 'card_membership' },
+    { id: 'memberships', label: 'Plans', icon: 'card_membership' },
     { id: 'attendance', label: 'Attendance', icon: 'fact_check' },
     { id: 'payments', label: 'Payments', icon: 'payments' },
     { id: 'settings', label: 'Settings', icon: 'settings' },
@@ -42,20 +42,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         }`}
       >
         <div className="flex flex-col">
-          {/* Logo & System Brand */}
+          {/* Logo */}
           <div className="px-6 pt-6 pb-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img
-                src="https://lh3.googleusercontent.com/aida/AEtjO1Xh37fUV2ygiKcp79FX9jyg658Buc3JSEkd1sofiCtRT6-Jr5DiiImN97jH55GTGoMOFkOPTK5lGFcp2-ETdOGUiPGlHbCUtPzlQLxQtLwhskkQiKe8l3vHtcmVTxXw7aafrUFQgfeSUiRVb1mmWYgRljnF473_vbRTvrsMKbHSVddkrZMzgBmqjg8MJ7Vmx67BJLjFd99NQ5sW_vBMoEpg7FcvGRIv9kFLewPtxgdWSGzN5wV4O12vtw4"
-                alt="Iron Pulse Gym Logo"
-                className="h-8 w-auto object-contain drop-shadow-[0_0_8px_rgba(123,208,255,0.4)]"
-              />
+              <span className="material-symbols-outlined text-secondary text-3xl">fitness_center</span>
               <div className="flex flex-col">
                 <span className="font-sora text-[1.125rem] font-semibold uppercase text-on-surface tracking-wider leading-none">
                   Iron Pulse
                 </span>
-                <span className="font-sans text-[0.6875rem] font-semibold text-secondary tracking-widest uppercase mt-1 drop-shadow-[0_0_8px_rgba(123,208,255,0.4)]">
-                  System OS v2.4
+                <span className="font-sans text-xs font-semibold text-secondary tracking-widest uppercase mt-1 drop-shadow-[0_0_8px_rgba(123,208,255,0.4)]">
+                  Gym Management
                 </span>
               </div>
             </div>
@@ -71,8 +67,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Section Divider */}
           <div className="px-4 pt-4">
-            <span className="px-2 font-sans text-[0.6875rem] font-semibold uppercase tracking-wider text-outline">
-              Tactical Operations
+            <span className="px-2 font-sans text-xs font-semibold uppercase tracking-wider text-outline">
+              Menu
             </span>
           </div>
 
@@ -99,7 +95,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
 
                   {item.id === 'members' && expiringCount > 0 && (
-                    <span className="px-1.5 py-0.5 rounded text-[0.6875rem] font-bold bg-error-container/50 text-error border border-error/30">
+                    <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-error-container/50 text-error border border-error/30">
                       {expiringCount}
                     </span>
                   )}
@@ -109,19 +105,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </nav>
         </div>
 
-        {/* Footer Gym Status Card */}
+        {/* Gym card */}
         <div className="p-4 m-4 rounded-xl bg-surface-container-low border border-surface-container-high flex items-center gap-3 shadow-[0_0_12px_rgba(0,0,0,0.3)]">
-          <img
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuSNGwY4LSqbThfGRLDoY-oL4HMZMK6lufIppZfiefJFDFo4RSqzcZpY4SWiQc6UnAQKHxyk2lEBMFSl-vppOFOJ_QBh14FNifWguJi4ih5VygOqG1axDQ8c5EuC8DfrVkAcCd8g8mK-PRLmeJvnN-amnpbnS_f81xasNH-nsWvF0_bA4r2l8ikzM6ZZXnC6kOly7sqMGA_4-tf1Cd8dXhJzatRkU1pQ-fuXkmMl219tyIh7FEaHwS"
-            alt="Profile"
-            className="w-9 h-9 rounded-full object-cover shrink-0 border border-secondary/40 shadow-[0_0_8px_rgba(123,208,255,0.2)]"
-          />
+          <div className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs border border-primary/30 shrink-0">IP</div>
           <div className="flex flex-col min-w-0 flex-1">
             <span className="text-[0.8125rem] font-medium text-on-surface truncate">Iron Pulse Gym</span>
-            <span className="text-[0.75rem] text-on-surface-variant truncate">Indiranagar, Bengaluru</span>
+            <span className="text-[0.75rem] text-on-surface-variant truncate">Malviya Nagar, Jaipur</span>
             <div className="flex items-center gap-1.5 mt-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse"></span>
-              <span className="text-[0.6875rem] font-semibold text-tertiary leading-none">Floor Open</span>
+              <span className="text-xs font-semibold text-tertiary leading-none">Open now</span>
             </div>
           </div>
         </div>

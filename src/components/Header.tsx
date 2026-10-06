@@ -50,33 +50,16 @@ export const Header: React.FC<HeaderProps> = ({
             search
           </span>
           <div className="w-full bg-surface-container pl-10 pr-20 py-1.5 rounded-lg text-[0.75rem] text-outline border border-surface-container-high group-hover:border-secondary/40 transition-all flex items-center justify-between">
-            <span className="truncate">Search member by name or phone (e.g. +91 98...)</span>
-            <div className="hidden sm:flex items-center px-1.5 py-0.5 rounded bg-surface-container-highest text-[0.6875rem] font-semibold text-on-surface-variant border border-outline-variant/50">
+            <span className="truncate">Search members by name or phone</span>
+            <div className="hidden sm:flex items-center px-1.5 py-0.5 rounded bg-surface-container-highest text-xs font-semibold text-on-surface-variant border border-outline-variant/50">
               Ctrl + K
             </div>
           </div>
         </div>
-
-        {/* Status indicator */}
-        <div className="hidden xl:flex items-center gap-1.5 px-3 py-1 rounded bg-surface-container-low border border-surface-container-high">
-          <span className="w-2 h-2 rounded-full bg-[#4edea3] animate-pulse"></span>
-          <span className="font-sans text-[0.6875rem] font-bold uppercase tracking-wider text-tertiary whitespace-nowrap">
-            Status: Optimal
-          </span>
-        </div>
       </div>
 
-      {/* Right: Date, Notifications, Add Member, Profile */}
+      {/* Right: Theme, Notifications, Add Member, Profile */}
       <div className="flex items-center gap-3 sm:gap-4 relative">
-        <div className="hidden md:flex flex-col items-end">
-          <span className="text-[0.8125rem] font-medium text-on-surface leading-tight">
-            Mon, 24 Oct
-          </span>
-          <span className="text-[0.6875rem] text-secondary font-semibold tracking-widest">
-            IST
-          </span>
-        </div>
-
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
@@ -91,11 +74,11 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             onClick={() => setShowNotifications(!showNotifications)}
             className="relative p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low border border-transparent hover:border-surface-container-high transition-colors"
-            title="System Notifications"
+            title="Notifications"
           >
             <span className="material-symbols-outlined text-2xl">notifications</span>
-            <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-error-container text-on-error-container text-[0.6875rem] flex items-center justify-center font-bold ring-2 ring-surface-container-lowest">
-              3
+            <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-error-container text-on-error-container text-xs flex items-center justify-center font-bold ring-2 ring-surface-container-lowest">
+              2
             </span>
           </button>
 
@@ -104,12 +87,10 @@ export const Header: React.FC<HeaderProps> = ({
             <div className="absolute right-0 top-12 w-80 sm:w-96 bg-surface-container-low border border-surface-container-highest rounded-xl shadow-[0_12px_36px_rgba(0,0,0,0.7)] p-4 z-50">
               <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">
                 <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-secondary text-lg">bolt</span>
-                  <span className="font-sora font-semibold text-sm text-on-surface">
-                    Tactical Feeds
-                  </span>
+                  <span className="material-symbols-outlined text-secondary text-lg">notifications</span>
+                  <span className="font-sora font-semibold text-sm text-on-surface">Notifications</span>
                 </div>
-                <span className="text-[0.6875rem] text-secondary font-bold">3 Unread</span>
+                <span className="text-xs text-secondary font-bold">2 New</span>
               </div>
 
               <div className="divide-y divide-surface-container-high max-h-72 overflow-y-auto">
@@ -124,38 +105,25 @@ export const Header: React.FC<HeaderProps> = ({
                     <span className="w-2 h-2 rounded-full bg-error mt-1 shrink-0"></span>
                     <div>
                       <p className="text-xs text-error font-semibold">
-                        14 Memberships Expiring in 48h
+                        14 memberships expire in 2 days
                       </p>
-                      <p className="text-[0.6875rem] text-on-surface-variant mt-0.5">
-                        Urgent renewal dispatch ready via WhatsApp API.
+                      <p className="text-xs text-on-surface-variant mt-0.5">
+                        Tap to send WhatsApp reminders.
                       </p>
-                      <span className="text-[0.625rem] text-outline">2 mins ago</span>
+                      <span className="text-xs text-outline">2 mins ago</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="py-2.5 px-1 hover:bg-surface-container rounded transition-colors">
                   <div className="flex items-start gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#4edea3] mt-1 shrink-0"></span>
+                    <span className="w-2 h-2 rounded-full bg-primary mt-1 shrink-0"></span>
                     <div>
-                      <p className="text-xs text-on-surface font-medium">Gate 2 Biometric Synced</p>
-                      <p className="text-[0.6875rem] text-outline mt-0.5">
-                        Firmware v3.12 · 74 check-ins logged cleanly.
+                      <p className="text-xs text-on-surface font-medium">Monthly goal: 77% reached</p>
+                      <p className="text-xs text-outline mt-0.5">
+                        ₹3,86,000 of ₹5,00,000 collected this month.
                       </p>
-                      <span className="text-[0.625rem] text-outline">08:30 AM IST</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="py-2.5 px-1 hover:bg-surface-container rounded transition-colors">
-                  <div className="flex items-start gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#cabeff] mt-1 shrink-0"></span>
-                    <div>
-                      <p className="text-xs text-on-surface font-medium">Monthly Quest: 77.2% XP</p>
-                      <p className="text-[0.6875rem] text-outline mt-0.5">
-                        ₹3,86,000 / ₹5,00,000 recorded. Rank 4 Active.
-                      </p>
-                      <span className="text-[0.625rem] text-outline">Today</span>
+                      <span className="text-xs text-outline">Today</span>
                     </div>
                   </div>
                 </div>
@@ -179,39 +147,17 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setShowProfileMenu(!showProfileMenu)}
             className="ring-1 ring-secondary/40 hover:ring-secondary rounded-full transition-all focus:outline-none"
           >
-            <img
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuSNGwY4LSqbThfGRLDoY-oL4HMZMK6lufIppZfiefJFDFo4RSqzcZpY4SWiQc6UnAQKHxyk2lEBMFSl-vppOFOJ_QBh14FNifWguJi4ih5VygOqG1axDQ8c5EuC8DfrVkAcCd8g8mK-PRLmeJvnN-amnpbnS_f81xasNH-nsWvF0_bA4r2l8ikzM6ZZXnC6kOly7sqMGA_4-tf1Cd8dXhJzatRkU1pQ-fuXkmMl219tyIh7FEaHwS"
-              alt="Gym Master Profile"
-              className="w-8 h-8 rounded-full object-cover shrink-0 cursor-pointer"
-            />
+            <span className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs">KS</span>
           </button>
 
           {showProfileMenu && (
             <div className="absolute right-0 top-12 w-64 bg-surface-container-low border border-surface-container-highest rounded-xl shadow-[0_12px_36px_rgba(0,0,0,0.7)] p-3 z-50">
               <div className="flex items-center gap-3 pb-3 border-b border-surface-container-high">
-                <img
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuSNGwY4LSqbThfGRLDoY-oL4HMZMK6lufIppZfiefJFDFo4RSqzcZpY4SWiQc6UnAQKHxyk2lEBMFSl-vppOFOJ_QBh14FNifWguJi4ih5VygOqG1axDQ8c5EuC8DfrVkAcCd8g8mK-PRLmeJvnN-amnpbnS_f81xasNH-nsWvF0_bA4r2l8ikzM6ZZXnC6kOly7sqMGA_4-tf1Cd8dXhJzatRkU1pQ-fuXkmMl219tyIh7FEaHwS"
-                  alt="Owner"
-                  className="w-10 h-10 rounded-full object-cover"
-                />
+                <span className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm shrink-0">KS</span>
                 <div className="overflow-hidden">
                   <p className="text-xs font-bold text-on-surface truncate">Karan Singhania</p>
-                  <p className="text-[0.6875rem] text-secondary font-semibold">Guild Master · Level 4</p>
-                  <p className="text-[0.625rem] text-outline truncate">admin@ironpulsegym.in</p>
-                </div>
-              </div>
-              <div className="pt-2 text-xs text-on-surface-variant flex flex-col gap-1">
-                <div className="flex items-center justify-between py-1.5 px-2 hover:bg-surface-container rounded">
-                  <span>Branch</span>
-                  <span className="text-secondary font-medium">Indiranagar #1</span>
-                </div>
-                <div className="flex items-center justify-between py-1.5 px-2 hover:bg-surface-container rounded">
-                  <span>GSTIN</span>
-                  <span className="text-mono text-[0.6875rem] text-on-surface-variant">29AAAAA0000A1Z5</span>
-                </div>
-                <div className="flex items-center justify-between py-1.5 px-2 hover:bg-surface-container rounded">
-                  <span>System Build</span>
-                  <span className="text-[0.6875rem] text-tertiary">v2.4.9 Stable</span>
+                  <p className="text-xs text-secondary font-semibold">Gym Owner</p>
+                  <p className="text-xs text-outline truncate">admin@ironpulsegym.in</p>
                 </div>
               </div>
             </div>
