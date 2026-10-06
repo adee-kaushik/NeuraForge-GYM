@@ -82,7 +82,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
           )}
 
           {/* Quick Metrics */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="p-3 rounded-lg bg-surface-container-lowest border border-surface-container-high">
               <span className="text-xs text-outline uppercase font-bold">
                 Time Remaining

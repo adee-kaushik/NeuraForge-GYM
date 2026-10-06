@@ -310,7 +310,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
             {/* Table Container */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-on-surface text-xs">
+              <table className="stack w-full text-left text-on-surface text-xs">
                 <thead>
                   <tr className="text-outline uppercase text-xs bg-surface-container-lowest/50 rounded-lg">
                     <th className="py-2.5 px-3">Member</th>
@@ -327,23 +327,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       className="hover:bg-surface-container/60 transition-colors group cursor-pointer"
                       onClick={() => onSelectMember(member)}
                     >
-                      <td className="py-3 px-3">
+                      <td data-label="Member" className="py-3 px-3">
                         <div className="font-medium text-on-surface group-hover:text-secondary transition-colors">
                           {member.name}
                         </div>
                         <div className="text-xs text-outline">{member.phone}</div>
                       </td>
-                      <td className="py-3 px-2">
+                      <td data-label="Plan" className="py-3 px-2">
                         <span
                           className="px-2 py-0.5 rounded text-xs font-semibold bg-primary/15 text-primary border border-primary/30"
                         >
                           {member.planDuration}
                         </span>
                       </td>
-                      <td className="py-3 px-2 text-on-surface-variant font-mono text-[0.75rem]">
+                      <td data-label="Expiry" className="py-3 px-2 text-on-surface-variant font-mono text-[0.75rem]">
                         {member.expiryDate}
                       </td>
-                      <td className="py-3 px-2">
+                      <td data-label="Time Left" className="py-3 px-2">
                         <span
                           className={`px-2 py-0.5 rounded text-xs font-bold ${
                             member.daysLeft <= 3
@@ -356,7 +356,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           {member.daysLeft} Days Left
                         </span>
                       </td>
-                      <td className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <td data-label="" className="py-3 px-3 text-right" onClick={(e) => e.stopPropagation()}>
                         <button
                           onClick={() => onSendSingleReminder(member)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] text-xs font-bold transition-all shadow-[0_0_8px_rgba(37,211,102,0.15)] border border-[#25D366]/30 cursor-pointer"
@@ -581,7 +581,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Payments Data Table */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-on-surface text-xs">
+            <table className="stack w-full text-left text-on-surface text-xs">
               <thead>
                 <tr className="text-outline uppercase text-xs bg-surface-container-lowest/50 rounded-lg">
                   <th className="py-2.5 px-3">Transaction ID</th>
@@ -596,22 +596,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <tbody className="divide-y divide-surface-container-high/60">
                 {filteredTransactions.slice(0, 5).map((txn) => (
                   <tr key={txn.id} className="hover:bg-surface-container/60 transition-colors">
-                    <td className="py-3 px-3 font-mono text-secondary font-medium">
+                    <td data-label="Transaction ID" className="py-3 px-3 font-mono text-secondary font-medium">
                       {txn.id}
                     </td>
-                    <td className="py-3 px-3">
+                    <td data-label="Member" className="py-3 px-3">
                       <div className="font-medium text-on-surface">{txn.memberName}</div>
                       <div className="text-xs text-outline">{txn.memberEmail}</div>
                     </td>
-                    <td className="py-3 px-3">
+                    <td data-label="Plan / Category" className="py-3 px-3">
                       <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-semibold border border-primary/20">
                         {txn.planCategory}
                       </span>
                     </td>
-                    <td className="py-3 px-3 font-sora text-base font-semibold text-on-surface">
+                    <td data-label="Amount" className="py-3 px-3 font-sora text-base font-semibold text-on-surface">
                       ₹{txn.amount.toLocaleString('en-IN')}
                     </td>
-                    <td className="py-3 px-3">
+                    <td data-label="Payment Mode" className="py-3 px-3">
                       <div className="flex items-center gap-1.5 text-on-surface-variant">
                         <span className="material-symbols-outlined text-secondary text-base">
                           {txn.paymentMode.includes('UPI')
@@ -623,10 +623,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <span>{txn.paymentMode}</span>
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-on-surface-variant font-mono text-[0.75rem]">
+                    <td data-label="Timestamp" className="py-3 px-3 text-on-surface-variant font-mono text-[0.75rem]">
                       {txn.timestamp}
                     </td>
-                    <td className="py-3 px-3 text-right">
+                    <td data-label="Status" className="py-3 px-3 text-right">
                       {txn.status === 'PAID' ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded bg-tertiary-container/30 text-tertiary text-xs font-bold shadow-[0_0_8px_rgba(78,222,163,0.2)] border border-tertiary/30">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3]"></span> PAID

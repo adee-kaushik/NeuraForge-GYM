@@ -173,7 +173,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
       {/* Members Table */}
       <div className="rounded-xl bg-surface-container-low border border-surface-container-high overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.35)]">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-on-surface text-xs">
+          <table className="stack w-full text-left text-on-surface text-xs">
             <thead>
               <tr className="text-outline uppercase text-xs bg-surface-container-lowest border-b border-surface-container-high">
                 <th className="py-3 px-4">Member</th>
@@ -191,7 +191,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                   onClick={() => onSelectMember(member)}
                   className="hover:bg-surface-container/70 transition-colors group cursor-pointer"
                 >
-                  <td className="py-3.5 px-4">
+                  <td data-label="Member" className="py-3.5 px-4">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs border border-primary/30">
                         {member.avatarInitials}
@@ -204,7 +204,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       </div>
                     </div>
                   </td>
-                  <td className="py-3.5 px-3">
+                  <td data-label="Plan" className="py-3.5 px-3">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-bold ${
                         member.planDuration === 'VIP'
@@ -219,10 +219,10 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       {member.planDuration}
                     </span>
                   </td>
-                  <td className="py-3.5 px-3 text-on-surface-variant font-mono">
+                  <td data-label="Expiry Date" className="py-3.5 px-3 text-on-surface-variant font-mono">
                     {member.expiryDate}
                   </td>
-                  <td className="py-3.5 px-3">
+                  <td data-label="Status" className="py-3.5 px-3">
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-bold ${
                         member.daysLeft <= 3
@@ -235,10 +235,10 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       {member.daysLeft} days left
                     </span>
                   </td>
-                  <td className="py-3.5 px-3 text-on-surface">
+                  <td data-label="Visits This Month" className="py-3.5 px-3 text-on-surface">
                     <span className="font-semibold">{member.attendanceCountThisMonth}</span> visits
                   </td>
-                  <td className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                  <td data-label="" className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() => onSendSingleReminder(member)}

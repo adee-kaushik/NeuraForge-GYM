@@ -33,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="fixed top-0 left-0 lg:left-72 right-0 h-16 bg-surface-container-lowest/85 backdrop-blur-xl z-40 px-4 sm:px-6 flex items-center justify-between shadow-[0_1px_8px_rgba(0,0,0,0.25)] border-b border-surface-container">
       {/* Left: Mobile hamburger & Global Search */}
-      <div className="flex items-center gap-3 flex-1 max-w-xl">
+      <div className="flex items-center gap-3 flex-1 min-w-0 max-w-xl">
         <button
           onClick={onToggleMobileMenu}
           className="lg:hidden p-2 text-outline hover:text-on-surface rounded-lg bg-surface-container-low"
@@ -59,7 +59,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Right: Theme, Notifications, Add Member, Profile */}
-      <div className="flex items-center gap-3 sm:gap-4 relative">
+      <div className="flex items-center gap-2 sm:gap-4 relative shrink-0">
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
@@ -138,7 +138,7 @@ export const Header: React.FC<HeaderProps> = ({
           className="flex items-center gap-1.5 bg-primary-container hover:bg-[#cabeff] text-on-primary-container font-bold text-[0.8125rem] px-3.5 py-1.5 rounded-lg shadow-[0_0_16px_rgba(148,125,255,0.35)] transition-all hover:shadow-[0_0_24px_rgba(202,190,255,0.6)] active:scale-95"
         >
           <span className="material-symbols-outlined text-lg">add</span>
-          <span className="whitespace-nowrap">Add Member</span>
+          <span className="hidden sm:inline whitespace-nowrap">Add Member</span>
         </button>
 
         {/* User Profile Avatar */}

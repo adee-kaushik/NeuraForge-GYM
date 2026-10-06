@@ -82,7 +82,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ checkIns, member
           </h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-on-surface text-xs">
+          <table className="stack w-full text-left text-on-surface text-xs">
             <thead>
               <tr className="text-outline uppercase text-xs bg-surface-container-lowest border-b border-surface-container-high">
                 <th className="py-2.5 px-4">Member</th>
@@ -93,9 +93,9 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ checkIns, member
             <tbody className="divide-y divide-surface-container-high">
               {checkIns.map((log) => (
                 <tr key={log.id}>
-                  <td className="py-3 px-4 font-semibold">{log.memberName}</td>
-                  <td className="py-3 px-4 text-on-surface-variant">{log.planDuration}</td>
-                  <td className="py-3 px-4 text-on-surface-variant">{log.time}</td>
+                  <td data-label="Member" className="py-3 px-4 font-semibold">{log.memberName}</td>
+                  <td data-label="Plan" className="py-3 px-4 text-on-surface-variant">{log.planDuration}</td>
+                  <td data-label="Time" className="py-3 px-4 text-on-surface-variant">{log.time}</td>
                 </tr>
               ))}
               {checkIns.length === 0 && (

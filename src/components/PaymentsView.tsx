@@ -189,7 +189,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-on-surface text-xs">
+          <table className="stack w-full text-left text-on-surface text-xs">
             <thead>
               <tr className="text-outline uppercase text-xs bg-surface-container-lowest/50 border-b border-surface-container-high">
                 <th className="py-3 px-4">Transaction ID</th>
@@ -204,22 +204,22 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
             <tbody className="divide-y divide-surface-container-high">
               {filtered.map((txn) => (
                 <tr key={txn.id} className="hover:bg-surface-container/60 transition-colors">
-                  <td className="py-3 px-4 font-mono text-secondary font-semibold">
+                  <td data-label="Transaction ID" className="py-3 px-4 font-mono text-secondary font-semibold">
                     {txn.id}
                   </td>
-                  <td className="py-3 px-4">
+                  <td data-label="Member" className="py-3 px-4">
                     <div className="font-medium text-on-surface">{txn.memberName}</div>
                     <div className="text-xs text-outline">{txn.memberEmail}</div>
                   </td>
-                  <td className="py-3 px-4">
+                  <td data-label="Plan Category" className="py-3 px-4">
                     <span className="px-2 py-0.5 rounded bg-primary/15 text-primary text-xs font-semibold">
                       {txn.planCategory}
                     </span>
                   </td>
-                  <td className="py-3 px-4 font-sora text-sm font-semibold text-on-surface">
+                  <td data-label="Amount" className="py-3 px-4 font-sora text-sm font-semibold text-on-surface">
                     ₹{txn.amount.toLocaleString('en-IN')}
                   </td>
-                  <td className="py-3 px-4 text-on-surface-variant">
+                  <td data-label="Mode" className="py-3 px-4 text-on-surface-variant">
                     <div className="flex items-center gap-1.5">
                       <span className="material-symbols-outlined text-secondary text-base">
                         {txn.paymentMode.includes('UPI')
@@ -231,10 +231,10 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                       <span>{txn.paymentMode}</span>
                     </div>
                   </td>
-                  <td className="py-3 px-4 font-mono text-[0.75rem] text-outline">
+                  <td data-label="Timestamp" className="py-3 px-4 font-mono text-[0.75rem] text-outline">
                     {txn.timestamp}
                   </td>
-                  <td className="py-3 px-4 text-right">
+                  <td data-label="" className="py-3 px-4 text-right">
                     {txn.status === 'PAID' ? (
                       <button
                         onClick={() => setSelectedReceipt(txn)}
