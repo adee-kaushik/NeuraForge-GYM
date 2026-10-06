@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { CURRENT_USER } from '../config/gym';
+import { DashboardStats } from '../lib/stats';
+import { inr } from '../lib/format';
 
 interface HeaderProps {
+  stats: DashboardStats;
   onOpenAddMember: () => void;
   onOpenSearch: () => void;
   onToggleMobileMenu: () => void;
@@ -8,6 +12,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  stats,
   onOpenAddMember,
   onOpenSearch,
   onToggleMobileMenu,
@@ -16,6 +21,9 @@ export const Header: React.FC<HeaderProps> = ({
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [light, setLight] = useState(false);
+
+  const hasExpiryAlert = stats.expiringIn48h > 0;
+  const notificationCount = (hasExpiryAlert ? 1 : 0) + 1; // expiry alert + goal progress
 
   useEffect(() => {
     const saved = localStorage.getItem('theme') === 'light';
@@ -78,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <span className="material-symbols-outlined text-2xl">notifications</span>
             <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-error-container text-on-error-container text-xs flex items-center justify-center font-bold ring-2 ring-surface-container-lowest">
-              2
+              {notificationCount}
             </span>
           </button>
 
@@ -90,10 +98,11 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="material-symbols-outlined text-secondary text-lg">notifications</span>
                   <span className="font-sora font-semibold text-sm text-on-surface">Notifications</span>
                 </div>
-                <span className="text-xs text-secondary font-bold">2 New</span>
+                <span className="text-xs text-secondary font-bold">{notificationCount} New</span>
               </div>
 
               <div className="divide-y divide-surface-container-high max-h-72 overflow-y-auto">
+                {hasExpiryAlert && (
                 <div
                   onClick={() => {
                     setShowNotifications(false);
@@ -105,25 +114,24 @@ export const Header: React.FC<HeaderProps> = ({
                     <span className="w-2 h-2 rounded-full bg-error mt-1 shrink-0"></span>
                     <div>
                       <p className="text-xs text-error font-semibold">
-                        14 memberships expire in 2 days
+                        {stats.expiringIn48h} {stats.expiringIn48h === 1 ? 'membership expires' : 'memberships expire'} in 2 days
                       </p>
                       <p className="text-xs text-on-surface-variant mt-0.5">
                         Tap to send WhatsApp reminders.
                       </p>
-                      <span className="text-xs text-outline">2 mins ago</span>
                     </div>
                   </div>
                 </div>
+                )}
 
                 <div className="py-2.5 px-1 hover:bg-surface-container rounded transition-colors">
                   <div className="flex items-start gap-2">
                     <span className="w-2 h-2 rounded-full bg-primary mt-1 shrink-0"></span>
                     <div>
-                      <p className="text-xs text-on-surface font-medium">Monthly goal: 77% reached</p>
+                      <p className="text-xs text-on-surface font-medium">Monthly goal: {Math.round(stats.goalPercent)}% reached</p>
                       <p className="text-xs text-outline mt-0.5">
-                        ₹3,86,000 of ₹5,00,000 collected this month.
+                        {inr(stats.revenueThisMonth)} of {inr(stats.goal)} collected this month.
                       </p>
-                      <span className="text-xs text-outline">Today</span>
                     </div>
                   </div>
                 </div>
@@ -147,17 +155,17 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setShowProfileMenu(!showProfileMenu)}
             className="ring-1 ring-secondary/40 hover:ring-secondary rounded-full transition-all focus:outline-none"
           >
-            <span className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs">KS</span>
+            <span className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs">{CURRENT_USER.initials}</span>
           </button>
 
           {showProfileMenu && (
             <div className="absolute right-0 top-12 w-64 bg-surface-container-low border border-surface-container-highest rounded-xl shadow-[0_12px_36px_rgba(0,0,0,0.7)] p-3 z-50">
               <div className="flex items-center gap-3 pb-3 border-b border-surface-container-high">
-                <span className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm shrink-0">KS</span>
+                <span className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm shrink-0">{CURRENT_USER.initials}</span>
                 <div className="overflow-hidden">
-                  <p className="text-xs font-bold text-on-surface truncate">Karan Singhania</p>
-                  <p className="text-xs text-secondary font-semibold">Gym Owner</p>
-                  <p className="text-xs text-outline truncate">admin@ironpulsegym.in</p>
+                  <p className="text-xs font-bold text-on-surface truncate">{CURRENT_USER.name}</p>
+                  <p className="text-xs text-secondary font-semibold">{CURRENT_USER.role}</p>
+                  <p className="text-xs text-outline truncate">{CURRENT_USER.email}</p>
                 </div>
               </div>
             </div>

@@ -20,7 +20,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<string>('All');
-  const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Expiring'>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Active' | 'Expiring' | 'Expired'>('All');
 
   const filtered = members.filter((m) => {
     const matchesSearch =
@@ -31,8 +31,9 @@ export const MembersView: React.FC<MembersViewProps> = ({
     const matchesPlan = selectedPlan === 'All' || m.planDuration === selectedPlan;
     const matchesStatus =
       statusFilter === 'All' ||
-      (statusFilter === 'Expiring' && (m.status === 'expiring' || m.daysLeft <= 7)) ||
-      (statusFilter === 'Active' && m.status === 'active' && m.daysLeft > 7);
+      (statusFilter === 'Expiring' && m.status === 'expiring') ||
+      (statusFilter === 'Expired' && m.status === 'expired') ||
+      (statusFilter === 'Active' && m.status === 'active');
 
     return matchesSearch && matchesPlan && matchesStatus;
   });
@@ -102,7 +103,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
               Expiring This Week
             </span>
             <p className="font-sora text-2xl font-bold text-error mt-1">
-              {members.filter((m) => m.daysLeft <= 7).length}
+              {members.filter((m) => m.status === 'expiring').length}
             </p>
           </div>
           <span className="material-symbols-outlined text-error text-2xl">warning</span>
@@ -138,7 +139,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
         {/* Filter Chips */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 md:pb-0">
           <span className="text-xs text-outline font-bold uppercase mr-1">Plan:</span>
-          {(['All', 'VIP', 'Yearly', 'Half-Yearly', 'Quarterly', 'Monthly'] as const).map((plan) => (
+          {['All', ...Array.from(new Set(members.map((m) => m.planName)))].map((plan) => (
             <button
               key={plan}
               onClick={() => setSelectedPlan(plan)}
@@ -154,7 +155,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
 
           <div className="h-4 w-px bg-surface-container-highest mx-1"></div>
 
-          {(['All', 'Active', 'Expiring'] as const).map((status) => (
+          {(['All', 'Active', 'Expiring', 'Expired'] as const).map((status) => (
             <button
               key={status}
               onClick={() => setStatusFilter(status)}
@@ -232,7 +233,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                           : 'bg-tertiary-container/20 text-tertiary'
                       }`}
                     >
-                      {member.daysLeft} days left
+                      {member.daysLeft < 0 ? `Expired ${Math.abs(member.daysLeft)}d ago` : `${member.daysLeft} days left`}
                     </span>
                   </td>
                   <td data-label="Visits This Month" className="py-3.5 px-3 text-on-surface">

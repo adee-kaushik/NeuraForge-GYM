@@ -1,20 +1,40 @@
 import React, { useState } from 'react';
+import { GymConfig } from '../config/gym';
 
 const inputClass =
   'w-full bg-surface-container-lowest border border-surface-container-high focus:border-secondary rounded-lg p-2.5 text-on-surface focus:outline-none';
 const labelClass = 'block text-xs font-bold uppercase text-outline mb-1';
 
-export const SettingsView: React.FC = () => {
-  const [gymName, setGymName] = useState('Iron Pulse Gym');
-  const [address, setAddress] = useState('Malviya Nagar, Jaipur');
-  const [gstNumber, setGstNumber] = useState('');
-  const [revenueGoal, setRevenueGoal] = useState('500000');
-  const [savedAlert, setSavedAlert] = useState(false);
+interface SettingsViewProps {
+  gym: GymConfig;
+  onSave: (next: GymConfig) => void;
+}
+
+export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave }) => {
+  const [gymName, setGymName] = useState(gym.name);
+  const [address, setAddress] = useState(gym.address);
+  const [gstNumber, setGstNumber] = useState(gym.gstNumber);
+  const [revenueGoal, setRevenueGoal] = useState(String(gym.monthlyRevenueGoal));
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    setSavedAlert(true);
-    setTimeout(() => setSavedAlert(false), 3000);
+    const name = gymName.trim() || gym.name;
+    const goal = parseInt(revenueGoal, 10);
+    onSave({
+      ...gym,
+      name,
+      shortName: name.replace(/\s+gym$/i, ''),
+      initials:
+        name
+          .split(/\s+/)
+          .map((w) => w[0])
+          .slice(0, 2)
+          .join('')
+          .toUpperCase() || gym.initials,
+      address: address.trim(),
+      gstNumber: gstNumber.trim().toUpperCase(),
+      monthlyRevenueGoal: Number.isFinite(goal) && goal > 0 ? goal : gym.monthlyRevenueGoal,
+    });
   };
 
   return (
@@ -28,13 +48,6 @@ export const SettingsView: React.FC = () => {
           </div>
           <p className="text-xs text-outline mt-1">Your gym details and monthly goal</p>
         </div>
-
-        {savedAlert && (
-          <div className="px-3.5 py-1.5 rounded-lg bg-tertiary-container/20 border border-tertiary/40 text-tertiary text-xs font-bold flex items-center gap-2 animate-in fade-in">
-            <span className="material-symbols-outlined text-base">check_circle</span>
-            <span>Settings saved!</span>
-          </div>
-        )}
       </div>
 
       <form

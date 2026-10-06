@@ -1,334 +1,13 @@
-import { Member, Transaction, CheckInLog, MembershipPlan } from '../types';
+import { CheckInRecord, MemberRecord, MembershipPlan, TransactionRecord, PaymentMode, PaymentStatus } from '../types';
+import { GYM } from '../config/gym';
+import { addDays, addMonths, gstIncluded, startOfDay } from '../lib/format';
+import { invoiceFor } from '../lib/ids';
 
-export const INITIAL_MEMBERS: Member[] = [
-  {
-    id: 'MEM-001',
-    name: 'Rohit Sharma',
-    phone: '+91 98201 44102',
-    email: 'rohit.sharma@gmail.com',
-    planName: 'Yearly',
-    planDuration: 'Yearly',
-    expiryDate: '26 Oct 2024',
-    daysLeft: 2,
-    status: 'expiring',
-    avatarInitials: 'RS',
-    joinDate: '26 Oct 2023',
-    attendanceCountThisMonth: 18,
-    lastCheckIn: 'Yesterday, 06:40 AM',
-  },
-  {
-    id: 'MEM-002',
-    name: 'Priya Meena',
-    phone: '+91 97410 89230',
-    email: 'priya.meena@techcorp.in',
-    planName: 'Half-Yearly',
-    planDuration: 'Half-Yearly',
-    expiryDate: '27 Oct 2024',
-    daysLeft: 3,
-    status: 'expiring',
-    avatarInitials: 'PM',
-    joinDate: '27 Apr 2024',
-    attendanceCountThisMonth: 14,
-    lastCheckIn: 'Today, 07:15 AM',
-  },
-  {
-    id: 'MEM-003',
-    name: 'Aman Gupta',
-    phone: '+91 98862 31109',
-    email: 'aman.g@outlook.com',
-    planName: 'Quarterly',
-    planDuration: 'Quarterly',
-    expiryDate: '28 Oct 2024',
-    daysLeft: 4,
-    status: 'expiring',
-    avatarInitials: 'AG',
-    joinDate: '28 Jul 2024',
-    attendanceCountThisMonth: 9,
-    lastCheckIn: '22 Oct, 08:10 PM',
-    pendingDue: 6200,
-  },
-  {
-    id: 'MEM-004',
-    name: 'Kavya Singh',
-    phone: '+91 99014 55421',
-    email: 'kavya.singh@design.studio',
-    planName: 'Monthly',
-    planDuration: 'Monthly',
-    expiryDate: '29 Oct 2024',
-    daysLeft: 5,
-    status: 'expiring',
-    avatarInitials: 'KS',
-    joinDate: '29 Sep 2024',
-    attendanceCountThisMonth: 12,
-    lastCheckIn: 'Yesterday, 07:45 AM',
-  },
-  {
-    id: 'MEM-005',
-    name: 'Vikramaditya Rao',
-    phone: '+91 94481 02938',
-    email: 'vikram.rao@fintech.io',
-    planName: 'Quarterly',
-    planDuration: 'Quarterly',
-    expiryDate: '30 Oct 2024',
-    daysLeft: 6,
-    status: 'expiring',
-    avatarInitials: 'VR',
-    joinDate: '30 Jul 2024',
-    attendanceCountThisMonth: 21,
-    lastCheckIn: 'Today, 06:10 AM',
-  },
-  {
-    id: 'MEM-006',
-    name: 'Arjun Nair',
-    phone: '+91 98450 11982',
-    email: 'arjun.nair@aerospace.in',
-    planName: 'Yearly',
-    planDuration: 'Yearly',
-    expiryDate: '15 Jan 2025',
-    daysLeft: 83,
-    status: 'active',
-    avatarInitials: 'AN',
-    joinDate: '15 Jan 2024',
-    attendanceCountThisMonth: 22,
-    lastCheckIn: 'Today, 09:14 AM',
-  },
-  {
-    id: 'MEM-007',
-    name: 'Deepa Krishnan',
-    phone: '+91 98801 77342',
-    email: 'deepa.k@medresearch.org',
-    planName: 'Half-Yearly',
-    planDuration: 'Half-Yearly',
-    expiryDate: '10 Feb 2025',
-    daysLeft: 109,
-    status: 'active',
-    avatarInitials: 'DK',
-    joinDate: '10 Aug 2024',
-    attendanceCountThisMonth: 16,
-    lastCheckIn: 'Today, 09:05 AM',
-  },
-  {
-    id: 'MEM-008',
-    name: 'Rahul Verma',
-    phone: '+91 97312 44901',
-    email: 'rahul.verma@startup.co',
-    planName: 'Monthly',
-    planDuration: 'Monthly',
-    expiryDate: '18 Nov 2024',
-    daysLeft: 25,
-    status: 'active',
-    avatarInitials: 'RV',
-    joinDate: '18 Oct 2024',
-    attendanceCountThisMonth: 5,
-    lastCheckIn: 'Today, 08:48 AM',
-  },
-  {
-    id: 'MEM-009',
-    name: 'Sneha Patel',
-    phone: '+91 96118 33204',
-    email: 'sneha.patel@arch.in',
-    planName: 'Quarterly',
-    planDuration: 'Quarterly',
-    expiryDate: '05 Dec 2024',
-    daysLeft: 42,
-    status: 'active',
-    avatarInitials: 'SP',
-    joinDate: '05 Sep 2024',
-    attendanceCountThisMonth: 15,
-    lastCheckIn: 'Today, 08:32 AM',
-  },
-  {
-    id: 'MEM-010',
-    name: 'Ananya Deshmukh',
-    phone: '+91 99805 12384',
-    email: 'ananya.d@gmail.com',
-    planName: 'Yearly',
-    planDuration: 'Yearly',
-    expiryDate: '24 Oct 2025',
-    daysLeft: 365,
-    status: 'active',
-    avatarInitials: 'AD',
-    joinDate: '24 Oct 2024',
-    attendanceCountThisMonth: 1,
-    lastCheckIn: 'Today, 08:45 AM',
-  },
-  {
-    id: 'MEM-011',
-    name: 'Siddharth Iyer',
-    phone: '+91 98452 90112',
-    email: 'sid.iyer@quantum.org',
-    planName: 'VIP',
-    planDuration: 'VIP',
-    expiryDate: '31 Dec 2026',
-    daysLeft: 800,
-    status: 'active',
-    avatarInitials: 'SI',
-    joinDate: '01 Jan 2023',
-    attendanceCountThisMonth: 24,
-    lastCheckIn: 'Today, 06:05 AM',
-  },
-  {
-    id: 'MEM-012',
-    name: 'Nandini Hegde',
-    phone: '+91 98440 65123',
-    email: 'nandini.h@cloud.net',
-    planName: 'Half-Yearly',
-    planDuration: 'Half-Yearly',
-    expiryDate: '01 Nov 2024',
-    daysLeft: 8,
-    status: 'expiring',
-    avatarInitials: 'NH',
-    joinDate: '01 May 2024',
-    attendanceCountThisMonth: 11,
-    lastCheckIn: 'Yesterday, 05:30 PM',
-  },
-];
-
-export const INITIAL_TRANSACTIONS: Transaction[] = [
-  {
-    id: '#TXN-9082',
-    memberId: 'MEM-010',
-    memberName: 'Ananya Deshmukh',
-    memberEmail: 'ananya.d@gmail.com',
-    planCategory: 'Yearly',
-    amount: 18500,
-    paymentMode: 'UPI',
-    timestamp: 'Today, 08:45 AM',
-    status: 'PAID',
-    invoiceNo: 'INV-2024-9082',
-    gstAmount: 2822,
-  },
-  {
-    id: '#TXN-9081',
-    memberId: 'MEM-013',
-    memberName: 'Rajesh Patel',
-    memberEmail: 'rajesh.p@yahoo.in',
-    planCategory: 'Quarterly',
-    amount: 6200,
-    paymentMode: 'UPI',
-    timestamp: 'Today, 08:12 AM',
-    status: 'PAID',
-    invoiceNo: 'INV-2024-9081',
-    gstAmount: 945,
-  },
-  {
-    id: '#TXN-9080',
-    memberId: 'MEM-003',
-    memberName: 'Aman Gupta',
-    memberEmail: 'aman.g@outlook.com',
-    planCategory: 'Renewal (Quarterly)',
-    amount: 6200,
-    paymentMode: 'Cash',
-    timestamp: 'Yesterday, 07:30 PM',
-    status: 'PENDING',
-    invoiceNo: 'INV-2024-9080',
-    gstAmount: 945,
-  },
-  {
-    id: '#TXN-9079',
-    memberId: 'MEM-014',
-    memberName: 'Simran Kaur',
-    memberEmail: 'simran.k@gmail.com',
-    planCategory: 'Half-Yearly',
-    amount: 11000,
-    paymentMode: 'Card',
-    timestamp: 'Yesterday, 05:15 PM',
-    status: 'PAID',
-    invoiceNo: 'INV-2024-9079',
-    gstAmount: 1678,
-  },
-  {
-    id: '#TXN-9078',
-    memberId: 'MEM-015',
-    memberName: 'Devendra Joshi',
-    memberEmail: 'dev.joshi@corp.in',
-    planCategory: 'Monthly',
-    amount: 2500,
-    paymentMode: 'UPI',
-    timestamp: 'Yesterday, 02:40 PM',
-    status: 'PAID',
-    invoiceNo: 'INV-2024-9078',
-    gstAmount: 381,
-  },
-  {
-    id: '#TXN-9077',
-    memberId: 'MEM-016',
-    memberName: 'Rohan Mehra',
-    memberEmail: 'rohan.m@gmail.com',
-    planCategory: 'Yearly',
-    amount: 18500,
-    paymentMode: 'UPI',
-    timestamp: '22 Oct, 11:20 AM',
-    status: 'PAID',
-    invoiceNo: 'INV-2024-9077',
-    gstAmount: 2822,
-  },
-  {
-    id: '#TXN-9076',
-    memberId: 'MEM-017',
-    memberName: 'Tanvi Shrestha',
-    memberEmail: 'tanvi.s@tech.co',
-    planCategory: 'Quarterly',
-    amount: 6200,
-    paymentMode: 'Card',
-    timestamp: '22 Oct, 09:10 AM',
-    status: 'PAID',
-    invoiceNo: 'INV-2024-9076',
-    gstAmount: 945,
-  },
-];
-
-export const INITIAL_CHECKINS: CheckInLog[] = [
-  {
-    id: 'CHK-991',
-    memberId: 'MEM-006',
-    memberName: 'Arjun Nair',
-    planDuration: 'Yearly',
-    time: '09:14 AM',
-  },
-  {
-    id: 'CHK-990',
-    memberId: 'MEM-007',
-    memberName: 'Deepa Krishnan',
-    planDuration: 'Half-Yearly',
-    time: '09:05 AM',
-  },
-  {
-    id: 'CHK-989',
-    memberId: 'MEM-008',
-    memberName: 'Rahul Verma',
-    planDuration: 'Monthly',
-    time: '08:48 AM',
-  },
-  {
-    id: 'CHK-988',
-    memberId: 'MEM-009',
-    memberName: 'Sneha Patel',
-    planDuration: 'Quarterly',
-    time: '08:32 AM',
-  },
-  {
-    id: 'CHK-987',
-    memberId: 'MEM-010',
-    memberName: 'Ananya Deshmukh',
-    planDuration: 'Yearly',
-    time: '08:20 AM',
-  },
-  {
-    id: 'CHK-986',
-    memberId: 'MEM-005',
-    memberName: 'Vikramaditya Rao',
-    planDuration: 'Quarterly',
-    time: '06:10 AM',
-  },
-  {
-    id: 'CHK-985',
-    memberId: 'MEM-011',
-    memberName: 'Siddharth Iyer',
-    planDuration: 'VIP',
-    time: '06:05 AM',
-  },
-];
+// ─────────────────────────────────────────────────────────────
+// Mock data, shaped like database rows.
+// All dates are relative to "now", so the demo never goes stale.
+// Replaced by Prisma queries in the backend phase.
+// ─────────────────────────────────────────────────────────────
 
 export const MEMBERSHIP_PLANS: MembershipPlan[] = [
   {
@@ -338,7 +17,6 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     durationMonths: 12,
     price: 32000,
     originalPrice: 38000,
-    activeCount: 18,
     features: ['All gym areas', 'Personal locker', 'Steam and sauna', '2 guest passes per month', 'Personal trainer'],
   },
   {
@@ -348,7 +26,6 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     durationMonths: 12,
     price: 18500,
     originalPrice: 22000,
-    activeCount: 114,
     popular: true,
     features: ['All gym areas', 'Free locker for 12 months', 'Monthly body check', 'Group classes'],
   },
@@ -359,7 +36,6 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     durationMonths: 6,
     price: 11000,
     originalPrice: 13500,
-    activeCount: 68,
     features: ['Cardio and weights area', 'Steam room on weekends', 'Free diet consultation'],
   },
   {
@@ -369,7 +45,6 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     durationMonths: 3,
     price: 6200,
     originalPrice: 7500,
-    activeCount: 52,
     features: ['Gym floor 6:00 AM to 10:30 PM', 'Locker room and shower', 'Starter workout plan'],
   },
   {
@@ -378,7 +53,122 @@ export const MEMBERSHIP_PLANS: MembershipPlan[] = [
     durationLabel: '1 month',
     durationMonths: 1,
     price: 2500,
-    activeCount: 16,
     features: ['Gym floor access', 'Locker for the day'],
   },
 ];
+
+const planOf = (planId: string) => MEMBERSHIP_PLANS.find((p) => p.id === planId)!;
+
+// [id, name, phone, email, planId, days until expiry (negative = already expired)]
+const MEMBER_ROWS: [string, string, string, string, string, number][] = [
+  ['MEM-001', 'Rohit Sharma', '+91 98201 44102', 'rohit.sharma@gmail.com', 'PLAN-YEARLY', 2],
+  ['MEM-002', 'Priya Meena', '+91 97410 89230', 'priya.meena@techcorp.in', 'PLAN-HALF', 3],
+  ['MEM-003', 'Aman Gupta', '+91 98862 31109', 'aman.g@outlook.com', 'PLAN-QUARTERLY', 4],
+  ['MEM-004', 'Kavya Singh', '+91 99014 55421', 'kavya.singh@design.studio', 'PLAN-MONTHLY', 5],
+  ['MEM-005', 'Vikramaditya Rao', '+91 94481 02938', 'vikram.rao@fintech.io', 'PLAN-QUARTERLY', 6],
+  ['MEM-006', 'Arjun Nair', '+91 98450 11982', 'arjun.nair@aerospace.in', 'PLAN-YEARLY', 83],
+  ['MEM-007', 'Deepa Krishnan', '+91 98801 77342', 'deepa.k@medresearch.org', 'PLAN-HALF', 109],
+  ['MEM-008', 'Rahul Verma', '+91 97312 44901', 'rahul.verma@startup.co', 'PLAN-MONTHLY', 25],
+  ['MEM-009', 'Sneha Patel', '+91 96118 33204', 'sneha.patel@arch.in', 'PLAN-QUARTERLY', 42],
+  ['MEM-010', 'Ananya Deshmukh', '+91 99805 12384', 'ananya.d@gmail.com', 'PLAN-YEARLY', 365],
+  ['MEM-011', 'Siddharth Iyer', '+91 98452 90112', 'sid.iyer@quantum.org', 'PLAN-VIP', 180],
+  ['MEM-012', 'Nandini Hegde', '+91 98440 65123', 'nandini.h@cloud.net', 'PLAN-HALF', 7],
+  ['MEM-013', 'Rajesh Patel', '+91 98765 21043', 'rajesh.p@yahoo.in', 'PLAN-QUARTERLY', 90],
+  ['MEM-014', 'Simran Kaur', '+91 98110 67852', 'simran.k@gmail.com', 'PLAN-HALF', 180],
+  ['MEM-015', 'Devendra Joshi', '+91 99290 45118', 'dev.joshi@corp.in', 'PLAN-MONTHLY', 29],
+  ['MEM-016', 'Rohan Mehra', '+91 98290 33017', 'rohan.m@gmail.com', 'PLAN-YEARLY', 363],
+  ['MEM-017', 'Tanvi Shrestha', '+91 97829 90461', 'tanvi.s@tech.co', 'PLAN-QUARTERLY', 88],
+  ['MEM-018', 'Karan Malhotra', '+91 98280 71526', 'karan.m@gmail.com', 'PLAN-MONTHLY', -3],
+];
+
+export const createInitialMembers = (now: Date): MemberRecord[] =>
+  MEMBER_ROWS.map(([id, name, phone, email, planId, daysToExpiry]) => {
+    const expires = addDays(startOfDay(now), daysToExpiry);
+    return {
+      id,
+      name,
+      phone,
+      email,
+      planId,
+      expiresAt: expires.toISOString(),
+      joinedAt: addMonths(expires, -planOf(planId).durationMonths).toISOString(),
+    };
+  });
+
+// Clamp to start of today so "X minutes ago" never slips into yesterday
+const minutesAgo = (now: Date, minutes: number): Date =>
+  new Date(Math.max(startOfDay(now).getTime(), now.getTime() - minutes * 60000));
+
+const dayAt = (now: Date, daysAgo: number, hour: number, minute: number): Date => {
+  const d = addDays(startOfDay(now), -daysAgo);
+  d.setHours(hour, minute, 0, 0);
+  return d;
+};
+
+const memberOf = (id: string) => MEMBER_ROWS.find((r) => r[0] === id)!;
+
+// [txn number, memberId, planCategory, plan price, mode, status, when]
+export const createInitialTransactions = (now: Date): TransactionRecord[] => {
+  const rows: [number, string, string, number, PaymentMode, PaymentStatus, Date][] = [
+    [9082, 'MEM-010', 'Yearly', 18500, 'UPI', 'PAID', minutesAgo(now, 25)],
+    [9081, 'MEM-013', 'Quarterly', 6200, 'UPI', 'PAID', minutesAgo(now, 60)],
+    [9080, 'MEM-003', 'Renewal (Quarterly)', 6200, 'Cash', 'PENDING', dayAt(now, 1, 19, 30)],
+    [9079, 'MEM-014', 'Half-Yearly', 11000, 'Card', 'PAID', dayAt(now, 1, 17, 15)],
+    [9078, 'MEM-015', 'Monthly', 2500, 'UPI', 'PAID', dayAt(now, 1, 14, 40)],
+    [9077, 'MEM-016', 'Yearly', 18500, 'UPI', 'PAID', dayAt(now, 2, 11, 20)],
+    [9076, 'MEM-017', 'Quarterly', 6200, 'Card', 'PAID', dayAt(now, 2, 9, 10)],
+  ];
+
+  return rows.map(([n, memberId, planCategory, amount, paymentMode, status, when]) => {
+    const [, name, , email] = memberOf(memberId);
+    const id = `#TXN-${n}`;
+    return {
+      id,
+      memberId,
+      memberName: name,
+      memberEmail: email,
+      planCategory,
+      amount,
+      paymentMode,
+      status,
+      invoiceNo: invoiceFor(id, now),
+      gstAmount: gstIncluded(amount, GYM.gstRatePercent),
+      createdAt: when.toISOString(),
+    };
+  });
+};
+
+export const createInitialCheckIns = (now: Date): CheckInRecord[] => {
+  const out: CheckInRecord[] = [];
+  let n = 1;
+  const add = (memberId: string, when: Date) => {
+    out.push({ id: `CHK-${String(n).padStart(3, '0')}`, memberId, checkedInAt: when.toISOString() });
+    n += 1;
+  };
+
+  // Past 6 days: a rotating group of the first 12 members, morning + evening batches
+  const perDay = [8, 10, 9, 11, 7, 12]; // days ago 6..1
+  perDay.forEach((count, idx) => {
+    const daysAgo = 6 - idx;
+    for (let i = 0; i < count; i += 1) {
+      const memberId = MEMBER_ROWS[(daysAgo * 3 + i) % 12][0];
+      const morning = i % 2 === 0;
+      const minutes = (morning ? 6 * 60 : 17 * 60) + Math.floor(i / 2) * 35;
+      add(memberId, dayAt(now, daysAgo, Math.floor(minutes / 60), minutes % 60));
+    }
+  });
+
+  // Today: relative to now so nothing is in the future
+  const today: [string, number][] = [
+    ['MEM-011', 205],
+    ['MEM-005', 190],
+    ['MEM-010', 85],
+    ['MEM-009', 70],
+    ['MEM-008', 45],
+    ['MEM-007', 30],
+    ['MEM-006', 15],
+  ];
+  today.forEach(([memberId, mins]) => add(memberId, minutesAgo(now, mins)));
+
+  return out;
+};

@@ -3,6 +3,7 @@ import { Member } from '../../types';
 
 interface BulkWhatsAppModalProps {
   isOpen: boolean;
+  gymName: string;
   onClose: () => void;
   members: Member[];
 }
@@ -14,14 +15,16 @@ const fill = (template: string, m: Member) =>
     .replace(/\{daysLeft\}/g, String(m.daysLeft))
     .replace(/\{expiryDate\}/g, m.expiryDate);
 
-export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({ isOpen, onClose, members }) => {
-  const [template, setTemplate] = useState(
-    'Hi {name}, your Iron Pulse Gym {plan} membership expires in {daysLeft} days on {expiryDate}. Please renew to keep your membership active.'
-  );
+export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({ isOpen, gymName, onClose, members }) => {
+  // null = use the default message (always uses the current gym name)
+  const [customTemplate, setCustomTemplate] = useState<string | null>(null);
+  const template =
+    customTemplate ??
+    `Hi {name}, your ${gymName} {plan} membership expires in {daysLeft} days on {expiryDate}. Please renew to keep your membership active.`;
 
   if (!isOpen) return null;
 
-  const expiringMembers = members.filter((m) => m.status === 'expiring' || m.daysLeft <= 7);
+  const expiringMembers = members.filter((m) => m.status === 'expiring');
 
   const send = (m: Member) => {
     const phone = m.phone.replace(/[^0-9]/g, '');
@@ -60,7 +63,7 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({ isOpen, on
             <textarea
               rows={3}
               value={template}
-              onChange={(e) => setTemplate(e.target.value)}
+              onChange={(e) => setCustomTemplate(e.target.value)}
               className="w-full bg-surface-container border border-surface-container-high focus:border-[#25D366] rounded-lg p-3 text-xs text-on-surface focus:outline-none transition-colors"
             />
           </div>

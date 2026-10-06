@@ -1,80 +1,58 @@
 import React, { useState } from 'react';
-import { Member, PlanDuration, Transaction } from '../../types';
-import { MEMBERSHIP_PLANS } from '../../data/mockData';
+import { MembershipPlan, NewMemberInput, PaymentMode } from '../../types';
 
 interface AddMemberModalProps {
   isOpen: boolean;
+  plans: MembershipPlan[];
   onClose: () => void;
-  onAddMember: (newMember: Member, txn?: Transaction) => void;
+  onAddMember: (input: NewMemberInput) => void;
 }
-
-const formatDate = (d: Date) => d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 
 const labelClass = 'block text-xs font-bold uppercase tracking-wider text-outline mb-1';
 const inputClass =
   'w-full bg-surface-container-lowest border border-surface-container-high focus:border-secondary rounded-lg px-3.5 py-2 text-xs text-on-surface focus:outline-none transition-colors';
 
-export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose, onAddMember }) => {
+const DEFAULT_PHONE = '+91 ';
+
+export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, onClose, onAddMember }) => {
+  const defaultPlanId = (plans.find((p) => p.popular) ?? plans[0])?.id ?? '';
   const [name, setName] = useState('');
-  const [phone, setPhone] = useState('+91 ');
+  const [phone, setPhone] = useState(DEFAULT_PHONE);
   const [email, setEmail] = useState('');
-  const [planId, setPlanId] = useState(MEMBERSHIP_PLANS[1].id);
-  const [paymentMode, setPaymentMode] = useState<Transaction['paymentMode']>('UPI');
+  const [planId, setPlanId] = useState(defaultPlanId);
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>('UPI');
   const [recordPayment, setRecordPayment] = useState(true);
+  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const plan = MEMBERSHIP_PLANS.find((p) => p.id === planId) ?? MEMBERSHIP_PLANS[1];
+  const plan = plans.find((p) => p.id === planId) ?? plans[0];
+
+  const handleClose = () => {
+    setError('');
+    onClose();
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    const id = `MEM-${Math.floor(100 + Math.random() * 900)}`;
-    const initials = name
-      .trim()
-      .split(' ')
-      .map((p) => p[0])
-      .slice(0, 2)
-      .join('')
-      .toUpperCase();
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 10) {
+      setError('Enter a valid phone number (at least 10 digits).');
+      return;
+    }
 
-    const start = new Date();
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + plan.durationMonths);
+    onAddMember({ name, phone, email, planId: plan.id, recordPayment, paymentMode });
 
-    const newMember: Member = {
-      id,
-      name,
-      phone,
-      email: email || `${name.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
-      planName: plan.name,
-      planDuration: plan.name as PlanDuration,
-      expiryDate: formatDate(end),
-      daysLeft: Math.round((end.getTime() - start.getTime()) / 86400000),
-      status: 'active',
-      avatarInitials: initials || 'M',
-      joinDate: formatDate(start),
-      attendanceCountThisMonth: 0,
-    };
-
-    const newTxn: Transaction | undefined = recordPayment
-      ? {
-          id: `#TXN-${Math.floor(9090 + Math.random() * 90)}`,
-          memberId: id,
-          memberName: name,
-          memberEmail: newMember.email,
-          planCategory: plan.name,
-          amount: plan.price,
-          paymentMode,
-          timestamp: 'Today, Just Now',
-          status: 'PAID',
-          invoiceNo: `INV-${start.getFullYear()}-${Math.floor(9100 + Math.random() * 100)}`,
-          gstAmount: Math.round(plan.price * 0.18),
-        }
-      : undefined;
-
-    onAddMember(newMember, newTxn);
+    // Reset the form for the next member
+    setName('');
+    setPhone(DEFAULT_PHONE);
+    setEmail('');
+    setPlanId(defaultPlanId);
+    setPaymentMode('UPI');
+    setRecordPayment(true);
+    setError('');
     onClose();
   };
 
@@ -99,7 +77,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-outline hover:text-on-surface p-1 transition-colors cursor-pointer"
             aria-label="Close"
           >
@@ -149,7 +127,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
           <div>
             <label className={`${labelClass} mb-1.5`}>Choose a Plan</label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {MEMBERSHIP_PLANS.map((p) => (
+              {plans.map((p) => (
                 <button
                   key={p.id}
                   type="button"
@@ -173,7 +151,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
             <label className={labelClass}>Payment Method</label>
             <select
               value={paymentMode}
-              onChange={(e) => setPaymentMode(e.target.value as Transaction['paymentMode'])}
+              onChange={(e) => setPaymentMode(e.target.value as PaymentMode)}
               className={`${inputClass} cursor-pointer`}
             >
               <option value="UPI">UPI</option>
@@ -191,15 +169,17 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, onClose,
               className="accent-[#947dff] rounded w-4 h-4 cursor-pointer"
             />
             <label htmlFor="recordPayment" className="text-xs text-on-surface-variant cursor-pointer">
-              Record payment of ₹{plan.price.toLocaleString('en-IN')} and create invoice (includes 18% GST)
+              Record payment of ₹{plan.price.toLocaleString('en-IN')} and create invoice (GST included)
             </label>
           </div>
+
+          {error && <p className="text-xs text-error font-semibold">{error}</p>}
 
           {/* Footer */}
           <div className="pt-4 border-t border-surface-container-high flex items-center justify-end gap-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="px-4 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant text-xs font-semibold cursor-pointer"
             >
               Cancel

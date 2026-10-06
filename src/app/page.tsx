@@ -1,5 +1,5 @@
-import App from '@/components/App';
+import AppLoader from '@/components/AppLoader';
 
 export default function Page() {
-  return <App />;
+  return <AppLoader />;
 }

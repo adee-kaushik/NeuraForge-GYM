@@ -1,62 +1,71 @@
 import React, { useState } from 'react';
-import { Transaction } from '../types';
+import { Member, MembershipPlan, NewPaymentInput, PaymentMode, Transaction } from '../types';
+import { GymConfig } from '../config/gym';
+import { inr, isSameDay, isSameMonth } from '../lib/format';
 
 interface PaymentsViewProps {
+  gym: GymConfig;
+  plans: MembershipPlan[];
+  members: Member[];
   transactions: Transaction[];
   onMarkPaid: (txnId: string) => void;
-  onNewPayment: (txn: Transaction) => void;
+  onNewPayment: (input: NewPaymentInput) => void;
 }
 
 export const PaymentsView: React.FC<PaymentsViewProps> = ({
+  gym,
+  plans,
+  members,
   transactions,
   onMarkPaid,
   onNewPayment,
 }) => {
   const [filterMode, setFilterMode] = useState<string>('ALL');
   const [showManualModal, setShowManualModal] = useState(false);
-  const [memberName, setMemberName] = useState('');
-  const [amount, setAmount] = useState('6200');
-  const [mode, setMode] = useState<Transaction['paymentMode']>('Cash');
+  const [memberId, setMemberId] = useState('');
+  const [amount, setAmount] = useState('');
+  const [mode, setMode] = useState<PaymentMode>('Cash');
   const [selectedReceipt, setSelectedReceipt] = useState<Transaction | null>(null);
 
-  const totalRevenue = transactions
-    .filter((t) => t.status === 'PAID')
-    .reduce((acc, t) => acc + t.amount, 0);
+  const now = new Date();
+  const paidThisMonth = transactions.filter((t) => t.status === 'PAID' && isSameMonth(t.createdAt, now));
+  const paidToday = transactions.filter((t) => t.status === 'PAID' && isSameDay(t.createdAt, now));
+  const pending = transactions.filter((t) => t.status === 'PENDING');
 
-  const totalPending = transactions
-    .filter((t) => t.status === 'PENDING')
-    .reduce((acc, t) => acc + t.amount, 0);
-
-  const gstCollected = Math.round(totalRevenue * 0.18);
+  const sum = (list: Transaction[], pick: (t: Transaction) => number) => list.reduce((acc, t) => acc + pick(t), 0);
+  const revenueThisMonth = sum(paidThisMonth, (t) => t.amount);
+  const gstThisMonth = sum(paidThisMonth, (t) => t.gstAmount);
+  const collectedToday = sum(paidToday, (t) => t.amount);
+  const totalPending = sum(pending, (t) => t.amount);
 
   const filtered = transactions.filter((t) => {
     if (filterMode === 'ALL') return true;
     if (filterMode === 'PENDING') return t.status === 'PENDING';
-    return t.paymentMode.includes(filterMode);
+    return t.paymentMode === filterMode;
   });
+
+  const openManualModal = () => {
+    setMemberId('');
+    setAmount('');
+    setMode('Cash');
+    setShowManualModal(true);
+  };
+
+  const handleSelectMember = (id: string) => {
+    setMemberId(id);
+    const m = members.find((x) => x.id === id);
+    const plan = m && plans.find((p) => p.id === m.planId);
+    // Suggest the member's plan price (owner can change it)
+    if (plan) setAmount(String(plan.price));
+  };
 
   const handleCreateManual = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!memberName.trim()) return;
+    const amt = parseInt(amount, 10);
+    if (!memberId || !Number.isFinite(amt) || amt <= 0) return;
 
-    const amt = parseInt(amount, 10) || 2500;
-    const newTxn: Transaction = {
-      id: `#TXN-${Math.floor(9090 + Math.random() * 90)}`,
-      memberId: `MEM-${Math.floor(100 + Math.random() * 900)}`,
-      memberName,
-      memberEmail: `${memberName.toLowerCase().replace(/\s+/g, '.')}@gmail.com`,
-      planCategory: amt >= 18000 ? 'Yearly' : amt >= 10000 ? 'Half-Yearly' : 'Quarterly',
-      amount: amt,
-      paymentMode: mode,
-      timestamp: 'Today, Just Now',
-      status: 'PAID',
-      invoiceNo: `INV-2024-${Math.floor(9200 + Math.random() * 100)}`,
-      gstAmount: Math.round(amt * 0.18),
-    };
-
-    onNewPayment(newTxn);
+    onNewPayment({ memberId, amount: amt, paymentMode: mode });
     setShowManualModal(false);
-    setMemberName('');
   };
 
   return (
@@ -73,13 +82,13 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
             </h1>
           </div>
           <p className="text-xs text-outline mt-1">
-            Real-time settlement stream, Razorpay UPI reconciliation, and GST tax invoice generation
+            All payments, pending dues and GST invoices
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setShowManualModal(true)}
+            onClick={openManualModal}
             className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold transition-all shadow-[0_0_16px_rgba(148,125,255,0.35)] cursor-pointer"
           >
             <span className="material-symbols-outlined text-base">add_card</span>
@@ -92,70 +101,50 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col justify-between">
           <div className="flex items-center justify-between text-outline">
-            <span className="text-xs font-bold uppercase tracking-wider">
-              Net Settled (MoM)
-            </span>
+            <span className="text-xs font-bold uppercase tracking-wider">Collected This Month</span>
             <span className="material-symbols-outlined text-tertiary text-xl">payments</span>
           </div>
           <div className="mt-2">
-            <span className="font-sora text-2xl font-bold text-tertiary">
-              ₹{totalRevenue.toLocaleString('en-IN')}
-            </span>
+            <span className="font-sora text-2xl font-bold text-tertiary">{inr(revenueThisMonth)}</span>
             <p className="text-xs text-outline mt-0.5">
-              +18.4% ahead of September baseline
+              {paidThisMonth.length} paid {paidThisMonth.length === 1 ? 'payment' : 'payments'}
             </p>
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col justify-between">
           <div className="flex items-center justify-between text-outline">
-            <span className="text-xs font-bold uppercase tracking-wider">
-              Pending Desks Due
-            </span>
-            <span className="material-symbols-outlined text-error text-xl">
-              pending_actions
-            </span>
+            <span className="text-xs font-bold uppercase tracking-wider">Pending Dues</span>
+            <span className="material-symbols-outlined text-error text-xl">pending_actions</span>
           </div>
           <div className="mt-2">
-            <span className="font-sora text-2xl font-bold text-error">
-              ₹{totalPending.toLocaleString('en-IN')}
-            </span>
+            <span className="font-sora text-2xl font-bold text-error">{inr(totalPending)}</span>
             <p className="text-xs text-error mt-0.5">
-              Requires counter collection
+              {pending.length} {pending.length === 1 ? 'payment' : 'payments'} to collect
             </p>
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col justify-between">
           <div className="flex items-center justify-between text-outline">
-            <span className="text-xs font-bold uppercase tracking-wider">
-              GST Collected (18%)
-            </span>
+            <span className="text-xs font-bold uppercase tracking-wider">GST This Month ({gym.gstRatePercent}%)</span>
             <span className="material-symbols-outlined text-secondary text-xl">receipt</span>
           </div>
           <div className="mt-2">
-            <span className="font-sora text-2xl font-bold text-secondary">
-              ₹{gstCollected.toLocaleString('en-IN')}
-            </span>
-            <p className="text-xs text-outline mt-0.5">
-              CGST (9%) + SGST (9%) split
-            </p>
+            <span className="font-sora text-2xl font-bold text-secondary">{inr(gstThisMonth)}</span>
+            <p className="text-xs text-outline mt-0.5">Already included in plan prices</p>
           </div>
         </div>
 
         <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col justify-between">
           <div className="flex items-center justify-between text-outline">
-            <span className="text-xs font-bold uppercase tracking-wider">
-              Razorpay API Status
-            </span>
-            <span className="w-2.5 h-2.5 rounded-full bg-[#4edea3] animate-pulse"></span>
+            <span className="text-xs font-bold uppercase tracking-wider">Collected Today</span>
+            <span className="material-symbols-outlined text-primary text-xl">today</span>
           </div>
           <div className="mt-2">
-            <span className="font-mono text-sm font-bold text-on-surface">
-              NODE: BLR-SRV-01
-            </span>
-            <p className="text-xs text-tertiary mt-0.5">
-              Instant T+0 settlement enabled
+            <span className="font-sora text-2xl font-bold text-on-surface">{inr(collectedToday)}</span>
+            <p className="text-xs text-outline mt-0.5">
+              {paidToday.length} {paidToday.length === 1 ? 'payment' : 'payments'} today
             </p>
           </div>
         </div>
@@ -267,7 +256,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
           <div className="w-full max-w-md bg-surface-container-low border border-secondary/40 rounded-xl p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">
               <h3 className="font-sora text-sm font-semibold text-on-surface">
-                Record Desk Payment
+                Record Payment
               </h3>
               <button
                 onClick={() => setShowManualModal(false)}
@@ -279,17 +268,20 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
 
             <form onSubmit={handleCreateManual} className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-bold text-outline mb-1">
-                  Member Name
-                </label>
-                <input
-                  type="text"
+                <label className="block text-xs font-bold text-outline mb-1">Member</label>
+                <select
                   required
-                  placeholder="e.g. Vikramaditya Rao"
-                  value={memberName}
-                  onChange={(e) => setMemberName(e.target.value)}
+                  value={memberId}
+                  onChange={(e) => handleSelectMember(e.target.value)}
                   className="w-full bg-surface-container-lowest border border-surface-container-high rounded-lg p-2 text-on-surface focus:outline-none focus:border-secondary"
-                />
+                >
+                  <option value="">Select a member</option>
+                  {members.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name} · {m.planName}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -312,7 +304,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                 <select
                   value={mode}
                   onChange={(e) =>
-                    setMode(e.target.value as Transaction['paymentMode'])
+                    setMode(e.target.value as PaymentMode)
                   }
                   className="w-full bg-surface-container-lowest border border-surface-container-high rounded-lg p-2 text-on-surface focus:outline-none"
                 >
@@ -334,7 +326,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                   type="submit"
                   className="px-4 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container font-bold"
                 >
-                  Confirm Settlement
+                  Record Payment
                 </button>
               </div>
             </form>
@@ -352,7 +344,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                   TAX INVOICE / RECEIPT
                 </h3>
                 <p className="text-xs text-outline">
-                  Iron Pulse Gym · GSTIN 29AAAAA0000A1Z5
+                  {gym.name}{gym.gstNumber ? ` · GSTIN ${gym.gstNumber}` : ''}
                 </p>
               </div>
               <button
@@ -367,6 +359,10 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
               <div className="flex justify-between">
                 <span className="text-outline">Invoice Number:</span>
                 <span className="font-mono text-secondary font-bold">{selectedReceipt.invoiceNo}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-outline">Date:</span>
+                <span>{selectedReceipt.timestamp}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-outline">Transaction ID:</span>
@@ -389,7 +385,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                 <span className="text-tertiary">₹{selectedReceipt.amount.toLocaleString('en-IN')}</span>
               </div>
               <div className="text-xs text-outline text-right">
-                Includes 18% GST (₹{selectedReceipt.gstAmount.toLocaleString('en-IN')})
+                Includes {gym.gstRatePercent}% GST ({inr(selectedReceipt.gstAmount)})
               </div>
             </div>
 

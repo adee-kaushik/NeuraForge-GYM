@@ -125,7 +125,7 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({
                             : 'bg-tertiary-container/20 text-tertiary'
                         }`}
                       >
-                        {member.daysLeft} days left
+                        {member.daysLeft < 0 ? 'Expired' : `${member.daysLeft} days left`}
                       </span>
                     </div>
                   </div>

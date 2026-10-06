@@ -1,7 +1,9 @@
 import React from 'react';
 import { ActiveScreen } from '../types';
+import { GymConfig } from '../config/gym';
 
 interface SidebarProps {
+  gym: GymConfig;
   activeScreen: ActiveScreen;
   setActiveScreen: (screen: ActiveScreen) => void;
   mobileOpen: boolean;
@@ -11,11 +13,12 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
+  gym,
   activeScreen,
   setActiveScreen,
   mobileOpen,
   setMobileOpen,
-  expiringCount = 19,
+  expiringCount = 0,
 }) => {
   const navItems: { id: ActiveScreen; label: string; icon: string; badge?: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -48,7 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span className="material-symbols-outlined text-secondary text-3xl">fitness_center</span>
               <div className="flex flex-col">
                 <span className="font-sora text-[1.125rem] font-semibold uppercase text-on-surface tracking-wider leading-none">
-                  Iron Pulse
+                  {gym.shortName}
                 </span>
                 <span className="font-sans text-xs font-semibold text-secondary tracking-widest uppercase mt-1 drop-shadow-[0_0_8px_rgba(123,208,255,0.4)]">
                   Gym Management
@@ -107,14 +110,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Gym card */}
         <div className="p-4 m-4 rounded-xl bg-surface-container-low border border-surface-container-high flex items-center gap-3 shadow-[0_0_12px_rgba(0,0,0,0.3)]">
-          <div className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs border border-primary/30 shrink-0">IP</div>
+          <div className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs border border-primary/30 shrink-0">{gym.initials}</div>
           <div className="flex flex-col min-w-0 flex-1">
-            <span className="text-[0.8125rem] font-medium text-on-surface truncate">Iron Pulse Gym</span>
-            <span className="text-[0.75rem] text-on-surface-variant truncate">Malviya Nagar, Jaipur</span>
-            <div className="flex items-center gap-1.5 mt-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse"></span>
-              <span className="text-xs font-semibold text-tertiary leading-none">Open now</span>
-            </div>
+            <span className="text-[0.8125rem] font-medium text-on-surface truncate">{gym.name}</span>
+            <span className="text-[0.75rem] text-on-surface-variant truncate">{gym.address}</span>
           </div>
         </div>
       </aside>

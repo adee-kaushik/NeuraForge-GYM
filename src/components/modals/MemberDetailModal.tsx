@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Member, CheckInLog } from '../../types';
+import { formatTimestamp } from '../../lib/format';
 
 interface MemberDetailModalProps {
   member: Member | null;
+  gymName: string;
   onClose: () => void;
   onRenewPlan: (memberId: string) => void;
   onQuickCheckIn: (member: Member) => void;
@@ -11,20 +13,22 @@ interface MemberDetailModalProps {
 
 export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   member,
+  gymName,
   onClose,
   onRenewPlan,
   onQuickCheckIn,
   recentLogs = [],
 }) => {
   const [copied, setCopied] = useState(false);
-  const [renewNotice, setRenewNotice] = useState(false);
 
   if (!member) return null;
 
-  const memberLogs = recentLogs.filter((log) => log.memberId === member.id);
+  const memberLogs = recentLogs.filter((log) => log.memberId === member.id).slice(0, 5);
 
   const handleCopyWhatsAppLink = () => {
-    const text = `Hi ${member.name}, your Iron Pulse Gym membership expires on ${member.expiryDate}. Tap here to pay & renew: https://rzp.io/l/ironpulse-${member.id.toLowerCase()}`;
+    const text = member.status === 'expired'
+      ? `Hi ${member.name}, your ${gymName} membership expired on ${member.expiryDate}. Please renew to continue your workouts.`
+      : `Hi ${member.name}, your ${gymName} membership expires on ${member.expiryDate}. Please renew to keep your membership active.`;
     const url = `https://api.whatsapp.com/send?phone=${encodeURIComponent(
       member.phone.replace(/[^0-9]/g, '')
     )}&text=${encodeURIComponent(text)}`;
@@ -35,8 +39,6 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
   const handleRenew = () => {
     onRenewPlan(member.id);
-    setRenewNotice(true);
-    setTimeout(() => setRenewNotice(false), 3000);
   };
 
   return (
@@ -74,12 +76,6 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-5 text-xs text-on-surface">
-          {renewNotice && (
-            <div className="p-3 rounded-lg bg-tertiary-container/20 border border-tertiary/40 text-tertiary flex items-center gap-2">
-              <span className="material-symbols-outlined text-base">verified</span>
-              <span>Membership renewed for +365 days! Access pass active.</span>
-            </div>
-          )}
 
           {/* Quick Metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -92,7 +88,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                   member.daysLeft <= 3 ? 'text-error' : 'text-secondary'
                 }`}
               >
-                {member.daysLeft} Days
+                {member.daysLeft < 0 ? 'Expired' : `${member.daysLeft} Days`}
               </p>
               <span className="text-xs text-outline">Expires {member.expiryDate}</span>
             </div>
@@ -128,14 +124,14 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                 {member.planName} ({member.planDuration})
               </h4>
               <p className="text-xs text-on-surface-variant mt-1">
-                Joined: {member.joinDate} · Last Check-in: {member.lastCheckIn || 'Recent'}
+                Joined: {member.joinDate} · Last Check-in: {member.lastCheckIn || 'No visits yet'}
               </p>
             </div>
             <button
               onClick={handleRenew}
               className="px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container font-bold text-xs transition-all shadow-[0_0_12px_rgba(148,125,255,0.3)] cursor-pointer"
             >
-              Extend Plan (+1 Yr)
+              Renew {member.planName}
             </button>
           </div>
 
@@ -159,12 +155,12 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                 memberLogs.map((log) => (
                   <div key={log.id} className="p-2.5 flex items-center justify-between text-xs">
                     <span className="font-semibold text-on-surface">Checked in</span>
-                    <span className="font-mono text-secondary">{log.time}</span>
+                    <span className="font-mono text-secondary">{formatTimestamp(log.checkedInAt)}</span>
                   </div>
                 ))
               ) : (
                 <div className="p-3 text-center text-outline text-xs">
-                  No check-ins yet today.
+                  No check-ins yet.
                 </div>
               )}
             </div>

@@ -1,7 +1,16 @@
 import React from 'react';
-import { MEMBERSHIP_PLANS } from '../data/mockData';
+import { Member, MembershipPlan } from '../types';
+import { inr } from '../lib/format';
 
-export const MembershipsView: React.FC = () => {
+interface MembershipsViewProps {
+  plans: MembershipPlan[];
+  members: Member[];
+}
+
+export const MembershipsView: React.FC<MembershipsViewProps> = ({ plans, members }) => {
+  const activeMembers = members.filter((m) => m.status !== 'expired');
+  const activeOn = (planId: string) => activeMembers.filter((m) => m.planId === planId).length;
+
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
       {/* Header */}
@@ -16,13 +25,13 @@ export const MembershipsView: React.FC = () => {
 
         <div className="px-3.5 py-1.5 rounded-lg bg-surface-container-low border border-surface-container-high flex items-center gap-2 text-xs">
           <span className="text-outline">Active members:</span>
-          <span className="font-sora font-bold text-secondary">268</span>
+          <span className="font-sora font-bold text-secondary">{activeMembers.length}</span>
         </div>
       </div>
 
       {/* Plans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-        {MEMBERSHIP_PLANS.map((plan) => (
+        {plans.map((plan) => (
           <div
             key={plan.id}
             className={`relative bg-surface-container-low rounded-xl p-5 flex flex-col justify-between border transition-all ${
@@ -75,7 +84,7 @@ export const MembershipsView: React.FC = () => {
 
             <div className="pt-3 border-t border-surface-container-high/80">
               <span className="text-xs text-outline block">Members on this plan</span>
-              <span className="text-xs font-bold text-secondary">{plan.activeCount}</span>
+              <span className="text-xs font-bold text-secondary">{activeOn(plan.id)}</span>
             </div>
           </div>
         ))}

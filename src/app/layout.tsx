@@ -5,9 +5,9 @@ const description =
   'Gym management software for members, attendance, payments and renewals.';
 
 export const metadata: Metadata = {
-  title: 'Iron Pulse Gym',
+  title: 'NeuraForge Gym OS',
   description,
-  openGraph: { title: 'Iron Pulse Gym', description, type: 'website' },
+  openGraph: { title: 'NeuraForge Gym OS', description, type: 'website' },
   twitter: { card: 'summary_large_image' },
 };
 

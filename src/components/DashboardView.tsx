@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { Member, Transaction, CheckInLog } from '../types';
+import { DashboardStats } from '../lib/stats';
+import { inr } from '../lib/format';
+
+const PAYMENTS_PAGE_SIZE = 5;
 
 interface DashboardViewProps {
+  stats: DashboardStats;
   members: Member[];
   transactions: Transaction[];
   checkIns: CheckInLog[];
@@ -12,6 +17,7 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
+  stats,
   members,
   transactions,
   checkIns,
@@ -27,12 +33,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   // Filter transactions
   const filteredTransactions = transactions.filter((t) => {
     if (paymentFilter === 'All') return true;
-    if (paymentFilter === 'UPI') return t.paymentMode.includes('UPI');
-    if (paymentFilter === 'Cash') return t.paymentMode.includes('Cash');
-    if (paymentFilter === 'Card') return t.paymentMode.includes('Card');
+    if (paymentFilter === 'UPI') return t.paymentMode === 'UPI';
+    if (paymentFilter === 'Cash') return t.paymentMode === 'Cash';
+    if (paymentFilter === 'Card') return t.paymentMode === 'Card';
     if (paymentFilter === 'Pending') return t.status === 'PENDING';
     return true;
   });
+
+  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / PAYMENTS_PAGE_SIZE));
+  const page = Math.min(currentPage, totalPages);
+  const pageStart = (page - 1) * PAYMENTS_PAGE_SIZE;
+  const pageRows = filteredTransactions.slice(pageStart, pageStart + PAYMENTS_PAGE_SIZE);
+  const maxDayCount = Math.max(1, ...stats.last7Days.map((d) => d.count));
 
   const expiringMembers = members.filter((m) => m.status === 'expiring').slice(0, 5);
   const recentCheckIns = checkIns.slice(0, 4);
@@ -40,7 +52,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
       {/* 1. ALERT STRIP */}
-      {!noticeDismissed && (
+      {!noticeDismissed && stats.expiringIn48h > 0 && (
         <section className="relative w-full overflow-hidden bg-surface-container-low rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.45)] border border-surface-container-high">
           {/* Neon Accent Lines */}
           <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-[#7bd0ff] to-transparent opacity-80"></div>
@@ -63,7 +75,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </span>
                 <span className="font-sans text-xs text-error font-medium flex items-center gap-1.5">
                   <span className="w-1.5 h-1.5 rounded-full bg-error inline-block animate-ping"></span>
-                  14 memberships expiring in the next 48 hours require manual follow-up.
+                  {stats.expiringIn48h} {stats.expiringIn48h === 1 ? 'membership expires' : 'memberships expire'} within 48 hours and need follow-up.
                 </span>
               </div>
             </div>
@@ -106,11 +118,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <div className="font-sora text-3xl font-bold text-on-surface tracking-tight group-hover:text-secondary-fixed transition-colors">
-              312
+              {stats.totalMembers}
             </div>
             <div className="flex items-center gap-1 mt-1 text-tertiary text-xs font-semibold">
               <span className="material-symbols-outlined text-sm">trending_up</span>
-              <span>+12 this month</span>
+              <span>+{stats.newThisMonth} this month</span>
             </div>
           </div>
         </div>
@@ -126,9 +138,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
           </div>
           <div>
-            <div className="font-sora text-3xl font-bold text-on-surface tracking-tight">268</div>
+            <div className="font-sora text-3xl font-bold text-on-surface tracking-tight">{stats.activeMembers}</div>
             <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-xs">
-              <span>86% retention rate</span>
+              <span>{stats.activePercent}% of members active</span>
             </div>
           </div>
         </div>
@@ -145,7 +157,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <div className="font-sora text-3xl font-bold text-error tracking-tight drop-shadow-[0_0_10px_rgba(255,180,171,0.3)]">
-              19
+              {stats.expiringThisWeek}
             </div>
             <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-xs">
               <span>Requires intervention</span>
@@ -162,9 +174,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="material-symbols-outlined text-xl text-primary">pending_actions</span>
           </div>
           <div>
-            <div className="font-sora text-2xl lg:text-3xl font-bold text-on-surface tracking-tight">₹42,500</div>
+            <div className="font-sora text-2xl lg:text-3xl font-bold text-on-surface tracking-tight">{inr(stats.pendingAmount)}</div>
             <div className="flex items-center gap-1 mt-1 text-secondary text-xs">
-              <span>8 invoices unresolved</span>
+              <span>{stats.pendingCount} {stats.pendingCount === 1 ? 'payment' : 'payments'} to collect</span>
             </div>
           </div>
         </div>
@@ -178,9 +190,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="material-symbols-outlined text-xl text-tertiary">how_to_reg</span>
           </div>
           <div>
-            <div className="font-sora text-3xl font-bold text-on-surface tracking-tight">74</div>
+            <div className="font-sora text-3xl font-bold text-on-surface tracking-tight">{stats.todayEntries}</div>
             <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-xs">
-              <span className="truncate">Peak: 06:00 - 08:30 AM</span>
+              <span className="truncate">{stats.peakHourLabel ? `Busiest: ${stats.peakHourLabel}` : 'No check-ins yet'}</span>
             </div>
           </div>
         </div>
@@ -195,11 +207,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <div className="font-sora text-2xl lg:text-3xl font-bold text-primary tracking-tight drop-shadow-[0_0_12px_rgba(202,190,255,0.4)]">
-              ₹3,86,000
+              {inr(stats.revenueThisMonth)}
             </div>
             <div className="flex items-center gap-1 mt-1 text-tertiary text-xs font-semibold">
-              <span className="material-symbols-outlined text-sm">north_east</span>
-              <span>+18.4% MoM</span>
+              <span>{stats.paidCountThisMonth} {stats.paidCountThisMonth === 1 ? 'payment' : 'payments'} this month</span>
             </div>
           </div>
         </div>
@@ -237,9 +248,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </div>
 
             <div className="flex items-baseline gap-2 self-start md:self-auto bg-surface-container px-4 py-2 rounded-lg border border-surface-container-high">
-              <span className="font-sora text-xl font-bold text-primary">₹3,86,000</span>
-              <span className="text-sm text-outline">/ ₹5,00,000 goal</span>
-              <span className="ml-2 text-xs text-secondary font-bold">(77.2%)</span>
+              <span className="font-sora text-xl font-bold text-primary">{inr(stats.revenueThisMonth)}</span>
+              <span className="text-sm text-outline">/ {inr(stats.goal)} goal</span>
+              <span className="ml-2 text-xs text-secondary font-bold">({stats.goalPercent}%)</span>
             </div>
           </div>
 
@@ -249,7 +260,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {/* Progress Fill */}
               <div
                 className="h-full rounded-full bg-gradient-to-r from-[#cabeff] via-[#947dff] to-[#7bd0ff] shadow-[0_0_20px_rgba(123,208,255,0.6)] relative flex items-center justify-end transition-all duration-1000"
-                style={{ width: '77.2%' }}
+                style={{ width: `${stats.goalPercent}%` }}
               >
                 <div className="w-2 h-full bg-white rounded-full animate-ping opacity-75"></div>
               </div>
@@ -263,9 +274,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {/* Milestones */}
             <div className="flex justify-between text-xs text-outline px-1 font-medium">
               <span>₹0</span>
-              <span>₹2.5L (50%)</span>
-              <span className="text-secondary font-semibold">Now: 77.2%</span>
-              <span className="text-primary font-bold">Goal ₹5.0L</span>
+              <span>{inr(stats.goal / 2)} (50%)</span>
+              <span className="text-secondary font-semibold">Now: {stats.goalPercent}%</span>
+              <span className="text-primary font-bold">Goal {inr(stats.goal)}</span>
             </div>
           </div>
 
@@ -274,11 +285,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-secondary text-lg">flag</span>
               <span className="text-xs text-on-surface">
-                <strong className="text-secondary font-semibold">₹1,14,000 left</strong> to reach this month's goal</span>
+                <strong className="text-secondary font-semibold">{stats.remainingToGoal > 0 ? `${inr(stats.remainingToGoal)} left` : 'Goal reached'}</strong>{stats.remainingToGoal > 0 ? " to reach this month's goal" : ''}</span>
             </div>
             <div className="flex items-center gap-1.5 text-outline text-xs shrink-0">
               <span className="material-symbols-outlined text-sm">schedule</span>
-              <span>7 days left this month</span>
+              <span>{stats.daysLeftInMonth} {stats.daysLeftInMonth === 1 ? 'day' : 'days'} left this month</span>
             </div>
           </div>
         </div>
@@ -304,7 +315,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </p>
               </div>
               <span className="px-2.5 py-1 rounded bg-error-container/30 text-error text-xs font-bold border border-error/30">
-                19 PENDING
+                {stats.expiringThisWeek} EXPIRING
               </span>
             </div>
 
@@ -401,7 +412,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <h2 className="font-sora text-lg font-semibold text-on-surface">Floor Velocity</h2>
                 </div>
                 <p className="text-xs text-outline">
-                  Live check-ins: <strong className="text-tertiary">74 members today</strong>
+                  Live check-ins: <strong className="text-tertiary">{stats.todayEntries} {stats.todayEntries === 1 ? 'member' : 'members'} today</strong>
                 </p>
               </div>
               <span className="text-xs text-secondary bg-secondary/15 px-2.5 py-1 rounded font-semibold border border-secondary/30">
@@ -412,79 +423,26 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {/* 7-Day Attendance Mini Bar Chart */}
             <div className="bg-surface-container-lowest/60 p-4 rounded-xl my-4 border border-surface-container-high">
               <div className="flex items-end justify-between h-28 gap-2 pt-2">
-                {/* Mon */}
-                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-xs text-outline group-hover:text-primary transition-colors">
-                    82
-                  </span>
-                  <div
-                    className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
-                    style={{ height: '75%' }}
-                  ></div>
-                  <span className="text-xs text-outline">M</span>
-                </div>
-                {/* Tue */}
-                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-xs text-outline group-hover:text-primary transition-colors">
-                    91
-                  </span>
-                  <div
-                    className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
-                    style={{ height: '84%' }}
-                  ></div>
-                  <span className="text-xs text-outline">T</span>
-                </div>
-                {/* Wed */}
-                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-xs text-outline group-hover:text-primary transition-colors">
-                    88
-                  </span>
-                  <div
-                    className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
-                    style={{ height: '80%' }}
-                  ></div>
-                  <span className="text-xs text-outline">W</span>
-                </div>
-                {/* Thu */}
-                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-xs text-outline group-hover:text-primary transition-colors">
-                    95
-                  </span>
-                  <div
-                    className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
-                    style={{ height: '88%' }}
-                  ></div>
-                  <span className="text-xs text-outline">T</span>
-                </div>
-                {/* Fri */}
-                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-xs text-outline group-hover:text-primary transition-colors">
-                    84
-                  </span>
-                  <div
-                    className="w-full bg-surface-container-highest rounded-t hover:bg-primary-container/70 transition-all"
-                    style={{ height: '77%' }}
-                  ></div>
-                  <span className="text-xs text-outline">F</span>
-                </div>
-                {/* Sat */}
-                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-xs text-secondary font-bold">104</span>
-                  <div
-                    className="w-full bg-secondary-container rounded-t shadow-[0_0_8px_rgba(0,166,224,0.4)]"
-                    style={{ height: '100%' }}
-                  ></div>
-                  <span className="text-xs text-secondary font-bold">S</span>
-                </div>
-                {/* Sun / Today */}
-                <div className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
-                  <span className="text-xs text-tertiary font-bold">74</span>
-                  <div
-                    className="w-full bg-gradient-to-t from-[#947dff] to-[#4edea3] rounded-t shadow-[0_0_12px_rgba(78,222,163,0.5)]"
-                    style={{ height: '68%' }}
-                  ></div>
-                  <span className="text-xs text-tertiary font-bold">TOD</span>
-                </div>
+                {stats.last7Days.map((d, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
+                    <span
+                      className={`text-xs transition-colors ${
+                        d.isToday ? 'text-tertiary font-bold' : 'text-outline group-hover:text-primary'
+                      }`}
+                    >
+                      {d.count}
+                    </span>
+                    <div
+                      className={`w-full rounded-t transition-all ${
+                        d.isToday
+                          ? 'bg-gradient-to-t from-[#947dff] to-[#4edea3] shadow-[0_0_12px_rgba(78,222,163,0.5)]'
+                          : 'bg-surface-container-highest hover:bg-primary-container/70'
+                      }`}
+                      style={{ height: `${Math.max(4, Math.round((d.count / maxDayCount) * 100))}%` }}
+                    ></div>
+                    <span className={`text-xs ${d.isToday ? 'text-tertiary font-bold' : 'text-outline'}`}>{d.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -544,7 +502,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </h2>
               </div>
               <p className="text-xs text-outline mt-0.5">
-                Real-time settlement stream across Razorpay, UPI &amp; Cash Desks
+                Latest payments across UPI, cash and card
               </p>
             </div>
 
@@ -565,7 +523,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 return (
                   <button
                     key={filter}
-                    onClick={() => setPaymentFilter(filter)}
+                    onClick={() => {
+                      setPaymentFilter(filter);
+                      setCurrentPage(1);
+                    }}
                     className={`px-3 py-1 rounded text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                       isActive
                         ? 'bg-primary-container text-on-primary-container shadow-[0_0_8px_rgba(148,125,255,0.3)]'
@@ -594,7 +555,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-container-high/60">
-                {filteredTransactions.slice(0, 5).map((txn) => (
+                {pageRows.map((txn) => (
                   <tr key={txn.id} className="hover:bg-surface-container/60 transition-colors">
                     <td data-label="Transaction ID" className="py-3 px-3 font-mono text-secondary font-medium">
                       {txn.id}
@@ -614,9 +575,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <td data-label="Payment Mode" className="py-3 px-3">
                       <div className="flex items-center gap-1.5 text-on-surface-variant">
                         <span className="material-symbols-outlined text-secondary text-base">
-                          {txn.paymentMode.includes('UPI')
+                          {txn.paymentMode === 'UPI'
                             ? 'qr_code_2'
-                            : txn.paymentMode.includes('Cash')
+                            : txn.paymentMode === 'Cash'
                             ? 'payments'
                             : 'credit_card'}
                         </span>
@@ -645,19 +606,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Pagination & Summary */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2 text-outline text-xs border-t border-surface-container-high/60">
-            <span>Reconciled through Razorpay Core API Node · GST Ready (18% applied)</span>
+            <span>
+              {filteredTransactions.length === 0
+                ? 'No payments to show'
+                : `Showing ${pageStart + 1}-${pageStart + pageRows.length} of ${filteredTransactions.length} payments · GST included in amounts`}
+            </span>
             <div className="flex items-center gap-2">
               <button
-                disabled={currentPage === 1}
+                disabled={page === 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 className="px-2.5 py-1 rounded bg-surface-container text-on-surface-variant hover:text-on-surface transition-colors disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed border border-surface-container-high"
               >
                 Previous
               </button>
-              <span className="text-on-surface font-mono">Page {currentPage} of 9</span>
+              <span className="text-on-surface font-mono">Page {page} of {totalPages}</span>
               <button
-                onClick={() => setCurrentPage((p) => p + 1)}
-                className="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors border border-surface-container-high cursor-pointer"
+                disabled={page >= totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-on-surface transition-colors border border-surface-container-high cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Next
               </button>
