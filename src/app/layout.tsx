@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+   import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 const description =
@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   twitter: { card: 'summary_large_image' },
 };
 
+   export const viewport: Viewport = { width: 1024 };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
