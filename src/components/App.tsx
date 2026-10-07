@@ -299,7 +299,7 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
             />
           )}
 
-          {activeScreen === 'settings' && <SettingsView gym={gym} onSave={handleSaveSettings} />}
+          {activeScreen === 'settings' && <SettingsView gym={gym} onSave={handleSaveSettings} isOwner={currentUser.role === 'Gym Owner'} />}
         </main>
       </div>
 

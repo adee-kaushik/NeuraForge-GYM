@@ -35,6 +35,15 @@ export interface PlanInput {
   popular: boolean;
 }
 
+// Owner or staff login of a gym, as listed in Settings
+export interface StaffRecord {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  role: 'OWNER' | 'STAFF';
+}
+
 export interface MemberRecord {
   id: string;
   memberCode: string; // e.g. 'MEM-001', unique within a gym

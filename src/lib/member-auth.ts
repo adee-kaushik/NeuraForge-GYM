@@ -1,6 +1,6 @@
 import { randomInt } from 'crypto';
 
-const MEMBER_EMAIL_DOMAIN = 'members.neuraforge.app';
+export const MEMBER_EMAIL_DOMAIN = 'members.neuraforge.app';
 
 // No 0/O or 1/l/I, so the password is easy to read and type from a WhatsApp message
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';

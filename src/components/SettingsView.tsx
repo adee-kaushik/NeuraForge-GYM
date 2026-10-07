@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { GymConfig, GymSettingsInput } from '../config/gym';
+import { StaffSection } from './StaffSection';
 
 const inputClass =
   'w-full bg-surface-container-lowest border border-surface-container-high focus:border-secondary rounded-lg p-2.5 text-on-surface focus:outline-none';
@@ -8,9 +9,10 @@ const labelClass = 'block text-xs font-bold uppercase text-outline mb-1';
 interface SettingsViewProps {
   gym: GymConfig;
   onSave: (input: GymSettingsInput) => Promise<boolean>;
+  isOwner: boolean; // only the owner manages staff
 }
 
-export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave }) => {
+export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave, isOwner }) => {
   const [gymName, setGymName] = useState(gym.name);
   const [address, setAddress] = useState(gym.address);
   const [gstNumber, setGstNumber] = useState(gym.gstNumber);
@@ -84,6 +86,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave }) => {
           </button>
         </div>
       </form>
+
+      {isOwner && <StaffSection />}
     </div>
   );
 };
