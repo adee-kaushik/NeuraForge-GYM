@@ -13,12 +13,33 @@ import { toCheckInRecord } from '@/lib/records';
  */
 export async function POST(req: NextRequest) {
   try {
+    // Optional API Key protection if BIOMETRIC_API_KEY is configured in env
+    const configuredKey = process.env.BIOMETRIC_API_KEY;
+    if (configuredKey) {
+      const authHeader = req.headers.get('authorization') || '';
+      const apiKeyHeader = req.headers.get('x-api-key') || '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : apiKeyHeader.trim();
+      if (token !== configuredKey) {
+        return NextResponse.json(
+          { ok: false, status: 'DENIED', error: 'Unauthorized: Invalid or missing API key' },
+          { status: 401 }
+        );
+      }
+    }
+
     const body = await req.json();
     const { gymSlug, identifier, timestamp } = body ?? {};
 
-    if (!gymSlug || !identifier) {
+    if (!gymSlug || !identifier || typeof gymSlug !== 'string' || typeof identifier !== 'string') {
       return NextResponse.json(
-        { ok: false, status: 'DENIED', error: 'Missing gymSlug or identifier' },
+        { ok: false, status: 'DENIED', error: 'Missing or invalid gymSlug or identifier' },
+        { status: 400 }
+      );
+    }
+
+    if (gymSlug.length > 50 || identifier.length > 50) {
+      return NextResponse.json(
+        { ok: false, status: 'DENIED', error: 'Input exceeded maximum allowed length' },
         { status: 400 }
       );
     }

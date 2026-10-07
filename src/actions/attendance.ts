@@ -61,6 +61,10 @@ export async function checkInByCode(rawInput: string): Promise<ScanCheckInResult
   if (trimmed.startsWith('NF:')) {
     const parts = trimmed.split(':');
     if (parts.length >= 3) {
+      const qrSlug = parts[1].trim().toLowerCase();
+      if (qrSlug && qrSlug !== staff.gym.slug.toLowerCase()) {
+        return { ok: false, error: `Invalid pass: This QR code belongs to another gym (${qrSlug}).` };
+      }
       memberCode = parts[2].trim();
     }
   }
