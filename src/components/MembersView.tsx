@@ -58,28 +58,28 @@ export const MembersView: React.FC<MembersViewProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             onClick={onOpenImport}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-secondary text-xs font-bold border border-secondary/30 transition-all cursor-pointer"
+            className="min-h-[40px] px-3.5 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-secondary text-xs sm:text-sm font-bold border border-secondary/30 transition-all cursor-pointer flex items-center gap-1.5"
           >
-            <span className="material-symbols-outlined text-base">upload_file</span>
+            <span className="material-symbols-outlined text-base sm:text-lg">upload_file</span>
             <span>Import</span>
           </button>
 
           <button
             onClick={onOpenBulkWhatsApp}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] text-xs font-bold border border-[#25D366]/40 transition-all cursor-pointer shadow-[0_0_12px_rgba(37,211,102,0.2)]"
+            className="min-h-[40px] px-3.5 py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#15803d] text-xs sm:text-sm font-bold border border-[#25D366]/40 transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
           >
-            <span className="material-symbols-outlined text-base">chat</span>
+            <span className="material-symbols-outlined text-base sm:text-lg">chat</span>
             <span>Send Reminders</span>
           </button>
 
           <button
             onClick={onOpenAddMember}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold transition-all shadow-[0_0_16px_rgba(148,125,255,0.35)] cursor-pointer"
+            className="min-h-[40px] px-4 py-2 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-bold transition-all shadow-sm hover:opacity-90 active:scale-95 cursor-pointer flex items-center gap-1.5"
           >
-            <span className="material-symbols-outlined text-base">person_add</span>
+            <span className="material-symbols-outlined text-base sm:text-lg">person_add</span>
             <span>Add Member</span>
           </button>
         </div>

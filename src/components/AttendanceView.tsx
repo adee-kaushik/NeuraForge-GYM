@@ -157,39 +157,39 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
         </div>
 
         {/* Mode Switcher Tabs */}
-        <div className="flex items-center bg-surface-container-low p-1 rounded-xl border border-surface-container-high self-start sm:self-auto">
+        <div className="w-full sm:w-auto grid grid-cols-3 sm:flex items-center gap-1 bg-surface-container-low p-1.5 rounded-2xl border border-surface-container-high">
           <button
             onClick={() => setActiveTab('search')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`min-h-[42px] px-2 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'search'
-                ? 'bg-secondary text-[#001f28] font-bold shadow-[0_0_12px_rgba(123,208,255,0.35)]'
+                ? 'bg-secondary text-white shadow-xs'
                 : 'text-outline hover:text-on-surface'
             }`}
           >
-            <span className="material-symbols-outlined text-base">search</span>
-            <span>Manual Search</span>
+            <span className="material-symbols-outlined text-base sm:text-lg">search</span>
+            <span>Search</span>
           </button>
           <button
             onClick={() => setActiveTab('qr-scanner')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`min-h-[42px] px-2 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'qr-scanner'
-                ? 'bg-[#25D366] text-[#002113] font-bold shadow-[0_0_12px_rgba(37,211,102,0.35)]'
+                ? 'bg-[#25D366] text-black shadow-xs'
                 : 'text-outline hover:text-on-surface'
             }`}
           >
-            <span className="material-symbols-outlined text-base">qr_code_scanner</span>
-            <span>QR & Barcode Scan</span>
+            <span className="material-symbols-outlined text-base sm:text-lg">qr_code_scanner</span>
+            <span>QR Scan</span>
           </button>
           <button
             onClick={() => setActiveTab('biometric')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+            className={`min-h-[42px] px-2 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'biometric'
-                ? 'bg-primary-container text-on-primary-container font-bold shadow-[0_0_12px_rgba(148,125,255,0.35)]'
+                ? 'bg-primary text-on-primary shadow-xs'
                 : 'text-outline hover:text-on-surface'
             }`}
           >
-            <span className="material-symbols-outlined text-base">fingerprint</span>
-            <span>Biometrics Terminal</span>
+            <span className="material-symbols-outlined text-base sm:text-lg">fingerprint</span>
+            <span>Biometrics</span>
           </button>
         </div>
       </div>
@@ -376,7 +376,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <button
                       onClick={() => handleBiometricPunch(bioId)}
                       disabled={bioBusy || !bioId.trim()}
-                      className="px-4 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                      className="h-10 px-5 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-bold cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-sm hover:opacity-90 active:scale-95 transition-all"
                     >
                       {bioBusy && (
                         <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span>

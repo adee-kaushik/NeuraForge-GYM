@@ -203,10 +203,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center gap-4 self-end sm:self-auto shrink-0">
               <button
                 onClick={onOpenBulkWhatsApp}
-                className="group flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366]/35 text-[#25D366] transition-all shadow-[0_0_12px_rgba(37,211,102,0.25)] border border-[#25D366]/40 cursor-pointer"
+                className="group flex items-center gap-1.5 min-h-[40px] px-3.5 py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#15803d] font-bold text-xs sm:text-sm transition-all border border-[#25D366]/40 shadow-xs cursor-pointer"
               >
-                <span className="material-symbols-outlined text-base">chat</span>
-                <span className="font-sans text-xs font-bold tracking-wide">
+                <span className="material-symbols-outlined text-base sm:text-lg">chat</span>
+                <span className="font-sans font-bold tracking-wide">
                   Send Bulk Reminder [WhatsApp]
                 </span>
                 <span className="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">

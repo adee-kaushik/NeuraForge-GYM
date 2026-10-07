@@ -102,10 +102,11 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
         <div className="flex items-center gap-3">
           <button
             onClick={openManualModal}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold transition-all shadow-[0_0_16px_rgba(148,125,255,0.35)] cursor-pointer"
+            className="h-10 px-4 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-bold transition-all shadow-sm hover:opacity-90 active:scale-95 cursor-pointer flex items-center gap-1.5"
           >
-            <span className="material-symbols-outlined text-base">add_card</span>
-            <span>Record Cash / Counter Payment</span>
+            <span className="material-symbols-outlined text-base sm:text-lg">add_card</span>
+            <span className="hidden sm:inline">Record Cash / Counter Payment</span>
+            <span className="sm:hidden">Record Payment</span>
           </button>
         </div>
       </div>
