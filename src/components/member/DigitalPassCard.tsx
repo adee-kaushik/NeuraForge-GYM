@@ -137,7 +137,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
           <button
             onClick={handleBiometricCheckIn}
             disabled={busy || (daysLeft !== null && daysLeft < 0)}
-            className="w-full py-2.5 px-4 rounded-xl bg-primary-container hover:bg-[#cabeff] text-on-primary-container font-bold text-xs shadow-[0_0_16px_rgba(148,125,255,0.35)] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            className="w-full py-3 px-4 rounded-xl bg-primary text-on-primary font-bold text-xs shadow-sm hover:opacity-90 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {busy ? (
               <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>

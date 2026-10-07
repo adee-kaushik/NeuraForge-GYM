@@ -23,23 +23,9 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [light, setLight] = useState(false);
 
   const hasExpiryAlert = stats.expiringIn48h > 0;
   const notificationCount = (hasExpiryAlert ? 1 : 0) + 1; // expiry alert + goal progress
-
-  useEffect(() => {
-    const saved = localStorage.getItem('theme') === 'light';
-    document.documentElement.classList.toggle('light', saved);
-    setLight(saved);
-  }, []);
-
-  const toggleTheme = () => {
-    const next = !light;
-    document.documentElement.classList.toggle('light', next);
-    localStorage.setItem('theme', next ? 'light' : 'dark');
-    setLight(next);
-  };
 
   return (
     <header className="fixed top-0 left-0 lg:left-72 right-0 h-16 bg-surface-container-lowest/85 backdrop-blur-xl z-40 px-4 sm:px-6 flex items-center justify-between shadow-[0_1px_8px_rgba(0,0,0,0.25)] border-b border-surface-container">
@@ -69,16 +55,8 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {/* Right: Theme, Notifications, Add Member, Profile */}
+      {/* Right: Notifications, Add Member, Profile */}
       <div className="flex items-center gap-2 sm:gap-4 relative shrink-0">
-        {/* Theme toggle */}
-        <button
-          onClick={toggleTheme}
-          className="p-2 rounded-lg text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low border border-transparent hover:border-surface-container-high transition-colors"
-          title={light ? 'Switch to dark mode' : 'Switch to light mode'}
-        >
-          <span className="material-symbols-outlined text-2xl">{light ? 'dark_mode' : 'light_mode'}</span>
-        </button>
 
         {/* Notifications button */}
         <div className="relative">

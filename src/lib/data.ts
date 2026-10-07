@@ -34,7 +34,7 @@ export async function loadCheckInRecords(gymId: string): Promise<CheckInRecord[]
   const rows = await prisma.attendance.findMany({
     where: { gymId, checkedInAt: { gte: since } },
     orderBy: { checkedInAt: 'desc' },
-    take: 10000,
+    take: 1000,
   });
   return rows.map(toCheckInRecord);
 }

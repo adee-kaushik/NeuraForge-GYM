@@ -262,8 +262,8 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
     <div className="min-h-screen bg-background text-on-surface selection:bg-secondary/30 selection:text-on-surface flex">
       {/* Toast message */}
       {toastMessage && (
-        <div className="fixed top-20 right-6 z-50 bg-surface-container-low border border-secondary rounded-xl px-4 py-3 shadow-[0_0_24px_rgba(123,208,255,0.35)] flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
-          <span className="material-symbols-outlined text-secondary text-xl">check_circle</span>
+        <div className="fixed top-20 right-6 z-50 bg-surface-container-lowest border border-surface-container-high rounded-xl px-4 py-3 shadow-lg flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+          <span className="material-symbols-outlined text-tertiary text-xl">check_circle</span>
           <span className="text-xs font-semibold text-on-surface">{toastMessage}</span>
         </div>
       )}

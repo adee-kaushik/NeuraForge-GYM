@@ -22,8 +22,11 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Do not remove: this call refreshes an expiring session.
-  await supabase.auth.getUser();
+  // Only make the remote auth refresh call if an auth cookie exists
+  const hasAuthCookie = request.cookies.getAll().some((c) => c.name.includes('-auth-token'));
+  if (hasAuthCookie) {
+    await supabase.auth.getUser();
+  }
 
   return response;
 }

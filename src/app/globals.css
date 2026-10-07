@@ -1,69 +1,47 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sora: 'Sora', sans-serif;
-  --font-inter: 'Inter', sans-serif;
+  --font-sora: var(--font-sora), 'Sora', sans-serif;
+  --font-inter: var(--font-inter), 'Inter', sans-serif;
 
-  --color-surface-container-lowest: #010f1f;
-  --color-surface-container-low: #0d1c2d;
-  --color-surface-container: #122131;
-  --color-surface-container-high: #1c2b3c;
-  --color-surface-container-highest: #273647;
-  --color-surface-bright: #2c3a4c;
-  --color-surface: #051424;
-  --color-background: #051424;
+  /* Luxury Warm Beige Theme: calm linen, warm sand, crisp cards, deep espresso obsidian text */
+  --color-background: #F7F4EE;
+  --color-surface: #F3EEE5;
+  --color-surface-bright: #FFFFFF;
+  --color-surface-container-lowest: #FFFFFF;
+  --color-surface-container-low: #FAF7F2;
+  --color-surface-container: #EFE9DE;
+  --color-surface-container-high: #E5DECf;
+  --color-surface-container-highest: #D9D0BE;
 
-  --color-on-surface: #d4e4fa;
-  --color-on-surface-variant: #c9c4d8;
-  --color-outline: #938ea1;
-  --color-outline-variant: #484555;
+  --color-on-surface: #1C1917;
+  --color-on-surface-variant: #57534E;
+  --color-outline: #78716C;
+  --color-outline-variant: #DCD4C5;
 
-  --color-primary: #cabeff;
-  --color-primary-container: #947dff;
-  --color-primary-fixed: #e6deff;
-  --color-on-primary-container: #2a0088;
-  --color-on-primary: #31009a;
+  --color-primary: #1C1917;
+  --color-primary-container: #1C1917;
+  --color-primary-fixed: #EAE4D7;
+  --color-on-primary-container: #FFFFFF;
+  --color-on-primary: #FFFFFF;
 
-  --color-secondary: #7bd0ff;
-  --color-secondary-container: #00a6e0;
-  --color-secondary-fixed: #c4e7ff;
-  --color-secondary-fixed-dim: #7bd0ff;
+  --color-secondary: #0284C7;
+  --color-secondary-container: #E0F2FE;
+  --color-secondary-fixed: #BAE6FD;
+  --color-secondary-fixed-dim: #0284C7;
 
-  --color-tertiary: #4edea3;
-  --color-tertiary-container: #00a572;
-  --color-on-tertiary: #003824;
+  --color-tertiary: #059669;
+  --color-tertiary-container: #D1FAE5;
+  --color-on-tertiary: #064E3B;
 
-  --color-error: #ffb4ab;
-  --color-error-container: #93000a;
-  --color-on-error-container: #ffdad6;
-  --color-on-error: #690005;
+  --color-error: #DC2626;
+  --color-error-container: #FEE2E2;
+  --color-on-error-container: #991B1B;
+  --color-on-error: #FFFFFF;
 }
 
-
-/* Light mode: same tokens, light values. Toggled by the "light" class on <html>. */
-:root { color-scheme: dark; }
-html.light {
+:root {
   color-scheme: light;
-  --color-background: #f2f5fa;
-  --color-surface: #f2f5fa;
-  --color-surface-bright: #ffffff;
-  --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f6f8fc;
-  --color-surface-container: #eef2f8;
-  --color-surface-container-high: #e4eaf3;
-  --color-surface-container-highest: #d9e1ee;
-  --color-on-surface: #0f1b2d;
-  --color-on-surface-variant: #3d4759;
-  --color-outline: #596377;
-  --color-outline-variant: #c3cad7;
-  --color-primary: #5a3fd1;
-  --color-primary-fixed: #4b2fb8;
-  --color-secondary: #00668f;
-  --color-secondary-fixed: #003b55;
-  --color-tertiary: #007a55;
-  --color-error: #ba1a1a;
-  --color-error-container: #ffdad6;
-  --color-on-error-container: #93000a;
 }
 
 @layer base {
@@ -76,6 +54,11 @@ html.light {
   h1, h2, h3, h4, h5, h6, .font-sora {
     font-family: var(--font-sora);
   }
+
+  /* Luxury Dark Espresso Hover Override */
+  .hover\:bg-\[\#cabeff\]:hover {
+    background-color: #2D2723 !important;
+  }
 }
 
 /* Custom scrollbars */
@@ -84,14 +67,14 @@ html.light {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-surface-container-lowest);
+  background: var(--color-surface-container-low);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-surface-container-high);
+  background: var(--color-surface-container-highest);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-surface-container-highest);
+  background: var(--color-outline);
 }
 
 /* Material symbols outlined helper */
@@ -112,24 +95,27 @@ html.light {
 
 /* Corner ticks HUD accent */
 .hud-corner-tl {
-  border-top: 1.5px solid rgba(123, 208, 255, 0.7);
-  border-left: 1.5px solid rgba(123, 208, 255, 0.7);
+  border-top: 1.5px solid rgba(2, 132, 199, 0.4);
+  border-left: 1.5px solid rgba(2, 132, 199, 0.4);
 }
 .hud-corner-tr {
-  border-top: 1.5px solid rgba(123, 208, 255, 0.7);
-  border-right: 1.5px solid rgba(123, 208, 255, 0.7);
+  border-top: 1.5px solid rgba(2, 132, 199, 0.4);
+  border-right: 1.5px solid rgba(2, 132, 199, 0.4);
 }
 .hud-corner-bl {
-  border-bottom: 1.5px solid rgba(148, 125, 255, 0.7);
-  border-left: 1.5px solid rgba(148, 125, 255, 0.7);
+  border-bottom: 1.5px solid rgba(28, 25, 23, 0.4);
+  border-left: 1.5px solid rgba(28, 25, 23, 0.4);
 }
 .hud-corner-br {
-  border-bottom: 1.5px solid rgba(148, 125, 255, 0.7);
-  border-right: 1.5px solid rgba(148, 125, 255, 0.7);
+  border-bottom: 1.5px solid rgba(28, 25, 23, 0.4);
+  border-right: 1.5px solid rgba(28, 25, 23, 0.4);
 }
 
 /* Phones: tables become stacked cards and the page never scrolls sideways. */
-html, body { max-width: 100%; overflow-x: hidden; }
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
 @media (max-width: 639px) {
   table.stack, table.stack tbody { display: block; width: 100%; }
   table.stack thead { display: none; }

@@ -88,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   }}
                   className={`flex items-center justify-between px-4 py-2.5 rounded-lg text-left transition-all ${
                     isActive
-                      ? 'bg-surface-container-high text-primary font-bold shadow-[inset_4px_0_0_0_#cabeff] shadow-[0_0_16px_rgba(148,125,255,0.15)]'
+                      ? 'bg-surface-container text-on-surface font-bold shadow-[inset_4px_0_0_0_#1C1917]'
                       : 'text-on-surface-variant text-[0.8125rem] font-medium hover:bg-surface-container-low hover:text-on-surface'
                   }`}
                 >
