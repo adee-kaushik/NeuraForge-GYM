@@ -6,7 +6,7 @@ import { CurrentUser, GymConfig, GymSettingsInput } from '../config/gym';
 import { formatTimestamp, isSameDay } from '../lib/format';
 import { toMembers, toTransactions, toCheckInLogs } from '../lib/mappers';
 import { computeDashboardStats } from '../lib/stats';
-import { addMember, renewMembership, updateMember } from '../actions/members';
+import { addMember, extendMembership, renewMembership, updateMember } from '../actions/members';
 import { markPaymentPaid, recordPayment } from '../actions/payments';
 import { checkInMember } from '../actions/attendance';
 import { updateGymSettings } from '../actions/settings';
@@ -171,6 +171,27 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
       setMemberRecords((prev) => prev.map((m) => (m.id === memberId ? { ...m, expiresAt: res.expiresAt } : m)));
       const name = memberRecords.find((m) => m.id === memberId)?.name ?? 'Member';
       showToast(`${name}'s membership renewed.`);
+    } finally {
+      inFlight.current.delete(key);
+    }
+  };
+
+  const handleExtendMembership = async (memberId: string, days: number): Promise<boolean> => {
+    const key = `extend:${memberId}`;
+    if (inFlight.current.has(key)) return false;
+    inFlight.current.add(key);
+    try {
+      const res = await extendMembership(memberId, days);
+      if ('error' in res) {
+        showToast(res.error);
+        return false;
+      }
+      setMemberRecords((prev) =>
+        prev.map((m) => (m.id === memberId ? { ...m, expiresAt: res.expiresAt } : m))
+      );
+      const name = memberRecords.find((m) => m.id === memberId)?.name ?? 'Member';
+      showToast(`${name}'s plan extended by +${days} days.`);
+      return true;
     } finally {
       inFlight.current.delete(key);
     }
@@ -341,6 +362,7 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
         gymName={gym.name}
         onClose={() => setSelectedMember(null)}
         onRenewPlan={handleRenewPlan}
+        onExtendMembership={handleExtendMembership}
         onEdit={(m) => setEditingMemberId(m.id)}
         onQuickCheckIn={handleCheckIn}
         recentLogs={checkIns}

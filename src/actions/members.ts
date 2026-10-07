@@ -133,6 +133,33 @@ export async function renewMembership(memberId: string): Promise<RenewResult> {
   return { ok: true, expiresAt: created.expiresAt.toISOString() };
 }
 
+export type ExtendMembershipResult = { ok: true; expiresAt: string } | { ok: false; error: string };
+
+export async function extendMembership(memberId: string, days: number): Promise<ExtendMembershipResult> {
+  const staff = await requireStaff();
+
+  if (!Number.isInteger(days) || days <= 0 || days > 365) {
+    return { ok: false, error: 'Extension must be between 1 and 365 days.' };
+  }
+
+  const latest = await prisma.membership.findFirst({
+    where: { memberId, gymId: staff.gymId },
+    orderBy: { expiresAt: 'desc' },
+  });
+  if (!latest) return { ok: false, error: 'No membership record found.' };
+
+  const now = new Date();
+  const baseDate = latest.expiresAt > now ? latest.expiresAt : now;
+  const newExpiresAt = new Date(baseDate.getTime() + days * 24 * 60 * 60 * 1000);
+
+  const updated = await prisma.membership.update({
+    where: { id: latest.id },
+    data: { expiresAt: newExpiresAt },
+  });
+
+  return { ok: true, expiresAt: updated.expiresAt.toISOString() };
+}
+
 export type UpdateMemberInput = { name: string; phone: string; email: string };
 export type UpdateMemberResult = { ok: true; member: MemberRecord } | { ok: false; error: string };
 

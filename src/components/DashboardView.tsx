@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Member, Transaction, CheckInLog } from '../types';
-import { DashboardStats } from '../lib/stats';
-import { inr } from '../lib/format';
+import { computeDashboardStats, DashboardStats } from '../lib/stats';
+import { inr, isSameMonth } from '../lib/format';
 
 const PAYMENTS_PAGE_SIZE = 5;
 
@@ -33,9 +33,59 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [noticeDismissed, setNoticeDismissed] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState<'All' | 'UPI' | 'Cash' | 'Card' | 'Pending'>('All');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState(0);
+
+  // Available past 6 months for historical reporting
+  const availableMonths = useMemo(() => {
+    const list = [];
+    const base = new Date();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(base.getFullYear(), base.getMonth() - i, 1);
+      list.push({
+        offset: i,
+        label: d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' }),
+        shortLabel: d.toLocaleDateString('en-IN', { month: 'short' }),
+        date: d,
+      });
+    }
+    return list;
+  }, []);
+
+  const selectedMonth = availableMonths[selectedMonthIndex];
+  const isHistorical = selectedMonthIndex > 0;
+
+  // Active stats: live stats for current month, recomputed stats for historical months
+  const activeStats = useMemo(() => {
+    if (selectedMonthIndex === 0) return stats;
+    return computeDashboardStats(members, transactions, checkIns, stats.goal, selectedMonth.date);
+  }, [selectedMonthIndex, stats, members, transactions, checkIns, selectedMonth]);
+
+  // MoM comparison with the month prior to selectedMonth
+  const prevMonthDate = useMemo(() => {
+    const m = selectedMonth.date;
+    return new Date(m.getFullYear(), m.getMonth() - 1, 1);
+  }, [selectedMonth]);
+
+  const prevMonthRevenue = useMemo(() => {
+    return transactions
+      .filter((t) => t.status === 'PAID' && isSameMonth(t.createdAt, prevMonthDate))
+      .reduce((sum, t) => sum + t.amount, 0);
+  }, [transactions, prevMonthDate]);
+
+  const momGrowth = useMemo(() => {
+    if (prevMonthRevenue === 0) return null;
+    const diff = activeStats.revenueThisMonth - prevMonthRevenue;
+    return Math.round((diff / prevMonthRevenue) * 100);
+  }, [activeStats.revenueThisMonth, prevMonthRevenue]);
+
+  // Target transactions for table: all or filtered by month
+  const targetTransactions = useMemo(() => {
+    if (!isHistorical) return transactions;
+    return transactions.filter((t) => isSameMonth(t.createdAt, selectedMonth.date));
+  }, [transactions, isHistorical, selectedMonth]);
 
   // Filter transactions
-  const filteredTransactions = transactions.filter((t) => {
+  const filteredTransactions = targetTransactions.filter((t) => {
     if (paymentFilter === 'All') return true;
     if (paymentFilter === 'UPI') return t.paymentMode === 'UPI';
     if (paymentFilter === 'Cash') return t.paymentMode === 'Cash';
@@ -48,7 +98,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const page = Math.min(currentPage, totalPages);
   const pageStart = (page - 1) * PAYMENTS_PAGE_SIZE;
   const pageRows = filteredTransactions.slice(pageStart, pageStart + PAYMENTS_PAGE_SIZE);
-  const maxDayCount = Math.max(1, ...stats.last7Days.map((d) => d.count));
+  const maxDayCount = Math.max(1, ...activeStats.last7Days.map((d) => d.count));
 
   const expiringMembers = members.filter((m) => m.status === 'expiring').slice(0, 5);
   const recentCheckIns = checkIns.slice(0, 4);
@@ -122,7 +172,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       )}
 
       {/* 1. ALERT STRIP */}
-      {!noticeDismissed && stats.expiringIn48h > 0 && (
+      {!isHistorical && !noticeDismissed && stats.expiringIn48h > 0 && (
         <section className="relative w-full overflow-hidden bg-surface-container-low rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.45)] border border-surface-container-high">
           {/* Neon Accent Lines */}
           <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-transparent via-[#7bd0ff] to-transparent opacity-80"></div>
@@ -176,6 +226,49 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </section>
       )}
 
+      {/* MONTH / HISTORICAL SELECTOR BAR */}
+      <section className="bg-surface-container-low rounded-xl p-3 border border-surface-container-high flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
+        <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-1 text-secondary shrink-0">
+            <span className="material-symbols-outlined text-lg">calendar_month</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-outline mr-1">Period:</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {availableMonths.map((m, idx) => (
+              <button
+                key={m.offset}
+                onClick={() => {
+                  setSelectedMonthIndex(idx);
+                  setCurrentPage(1);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  selectedMonthIndex === idx
+                    ? 'bg-secondary text-[#001f28] font-bold shadow-[0_0_12px_rgba(123,208,255,0.35)]'
+                    : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant'
+                }`}
+              >
+                {idx === 0 ? `Current (${m.shortLabel})` : m.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {isHistorical && (
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <span className="px-2.5 py-1 rounded-full bg-secondary/15 text-secondary text-[11px] font-bold border border-secondary/30 flex items-center gap-1">
+              <span className="material-symbols-outlined text-sm">history</span>
+              <span>Showing {selectedMonth.label}</span>
+            </span>
+            <button
+              onClick={() => setSelectedMonthIndex(0)}
+              className="text-xs text-outline hover:text-secondary underline cursor-pointer"
+            >
+              Reset to Current
+            </button>
+          </div>
+        )}
+      </section>
+
       {/* 2. ROW OF 6 STAT CARDS */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* Card 1: Total Members */}
@@ -188,11 +281,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <div className="font-sora text-3xl font-bold text-on-surface tracking-tight group-hover:text-secondary-fixed transition-colors">
-              {stats.totalMembers}
+              {activeStats.totalMembers}
             </div>
             <div className="flex items-center gap-1 mt-1 text-tertiary text-xs font-semibold">
               <span className="material-symbols-outlined text-sm">trending_up</span>
-              <span>+{stats.newThisMonth} this month</span>
+              <span>+{activeStats.newThisMonth} joined</span>
             </div>
           </div>
         </div>
@@ -208,9 +301,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </span>
           </div>
           <div>
-            <div className="font-sora text-3xl font-bold text-on-surface tracking-tight">{stats.activeMembers}</div>
+            <div className="font-sora text-3xl font-bold text-on-surface tracking-tight">{activeStats.activeMembers}</div>
             <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-xs">
-              <span>{stats.activePercent}% of members active</span>
+              <span>{activeStats.activePercent}% of members active</span>
             </div>
           </div>
         </div>
@@ -227,7 +320,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <div className="font-sora text-3xl font-bold text-error tracking-tight drop-shadow-[0_0_10px_rgba(255,180,171,0.3)]">
-              {stats.expiringThisWeek}
+              {activeStats.expiringThisWeek}
             </div>
             <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-xs">
               <span>Requires intervention</span>
@@ -244,9 +337,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="material-symbols-outlined text-xl text-primary">pending_actions</span>
           </div>
           <div>
-            <div className="font-sora text-2xl lg:text-3xl font-bold text-on-surface tracking-tight">{inr(stats.pendingAmount)}</div>
+            <div className="font-sora text-2xl lg:text-3xl font-bold text-on-surface tracking-tight">{inr(activeStats.pendingAmount)}</div>
             <div className="flex items-center gap-1 mt-1 text-secondary text-xs">
-              <span>{stats.pendingCount} {stats.pendingCount === 1 ? 'payment' : 'payments'} to collect</span>
+              <span>{activeStats.pendingCount} {activeStats.pendingCount === 1 ? 'payment' : 'payments'} to collect</span>
             </div>
           </div>
         </div>
@@ -260,9 +353,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="material-symbols-outlined text-xl text-tertiary">how_to_reg</span>
           </div>
           <div>
-            <div className="font-sora text-3xl font-bold text-on-surface tracking-tight">{stats.todayEntries}</div>
+            <div className="font-sora text-3xl font-bold text-on-surface tracking-tight">{activeStats.todayEntries}</div>
             <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-xs">
-              <span className="truncate">{stats.peakHourLabel ? `Busiest: ${stats.peakHourLabel}` : 'No check-ins yet'}</span>
+              <span className="truncate">{activeStats.peakHourLabel ? `Busiest: ${activeStats.peakHourLabel}` : 'No check-ins'}</span>
             </div>
           </div>
         </div>
@@ -277,10 +370,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
           <div>
             <div className="font-sora text-2xl lg:text-3xl font-bold text-primary tracking-tight drop-shadow-[0_0_12px_rgba(202,190,255,0.4)]">
-              {inr(stats.revenueThisMonth)}
+              {inr(activeStats.revenueThisMonth)}
             </div>
-            <div className="flex items-center gap-1 mt-1 text-tertiary text-xs font-semibold">
-              <span>{stats.paidCountThisMonth} {stats.paidCountThisMonth === 1 ? 'payment' : 'payments'} this month</span>
+            <div className="flex items-center gap-1 mt-1 text-xs font-semibold">
+              {momGrowth !== null ? (
+                <span className={`flex items-center gap-0.5 ${momGrowth >= 0 ? 'text-tertiary' : 'text-error'}`}>
+                  <span className="material-symbols-outlined text-sm">{momGrowth >= 0 ? 'trending_up' : 'trending_down'}</span>
+                  <span>{momGrowth >= 0 ? `+${momGrowth}%` : `${momGrowth}%`} MoM</span>
+                </span>
+              ) : (
+                <span className="text-tertiary">{activeStats.paidCountThisMonth} payments</span>
+              )}
             </div>
           </div>
         </div>
@@ -312,15 +412,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-on-surface-variant mt-0.5">
-                  Target for this month
+                  Target for {selectedMonth.label}
                 </p>
               </div>
             </div>
 
             <div className="flex items-baseline gap-2 self-start md:self-auto bg-surface-container px-4 py-2 rounded-lg border border-surface-container-high">
-              <span className="font-sora text-xl font-bold text-primary">{inr(stats.revenueThisMonth)}</span>
-              <span className="text-sm text-outline">/ {inr(stats.goal)} goal</span>
-              <span className="ml-2 text-xs text-secondary font-bold">({stats.goalPercent}%)</span>
+              <span className="font-sora text-xl font-bold text-primary">{inr(activeStats.revenueThisMonth)}</span>
+              <span className="text-sm text-outline">/ {inr(activeStats.goal)} goal</span>
+              <span className="ml-2 text-xs text-secondary font-bold">({activeStats.goalPercent}%)</span>
             </div>
           </div>
 
@@ -330,7 +430,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {/* Progress Fill */}
               <div
                 className="h-full rounded-full bg-gradient-to-r from-[#cabeff] via-[#947dff] to-[#7bd0ff] shadow-[0_0_20px_rgba(123,208,255,0.6)] relative flex items-center justify-end transition-all duration-1000"
-                style={{ width: `${stats.goalPercent}%` }}
+                style={{ width: `${activeStats.goalPercent}%` }}
               >
                 <div className="w-2 h-full bg-white rounded-full animate-ping opacity-75"></div>
               </div>
@@ -344,9 +444,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {/* Milestones */}
             <div className="flex justify-between text-xs text-outline px-1 font-medium">
               <span>₹0</span>
-              <span>{inr(stats.goal / 2)} (50%)</span>
-              <span className="text-secondary font-semibold">Now: {stats.goalPercent}%</span>
-              <span className="text-primary font-bold">Goal {inr(stats.goal)}</span>
+              <span>{inr(activeStats.goal / 2)} (50%)</span>
+              <span className="text-secondary font-semibold">Now: {activeStats.goalPercent}%</span>
+              <span className="text-primary font-bold">Goal {inr(activeStats.goal)}</span>
             </div>
           </div>
 
@@ -355,11 +455,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center gap-2">
               <span className="material-symbols-outlined text-secondary text-lg">flag</span>
               <span className="text-xs text-on-surface">
-                <strong className="text-secondary font-semibold">{stats.remainingToGoal > 0 ? `${inr(stats.remainingToGoal)} left` : 'Goal reached'}</strong>{stats.remainingToGoal > 0 ? " to reach this month's goal" : ''}</span>
+                <strong className="text-secondary font-semibold">
+                  {activeStats.remainingToGoal > 0 ? `${inr(activeStats.remainingToGoal)} left` : 'Goal reached'}
+                </strong>
+                {activeStats.remainingToGoal > 0 ? ` to reach ${selectedMonth.shortLabel} goal` : ''}
+              </span>
             </div>
             <div className="flex items-center gap-1.5 text-outline text-xs shrink-0">
               <span className="material-symbols-outlined text-sm">schedule</span>
-              <span>{stats.daysLeftInMonth} {stats.daysLeftInMonth === 1 ? 'day' : 'days'} left this month</span>
+              <span>
+                {isHistorical ? 'Historical period' : `${activeStats.daysLeftInMonth} days left this month`}
+              </span>
             </div>
           </div>
         </div>
@@ -455,7 +561,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Table Footer */}
           <div className="flex items-center justify-between pt-4 mt-4 bg-surface-container-lowest/40 px-3 py-2.5 rounded-lg border border-surface-container-high">
-            <span className="text-xs text-outline">Showing 5 of 19 expiring members</span>
+            <span className="text-xs text-outline">
+              Showing {expiringMembers.length} of {activeStats.expiringThisWeek} expiring members
+            </span>
             <button
               onClick={onViewAllExpiring}
               className="text-xs text-secondary hover:text-secondary-fixed flex items-center gap-1 font-bold group cursor-pointer"
@@ -482,7 +590,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <h2 className="font-sora text-lg font-semibold text-on-surface">Floor Velocity</h2>
                 </div>
                 <p className="text-xs text-outline">
-                  Live check-ins: <strong className="text-tertiary">{stats.todayEntries} {stats.todayEntries === 1 ? 'member' : 'members'} today</strong>
+                  Live check-ins: <strong className="text-tertiary">{activeStats.todayEntries} {activeStats.todayEntries === 1 ? 'member' : 'members'} today</strong>
                 </p>
               </div>
               <span className="text-xs text-secondary bg-secondary/15 px-2.5 py-1 rounded font-semibold border border-secondary/30">
@@ -493,7 +601,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             {/* 7-Day Attendance Mini Bar Chart */}
             <div className="bg-surface-container-lowest/60 p-4 rounded-xl my-4 border border-surface-container-high">
               <div className="flex items-end justify-between h-28 gap-2 pt-2">
-                {stats.last7Days.map((d, i) => (
+                {activeStats.last7Days.map((d, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
                     <span
                       className={`text-xs transition-colors ${
@@ -581,8 +689,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {(['All', 'UPI', 'Cash', 'Card', 'Pending'] as const).map((filter) => {
                 const count =
                   filter === 'All'
-                    ? transactions.length
-                    : transactions.filter((t) =>
+                    ? targetTransactions.length
+                    : targetTransactions.filter((t) =>
                         filter === 'Pending'
                           ? t.status === 'PENDING'
                           : t.paymentMode.includes(filter)
@@ -603,7 +711,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         : 'bg-surface-container hover:bg-surface-container-high text-on-surface-variant border border-surface-container-high'
                     }`}
                   >
-                    {filter} {filter === 'All' ? `(${transactions.length})` : `(${count})`}
+                    {filter} {filter === 'All' ? `(${targetTransactions.length})` : `(${count})`}
                   </button>
                 );
               })}

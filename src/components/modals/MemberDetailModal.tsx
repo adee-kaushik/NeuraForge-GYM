@@ -10,6 +10,7 @@ interface MemberDetailModalProps {
   onRenewPlan: (memberId: string) => void;
   onEdit: (member: Member) => void;
   onQuickCheckIn: (member: Member) => void;
+  onExtendMembership?: (memberId: string, days: number) => Promise<boolean> | void;
   recentLogs?: CheckInLog[];
 }
 
@@ -20,6 +21,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   onRenewPlan,
   onEdit,
   onQuickCheckIn,
+  onExtendMembership,
   recentLogs = [],
 }) => {
   const [copied, setCopied] = useState(false);
@@ -27,6 +29,10 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   const [login, setLogin] = useState<{ memberId: string; result: MemberLoginResult } | null>(null);
   const [renewBusy, setRenewBusy] = useState(false);
   const [checkInBusy, setCheckInBusy] = useState(false);
+  const [showExtendBox, setShowExtendBox] = useState(false);
+  const [extendDays, setExtendDays] = useState(14);
+  const [customDays, setCustomDays] = useState('');
+  const [extendBusy, setExtendBusy] = useState(false);
 
   if (!member) return null;
 
@@ -74,6 +80,25 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
     setCheckInBusy(true);
     await onQuickCheckIn(member);
     setCheckInBusy(false);
+  };
+
+  const targetDays = customDays ? parseInt(customDays, 10) || 0 : extendDays;
+  const currentExpiry = new Date(member.expiresAt);
+  const baseDate = currentExpiry.getTime() > Date.now() ? currentExpiry : new Date();
+  const estimatedDate = new Date(baseDate.getTime() + targetDays * 24 * 60 * 60 * 1000);
+  const previewExpiryStr =
+    targetDays > 0
+      ? estimatedDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : null;
+
+  const handleExtend = async () => {
+    const days = customDays ? parseInt(customDays, 10) : extendDays;
+    if (!Number.isFinite(days) || days <= 0 || !onExtendMembership) return;
+    setExtendBusy(true);
+    await onExtendMembership(member.id, days);
+    setExtendBusy(false);
+    setShowExtendBox(false);
+    setCustomDays('');
   };
 
   return (
@@ -150,34 +175,112 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
           </div>
 
           {/* Plan Info */}
-          <div className="p-4 rounded-xl bg-surface-container border border-surface-container-high flex items-center justify-between">
-            <div>
-              <span className="text-xs text-outline uppercase font-bold">
-                Current Plan
-              </span>
-              <h4 className="text-sm font-semibold text-on-surface mt-0.5">
-                {member.planName} ({member.planDuration})
-              </h4>
-              <p className="text-xs text-on-surface-variant mt-1">
-                Joined: {member.joinDate} · Last Check-in: {member.lastCheckIn || 'No visits yet'}
-              </p>
-              <button
-                onClick={() => onEdit(member)}
-                className="mt-2 text-xs font-bold text-secondary hover:underline cursor-pointer"
-              >
-                Edit details
-              </button>
+          <div className="p-4 rounded-xl bg-surface-container border border-surface-container-high space-y-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <span className="text-xs text-outline uppercase font-bold">
+                  Current Plan
+                </span>
+                <h4 className="text-sm font-semibold text-on-surface mt-0.5">
+                  {member.planName} ({member.planDuration})
+                </h4>
+                <p className="text-xs text-on-surface-variant mt-1">
+                  Joined: {member.joinDate} · Last Check-in: {member.lastCheckIn || 'No visits yet'}
+                </p>
+                <button
+                  onClick={() => onEdit(member)}
+                  className="mt-2 text-xs font-bold text-secondary hover:underline cursor-pointer"
+                >
+                  Edit details
+                </button>
+              </div>
+              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                {onExtendMembership && (
+                  <button
+                    onClick={() => setShowExtendBox(!showExtendBox)}
+                    className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-secondary hover:text-on-surface font-bold text-xs transition-all border border-secondary/30 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-sm">pause_circle</span>
+                    <span>{showExtendBox ? 'Close Pause' : 'Freeze / Extend'}</span>
+                  </button>
+                )}
+                <button
+                  onClick={handleRenew}
+                  disabled={renewBusy}
+                  className="px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container font-bold text-xs transition-all shadow-[0_0_12px_rgba(148,125,255,0.3)] cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
+                >
+                  {renewBusy && (
+                    <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                  )}
+                  {renewBusy ? 'Renewing...' : `Renew ${member.planName}`}
+                </button>
+              </div>
             </div>
-            <button
-              onClick={handleRenew}
-              disabled={renewBusy}
-              className="px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container font-bold text-xs transition-all shadow-[0_0_12px_rgba(148,125,255,0.3)] cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
-            >
-              {renewBusy && (
-                <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
-              )}
-              {renewBusy ? 'Renewing...' : `Renew ${member.planName}`}
-            </button>
+
+            {/* Collapsible Freeze / Extend Panel */}
+            {showExtendBox && (
+              <div className="pt-3 border-t border-surface-container-high/60 space-y-3 bg-surface-container-lowest/60 p-3.5 rounded-lg border border-secondary/20">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-secondary flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm">date_range</span>
+                    <span>Extend Plan Expiry / Holiday Pause</span>
+                  </span>
+                  <span className="text-[11px] text-outline">
+                    Expires: <b className="text-on-surface">{member.expiryDate}</b>
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5">
+                  {[7, 14, 21, 30].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => {
+                        setExtendDays(d);
+                        setCustomDays('');
+                      }}
+                      className={`px-2.5 py-1 rounded text-xs font-semibold cursor-pointer transition-colors ${
+                        !customDays && extendDays === d
+                          ? 'bg-secondary text-[#001f28] font-bold'
+                          : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                      }`}
+                    >
+                      +{d} Days {d === 7 ? '(1w)' : d === 14 ? '(2w)' : d === 30 ? '(1m)' : ''}
+                    </button>
+                  ))}
+                  <div className="flex items-center gap-1 ml-auto">
+                    <span className="text-xs text-outline">Custom:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      max="365"
+                      value={customDays}
+                      onChange={(e) => setCustomDays(e.target.value)}
+                      placeholder="Days"
+                      className="w-16 bg-surface-container px-2 py-1 rounded text-xs text-on-surface border border-surface-container-high focus:outline-none focus:border-secondary"
+                    />
+                  </div>
+                </div>
+
+                {previewExpiryStr && (
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[11px] text-outline">
+                      New expiry date: <span className="text-tertiary font-bold">{previewExpiryStr}</span>
+                    </span>
+                    <button
+                      onClick={handleExtend}
+                      disabled={extendBusy}
+                      className="px-3.5 py-1.5 rounded-lg bg-[#4edea3] hover:bg-[#34c78b] text-[#002113] font-bold text-xs transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {extendBusy && (
+                        <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span>
+                      )}
+                      <span>{extendBusy ? 'Extending...' : `Confirm +${targetDays} Days`}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Member app login */}
