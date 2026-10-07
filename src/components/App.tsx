@@ -22,6 +22,7 @@ import { AddMemberModal } from './modals/AddMemberModal';
 import { BulkWhatsAppModal } from './modals/BulkWhatsAppModal';
 import { MemberDetailModal } from './modals/MemberDetailModal';
 import { EditMemberModal } from './modals/EditMemberModal';
+import { ImportMembersModal } from './modals/ImportMembersModal';
 import { QuickSearchModal } from './QuickSearchModal';
 
 interface AppProps {
@@ -67,6 +68,7 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
   // Modals state
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isBulkWhatsAppOpen, setIsBulkWhatsAppOpen] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
@@ -274,6 +276,7 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
               members={members}
               onSelectMember={(m) => setSelectedMember(m)}
               onOpenAddMember={() => setIsAddMemberOpen(true)}
+              onOpenImport={() => setIsImportOpen(true)}
               onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
               onSendSingleReminder={handleSendSingleReminder}
             />
@@ -306,6 +309,17 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
         plans={plans}
         onClose={() => setIsAddMemberOpen(false)}
         onAddMember={handleAddMember}
+      />
+
+      <ImportMembersModal
+        isOpen={isImportOpen}
+        plans={plans}
+        members={members}
+        onClose={() => setIsImportOpen(false)}
+        onImported={(imported) => {
+          setMemberRecords((prev) => [...imported, ...prev]);
+          showToast(`${imported.length} members imported.`);
+        }}
       />
 
       <BulkWhatsAppModal

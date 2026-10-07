@@ -5,6 +5,7 @@ interface MembersViewProps {
   members: Member[];
   onSelectMember: (member: Member) => void;
   onOpenAddMember: () => void;
+  onOpenImport: () => void;
   onOpenBulkWhatsApp: () => void;
   onSendSingleReminder: (member: Member) => void;
   initialFilter?: 'all' | 'expiring';
@@ -14,6 +15,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
   members,
   onSelectMember,
   onOpenAddMember,
+  onOpenImport,
   onOpenBulkWhatsApp,
   onSendSingleReminder,
   initialFilter = 'all',
@@ -55,6 +57,14 @@ export const MembersView: React.FC<MembersViewProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={onOpenImport}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-secondary text-xs font-bold border border-secondary/30 transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-base">upload_file</span>
+            <span>Import</span>
+          </button>
+
           <button
             onClick={onOpenBulkWhatsApp}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366]/30 text-[#25D366] text-xs font-bold border border-[#25D366]/40 transition-all cursor-pointer shadow-[0_0_12px_rgba(37,211,102,0.2)]"
