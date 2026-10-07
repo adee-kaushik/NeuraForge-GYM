@@ -10,6 +10,14 @@ export interface GymConfig {
   monthlyRevenueGoal: number;
 }
 
+// What the owner can edit on the Settings screen
+export interface GymSettingsInput {
+  name: string;
+  address: string;
+  gstNumber: string;
+  monthlyRevenueGoal: number;
+}
+
 export const GYM: GymConfig = {
   name: 'Iron Pulse Gym',
   shortName: 'Iron Pulse',

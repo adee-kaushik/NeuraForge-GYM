@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { GymConfig } from '../config/gym';
+import { GymConfig, GymSettingsInput } from '../config/gym';
 
 const inputClass =
   'w-full bg-surface-container-lowest border border-surface-container-high focus:border-secondary rounded-lg p-2.5 text-on-surface focus:outline-none';
@@ -7,7 +7,7 @@ const labelClass = 'block text-xs font-bold uppercase text-outline mb-1';
 
 interface SettingsViewProps {
   gym: GymConfig;
-  onSave: (next: GymConfig) => void;
+  onSave: (input: GymSettingsInput) => Promise<boolean>;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave }) => {
@@ -16,25 +16,20 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave }) => {
   const [gstNumber, setGstNumber] = useState(gym.gstNumber);
   const [revenueGoal, setRevenueGoal] = useState(String(gym.monthlyRevenueGoal));
 
-  const handleSave = (e: React.FormEvent) => {
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    const name = gymName.trim() || gym.name;
     const goal = parseInt(revenueGoal, 10);
-    onSave({
-      ...gym,
-      name,
-      shortName: name.replace(/\s+gym$/i, ''),
-      initials:
-        name
-          .split(/\s+/)
-          .map((w) => w[0])
-          .slice(0, 2)
-          .join('')
-          .toUpperCase() || gym.initials,
-      address: address.trim(),
-      gstNumber: gstNumber.trim().toUpperCase(),
-      monthlyRevenueGoal: Number.isFinite(goal) && goal > 0 ? goal : gym.monthlyRevenueGoal,
+
+    setSaving(true);
+    await onSave({
+      name: gymName,
+      address,
+      gstNumber,
+      monthlyRevenueGoal: Number.isFinite(goal) && goal >= 0 ? goal : -1,
     });
+    setSaving(false);
   };
 
   return (
@@ -82,9 +77,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave }) => {
         <div className="pt-2 flex justify-end">
           <button
             type="submit"
-            className="px-6 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold transition-all shadow-[0_0_16px_rgba(148,125,255,0.35)] cursor-pointer"
+            disabled={saving}
+            className="px-6 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold transition-all shadow-[0_0_16px_rgba(148,125,255,0.35)] cursor-pointer disabled:opacity-60"
           >
-            Save
+            {saving ? 'Saving...' : 'Save'}
           </button>
         </div>
       </form>

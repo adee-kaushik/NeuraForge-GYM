@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ActiveScreen, CheckInRecord, Member, MemberRecord, MembershipPlan, NewMemberInput, NewPaymentInput, TransactionRecord } from '../types';
-import { CurrentUser, GymConfig } from '../config/gym';
+import { CurrentUser, GymConfig, GymSettingsInput } from '../config/gym';
 import { isSameDay } from '../lib/format';
 import { toMembers, toTransactions, toCheckInLogs } from '../lib/mappers';
 import { computeDashboardStats } from '../lib/stats';
 import { addMember, renewMembership } from '../actions/members';
 import { markPaymentPaid, recordPayment } from '../actions/payments';
 import { checkInMember } from '../actions/attendance';
+import { updateGymSettings } from '../actions/settings';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { DashboardView } from './DashboardView';
@@ -193,9 +194,15 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
     showToast(`Opening WhatsApp to remind ${member.name}.`);
   };
 
-  const handleSaveSettings = (next: GymConfig) => {
-    setGym(next);
+  const handleSaveSettings = async (input: GymSettingsInput): Promise<boolean> => {
+    const res = await updateGymSettings(input);
+    if ('error' in res) {
+      showToast(res.error);
+      return false;
+    }
+    setGym(res.gym);
     showToast('Settings saved.');
+    return true;
   };
 
   return (
