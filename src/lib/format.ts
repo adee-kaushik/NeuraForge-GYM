@@ -50,3 +50,13 @@ export const inr = (n: number): string => `₹${Math.round(n).toLocaleString('en
 /** Prices are GST-inclusive: GST part of a total amount. e.g. 18500 @18% -> 2822 */
 export const gstIncluded = (total: number, ratePercent: number): number =>
   Math.round((total * ratePercent) / (100 + ratePercent));
+
+// Gyms are in India for now, so "today" on the server means today in IST (UTC+5:30),
+// not the server's own timezone (Vercel runs in UTC).
+const IST_OFFSET_MS = 330 * 60000;
+
+export const startOfDayIST = (now: Date = new Date()): Date => {
+  const shifted = new Date(now.getTime() + IST_OFFSET_MS);
+  const utcMidnight = Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate());
+  return new Date(utcMidnight - IST_OFFSET_MS);
+};

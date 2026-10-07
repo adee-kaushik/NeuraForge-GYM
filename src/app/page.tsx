@@ -3,17 +3,18 @@ import AppLoader from '@/components/AppLoader';
 import { getCurrentStaff } from '@/lib/auth';
 import { toCurrentUser, toGymConfig } from '@/lib/session';
 import { getPlansForGym } from '@/lib/plans';
-import { loadMemberRecords, loadTransactionRecords } from '@/lib/data';
+import { loadCheckInRecords, loadMemberRecords, loadTransactionRecords } from '@/lib/data';
 
 export default async function Page() {
   // Dashboard is for logged-in owner/staff only
   const staff = await getCurrentStaff();
   if (!staff) redirect('/login');
 
-  const [plans, members, transactions] = await Promise.all([
+  const [plans, members, transactions, checkIns] = await Promise.all([
     getPlansForGym(staff.gymId),
     loadMemberRecords(staff.gymId),
     loadTransactionRecords(staff.gymId),
+    loadCheckInRecords(staff.gymId),
   ]);
 
   return (
@@ -23,6 +24,7 @@ export default async function Page() {
       plans={plans}
       members={members}
       transactions={transactions}
+      checkIns={checkIns}
     />
   );
 }

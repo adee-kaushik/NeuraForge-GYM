@@ -1,5 +1,5 @@
-import type { Member, Membership, Payment, Plan } from '@prisma/client';
-import type { MemberRecord, TransactionRecord } from '@/types';
+import type { Attendance, Member, Membership, Payment, Plan } from '@prisma/client';
+import type { CheckInRecord, MemberRecord, TransactionRecord } from '@/types';
 
 // Database rows -> the record shapes the UI works with (ISO date strings, no Date objects)
 
@@ -36,4 +36,10 @@ export const toTransactionRecord = (p: PaymentWithRefs): TransactionRecord => ({
   invoiceNo: p.invoiceNo,
   gstAmount: p.gstAmount,
   createdAt: p.createdAt.toISOString(),
+});
+
+export const toCheckInRecord = (a: Attendance): CheckInRecord => ({
+  id: a.id,
+  memberId: a.memberId,
+  checkedInAt: a.checkedInAt.toISOString(),
 });

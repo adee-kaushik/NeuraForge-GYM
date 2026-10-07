@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import type { CurrentUser, GymConfig } from '../config/gym';
-import type { MemberRecord, MembershipPlan, TransactionRecord } from '../types';
+import type { CheckInRecord, MemberRecord, MembershipPlan, TransactionRecord } from '../types';
 
 // The dashboard is a logged-in app (no SEO needed) and shows time-relative data
 // ("2 days left", "Today, 08:45 AM"), so render it only in the browser.
@@ -17,9 +17,10 @@ interface AppLoaderProps {
   plans: MembershipPlan[];
   members: MemberRecord[];
   transactions: TransactionRecord[];
+  checkIns: CheckInRecord[];
 }
 
-export default function AppLoader({ gym, user, plans, members, transactions }: AppLoaderProps) {
+export default function AppLoader({ gym, user, plans, members, transactions, checkIns }: AppLoaderProps) {
   return (
     <App
       initialGym={gym}
@@ -27,6 +28,7 @@ export default function AppLoader({ gym, user, plans, members, transactions }: A
       plans={plans}
       initialMembers={members}
       initialTransactions={transactions}
+      initialCheckIns={checkIns}
     />
   );
 }

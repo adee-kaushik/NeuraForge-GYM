@@ -4,11 +4,11 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ActiveScreen, CheckInRecord, Member, MemberRecord, MembershipPlan, NewMemberInput, NewPaymentInput, TransactionRecord } from '../types';
 import { CurrentUser, GymConfig } from '../config/gym';
 import { isSameDay } from '../lib/format';
-import { nextId } from '../lib/ids';
 import { toMembers, toTransactions, toCheckInLogs } from '../lib/mappers';
 import { computeDashboardStats } from '../lib/stats';
 import { addMember, renewMembership } from '../actions/members';
 import { markPaymentPaid, recordPayment } from '../actions/payments';
+import { checkInMember } from '../actions/attendance';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { DashboardView } from './DashboardView';
@@ -28,9 +28,10 @@ interface AppProps {
   plans: MembershipPlan[];
   initialMembers: MemberRecord[];
   initialTransactions: TransactionRecord[];
+  initialCheckIns: CheckInRecord[];
 }
 
-export default function App({ initialGym, currentUser, plans, initialMembers, initialTransactions }: AppProps) {
+export default function App({ initialGym, currentUser, plans, initialMembers, initialTransactions, initialCheckIns }: AppProps) {
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('dashboard');
 
   // Records come from the database (loaded on the server). Everything the UI shows is derived from them.
@@ -38,8 +39,7 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
   const [gym, setGym] = useState<GymConfig>(initialGym);
   const [memberRecords, setMemberRecords] = useState<MemberRecord[]>(initialMembers);
   const [txnRecords, setTxnRecords] = useState<TransactionRecord[]>(initialTransactions);
-  // Attendance is not saved to the database yet (next step), so it starts empty and resets on refresh
-  const [checkInRecords, setCheckInRecords] = useState<CheckInRecord[]>([]);
+  const [checkInRecords, setCheckInRecords] = useState<CheckInRecord[]>(initialCheckIns);
 
   // Stops a double click from running the same action twice
   const inFlight = useRef(new Set<string>());
@@ -110,7 +110,8 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
     return true;
   };
 
-  const handleCheckIn = (m: Member) => {
+  const handleCheckIn = async (m: Member) => {
+    // Quick checks on screen first; the server checks again (and has the final say)
     if (m.status === 'expired') {
       showToast(`${m.name}'s membership has expired. Renew first.`);
       return;
@@ -119,13 +120,22 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
       showToast(`${m.name} is already marked present today.`);
       return;
     }
-    const record: CheckInRecord = {
-      id: nextId(checkInRecords.map((c) => c.id), 'CHK-', 1, 3),
-      memberId: m.id,
-      checkedInAt: new Date().toISOString(),
-    };
-    setCheckInRecords((prev) => [record, ...prev]);
-    showToast(`${m.name} marked present.`);
+
+    const key = `checkin:${m.id}`;
+    if (inFlight.current.has(key)) return;
+    inFlight.current.add(key);
+    try {
+      const res = await checkInMember(m.id);
+      if ('error' in res) {
+        showToast(res.error);
+        return;
+      }
+      const record = res.checkIn;
+      setCheckInRecords((prev) => [record, ...prev]);
+      showToast(`${m.name} marked present.`);
+    } finally {
+      inFlight.current.delete(key);
+    }
   };
 
   const handleRenewPlan = async (memberId: string) => {
