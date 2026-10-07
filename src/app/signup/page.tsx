@@ -49,6 +49,11 @@ export default function SignupPage() {
           <input id="password" name="password" type="password" required minLength={8} className={inputClass} />
         </div>
 
+        <div>
+          <label className={labelClass} htmlFor="inviteCode">Invite code</label>
+          <input id="inviteCode" name="inviteCode" required autoComplete="off" className={inputClass} />
+        </div>
+
         {state.error && <p className="text-xs text-error font-semibold">{state.error}</p>}
 
         <button
