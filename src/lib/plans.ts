@@ -1,3 +1,4 @@
+import type { Plan } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { DEFAULT_PLANS } from '@/lib/default-plans';
 import type { MembershipPlan } from '@/types';
@@ -7,6 +8,17 @@ const durationLabel = (months: number): string => {
   if (months === 12) return '12 months';
   return `${months} months`;
 };
+
+export const toMembershipPlan = (p: Plan): MembershipPlan => ({
+  id: p.id,
+  name: p.name,
+  durationLabel: durationLabel(p.durationMonths),
+  durationMonths: p.durationMonths,
+  price: p.price,
+  originalPrice: p.originalPrice ?? undefined,
+  features: p.features,
+  popular: p.popular,
+});
 
 // Loads the gym's active plans. Gyms created before default plans existed get them here once.
 export async function getPlansForGym(gymId: string): Promise<MembershipPlan[]> {
@@ -23,14 +35,5 @@ export async function getPlansForGym(gymId: string): Promise<MembershipPlan[]> {
     }
   }
 
-  return rows.map((p) => ({
-    id: p.id,
-    name: p.name,
-    durationLabel: durationLabel(p.durationMonths),
-    durationMonths: p.durationMonths,
-    price: p.price,
-    originalPrice: p.originalPrice ?? undefined,
-    features: p.features,
-    popular: p.popular,
-  }));
+  return rows.map(toMembershipPlan);
 }

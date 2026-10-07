@@ -21,3 +21,15 @@ export async function requireStaff() {
   if (!staff) throw new Error('Not logged in');
   return staff;
 }
+
+// Returns the logged-in member (with their gym), or null. Owners and staff get null here.
+export async function getCurrentMember() {
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) return null;
+
+  return prisma.member.findUnique({
+    where: { authUserId: data.user.id },
+    include: { gym: true },
+  });
+}

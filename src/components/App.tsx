@@ -262,7 +262,7 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
             />
           )}
 
-          {activeScreen === 'memberships' && <MembershipsView plans={plans} members={members} />}
+          {activeScreen === 'memberships' && <MembershipsView plans={plans} members={members} canEdit={currentUser.role === 'Gym Owner'} />}
 
           {activeScreen === 'attendance' && (
             <AttendanceView checkIns={todayCheckIns} members={members} onMarkPresent={handleCheckIn} />

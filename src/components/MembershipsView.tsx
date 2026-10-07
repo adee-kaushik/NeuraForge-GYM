@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Member, MembershipPlan } from '../types';
-import { inr } from '../lib/format';
+import { PlanModal } from './modals/PlanModal';
 
 interface MembershipsViewProps {
   plans: MembershipPlan[];
   members: Member[];
+  canEdit: boolean; // only the gym owner can change plans
 }
 
-export const MembershipsView: React.FC<MembershipsViewProps> = ({ plans, members }) => {
+export const MembershipsView: React.FC<MembershipsViewProps> = ({ plans, members, canEdit }) => {
+  const router = useRouter();
+  const [editing, setEditing] = useState<MembershipPlan | 'new' | null>(null);
   const activeMembers = members.filter((m) => m.status !== 'expired');
   const activeOn = (planId: string) => activeMembers.filter((m) => m.planId === planId).length;
 
@@ -23,9 +27,19 @@ export const MembershipsView: React.FC<MembershipsViewProps> = ({ plans, members
           <p className="text-xs text-outline mt-1">Your plans, prices and how many members are on each</p>
         </div>
 
-        <div className="px-3.5 py-1.5 rounded-lg bg-surface-container-low border border-surface-container-high flex items-center gap-2 text-xs">
-          <span className="text-outline">Active members:</span>
-          <span className="font-sora font-bold text-secondary">{activeMembers.length}</span>
+        <div className="flex items-center gap-3">
+          <div className="px-3.5 py-1.5 rounded-lg bg-surface-container-low border border-surface-container-high flex items-center gap-2 text-xs">
+            <span className="text-outline">Active members:</span>
+            <span className="font-sora font-bold text-secondary">{activeMembers.length}</span>
+          </div>
+          {canEdit && (
+            <button
+              onClick={() => setEditing('new')}
+              className="px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold cursor-pointer"
+            >
+              + Add plan
+            </button>
+          )}
         </div>
       </div>
 
@@ -84,11 +98,27 @@ export const MembershipsView: React.FC<MembershipsViewProps> = ({ plans, members
 
             <div className="pt-3 border-t border-surface-container-high/80">
               <span className="text-xs text-outline block">Members on this plan</span>
-              <span className="text-xs font-bold text-secondary">{activeOn(plan.id)}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-secondary">{activeOn(plan.id)}</span>
+                {canEdit && (
+                  <button onClick={() => setEditing(plan)} className="text-xs font-bold text-secondary hover:underline cursor-pointer">
+                    Edit
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      {editing && (
+        <PlanModal
+          key={editing === 'new' ? 'new' : editing.id}
+          plan={editing === 'new' ? undefined : editing}
+          onClose={() => setEditing(null)}
+          onSaved={() => router.refresh()}
+        />
+      )}
     </div>
   );
 };

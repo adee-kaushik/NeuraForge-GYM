@@ -25,6 +25,16 @@ export interface MembershipPlan {
   popular?: boolean;
 }
 
+export interface PlanInput {
+  id?: string; // empty = create a new plan
+  name: string;
+  durationMonths: number;
+  price: number; // GST-inclusive
+  originalPrice?: number;
+  features: string[];
+  popular: boolean;
+}
+
 export interface MemberRecord {
   id: string;
   memberCode: string; // e.g. 'MEM-001', unique within a gym
