@@ -8,7 +8,7 @@ import { toMembers, toTransactions, toCheckInLogs } from '../lib/mappers';
 import { computeDashboardStats } from '../lib/stats';
 import { addMember, extendMembership, renewMembership, updateMember } from '../actions/members';
 import { markPaymentPaid, recordPayment } from '../actions/payments';
-import { checkInMember } from '../actions/attendance';
+import { checkInMember, checkInByCode, type ScanCheckInResult } from '../actions/attendance';
 import { updateGymSettings } from '../actions/settings';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -156,6 +156,15 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
     } finally {
       inFlight.current.delete(key);
     }
+  };
+
+  const handleCheckInByCode = async (rawCode: string): Promise<ScanCheckInResult> => {
+    const res = await checkInByCode(rawCode);
+    if (res.ok) {
+      setCheckInRecords((prev) => [res.checkIn, ...prev]);
+      showToast(`${res.member.name} marked present!`);
+    }
+    return res;
   };
 
   const handleRenewPlan = async (memberId: string) => {
@@ -313,7 +322,12 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
           {activeScreen === 'memberships' && <MembershipsView plans={plans} members={members} canEdit={currentUser.role === 'Gym Owner'} />}
 
           {activeScreen === 'attendance' && (
-            <AttendanceView checkIns={todayCheckIns} members={members} onMarkPresent={handleCheckIn} />
+            <AttendanceView
+              checkIns={todayCheckIns}
+              members={members}
+              onMarkPresent={handleCheckIn}
+              onCheckInByCode={handleCheckInByCode}
+            />
           )}
 
           {activeScreen === 'payments' && (

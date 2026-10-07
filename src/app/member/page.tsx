@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getCurrentMember } from '@/lib/auth';
-import { inr, startOfDayIST } from '@/lib/format';
+import { inr, isSameDay, startOfDayIST } from '@/lib/format';
 import { statusFromDaysLeft } from '@/lib/mappers';
 import { logoutMember } from './actions';
+import { DigitalPassCard } from '@/components/member/DigitalPassCard';
 
 // Dates are shown in IST, because the server runs in UTC
 const dateIST = (d: Date) =>
@@ -42,10 +43,11 @@ export default async function MemberPage() {
     : null;
   const status = STATUS[daysLeft === null ? 'expired' : statusFromDaysLeft(daysLeft)];
   const pendingDue = pending._sum.amount ?? 0;
+  const hasCheckedInToday = visits.length > 0 && isSameDay(visits[0].checkedInAt, now);
 
   return (
     <main className="min-h-screen bg-background text-on-surface px-5 py-10">
-      <div className="mx-auto w-full max-w-md space-y-10">
+      <div className="mx-auto w-full max-w-md space-y-8">
         <header className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider text-outline">{member.gym.name}</p>
@@ -56,6 +58,20 @@ export default async function MemberPage() {
             <button className="text-xs font-bold text-secondary hover:underline cursor-pointer">Log out</button>
           </form>
         </header>
+
+        {/* Digital Gym Pass & QR / Biometrics */}
+        <DigitalPassCard
+          gymSlug={member.gym.slug}
+          gymName={member.gym.name}
+          memberCode={member.memberCode}
+          memberName={member.name}
+          planName={membership ? membership.plan.name : 'No active plan'}
+          expiryDateStr={membership ? dateIST(membership.expiresAt) : 'N/A'}
+          daysLeft={daysLeft}
+          statusLabel={status.label}
+          statusStyle={status.style}
+          hasCheckedInToday={hasCheckedInToday}
+        />
 
         <section className="rounded-2xl border border-secondary/30 bg-surface-container-low p-6 space-y-5 shadow-[0_0_24px_rgba(123,208,255,0.08)]">
           <div className="flex items-center justify-between gap-3">
