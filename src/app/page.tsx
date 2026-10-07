@@ -1,14 +1,14 @@
-import { redirect } from 'next/navigation';
 import AppLoader from '@/components/AppLoader';
+import Landing from '@/components/Landing';
 import { getCurrentStaff } from '@/lib/auth';
 import { toCurrentUser, toGymConfig } from '@/lib/session';
 import { getPlansForGym } from '@/lib/plans';
 import { loadCheckInRecords, loadMemberRecords, loadTransactionRecords } from '@/lib/data';
 
 export default async function Page() {
-  // Dashboard is for logged-in owner/staff only
+  // Logged-in owner/staff get the dashboard. Everyone else sees the public landing page.
   const staff = await getCurrentStaff();
-  if (!staff) redirect('/login');
+  if (!staff) return <Landing />;
 
   const [plans, members, transactions, checkIns] = await Promise.all([
     getPlansForGym(staff.gymId),
