@@ -6,7 +6,7 @@ import { CurrentUser, GymConfig, GymSettingsInput } from '../config/gym';
 import { isSameDay } from '../lib/format';
 import { toMembers, toTransactions, toCheckInLogs } from '../lib/mappers';
 import { computeDashboardStats } from '../lib/stats';
-import { addMember, renewMembership } from '../actions/members';
+import { addMember, renewMembership, updateMember } from '../actions/members';
 import { markPaymentPaid, recordPayment } from '../actions/payments';
 import { checkInMember } from '../actions/attendance';
 import { updateGymSettings } from '../actions/settings';
@@ -21,6 +21,7 @@ import { SettingsView } from './SettingsView';
 import { AddMemberModal } from './modals/AddMemberModal';
 import { BulkWhatsAppModal } from './modals/BulkWhatsAppModal';
 import { MemberDetailModal } from './modals/MemberDetailModal';
+import { EditMemberModal } from './modals/EditMemberModal';
 import { QuickSearchModal } from './QuickSearchModal';
 
 interface AppProps {
@@ -67,6 +68,7 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isBulkWhatsAppOpen, setIsBulkWhatsAppOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -108,6 +110,21 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
       setTxnRecords((prev) => [payment, ...prev]);
     }
     showToast(`${res.member.name} added as a new member.`);
+    return true;
+  };
+
+  const handleUpdateMember = async (
+    memberId: string,
+    input: { name: string; phone: string; email: string }
+  ): Promise<boolean> => {
+    const res = await updateMember(memberId, input);
+    if ('error' in res) {
+      showToast(res.error);
+      return false;
+    }
+    const updated = res.member;
+    setMemberRecords((prev) => prev.map((m) => (m.id === memberId ? updated : m)));
+    showToast(`${updated.name}'s details updated.`);
     return true;
   };
 
@@ -303,9 +320,19 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
         gymName={gym.name}
         onClose={() => setSelectedMember(null)}
         onRenewPlan={handleRenewPlan}
+        onEdit={(m) => setEditingMemberId(m.id)}
         onQuickCheckIn={handleCheckIn}
         recentLogs={checkIns}
       />
+
+      {editingMemberId && members.find((m) => m.id === editingMemberId) && (
+        <EditMemberModal
+          key={editingMemberId}
+          member={members.find((m) => m.id === editingMemberId)!}
+          onClose={() => setEditingMemberId(null)}
+          onSave={handleUpdateMember}
+        />
+      )}
 
       <QuickSearchModal
         isOpen={isQuickSearchOpen}

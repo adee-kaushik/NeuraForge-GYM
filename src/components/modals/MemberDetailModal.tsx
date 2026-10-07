@@ -8,6 +8,7 @@ interface MemberDetailModalProps {
   gymName: string;
   onClose: () => void;
   onRenewPlan: (memberId: string) => void;
+  onEdit: (member: Member) => void;
   onQuickCheckIn: (member: Member) => void;
   recentLogs?: CheckInLog[];
 }
@@ -17,6 +18,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   gymName,
   onClose,
   onRenewPlan,
+  onEdit,
   onQuickCheckIn,
   recentLogs = [],
 }) => {
@@ -149,6 +151,12 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
               <p className="text-xs text-on-surface-variant mt-1">
                 Joined: {member.joinDate} · Last Check-in: {member.lastCheckIn || 'No visits yet'}
               </p>
+              <button
+                onClick={() => onEdit(member)}
+                className="mt-2 text-xs font-bold text-secondary hover:underline cursor-pointer"
+              >
+                Edit details
+              </button>
             </div>
             <button
               onClick={handleRenew}

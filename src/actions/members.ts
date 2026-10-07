@@ -132,3 +132,38 @@ export async function renewMembership(memberId: string): Promise<RenewResult> {
 
   return { ok: true, expiresAt: created.expiresAt.toISOString() };
 }
+
+export type UpdateMemberInput = { name: string; phone: string; email: string };
+export type UpdateMemberResult = { ok: true; member: MemberRecord } | { ok: false; error: string };
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Fixes a member's name, phone or email. The member code, plan and history stay as they are.
+export async function updateMember(memberId: string, input: UpdateMemberInput): Promise<UpdateMemberResult> {
+  const staff = await requireStaff();
+  const gymId = staff.gymId;
+
+  const name = input.name.trim();
+  const phone = input.phone.trim();
+  const email = input.email.trim();
+  const phoneDigits = phone.replace(/\D/g, '');
+
+  if (!name || name.length > 80) return { ok: false, error: 'Name must be 1 to 80 characters.' };
+  if (phoneDigits.length < 10 || phoneDigits.length > 15) return { ok: false, error: 'Enter a valid phone number.' };
+  if (email && (email.length > 120 || !EMAIL_RE.test(email))) return { ok: false, error: 'Enter a valid email or leave it empty.' };
+
+  // gymId in the query means a member of another gym can never be changed here
+  const res = await prisma.member.updateMany({
+    where: { id: memberId, gymId },
+    data: { name, phone, email: email || null },
+  });
+  if (res.count !== 1) return { ok: false, error: 'Member not found.' };
+
+  const row = await prisma.member.findFirst({
+    where: { id: memberId, gymId },
+    include: { memberships: { orderBy: { expiresAt: 'desc' }, take: 1 } },
+  });
+  if (!row) return { ok: false, error: 'Member not found.' };
+
+  return { ok: true, member: toMemberRecord(row) };
+}
