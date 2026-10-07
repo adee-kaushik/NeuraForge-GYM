@@ -261,6 +261,13 @@ export const MembersView: React.FC<MembersViewProps> = ({
                   </td>
                 </tr>
               ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-10 px-4 text-center text-xs text-outline">
+                    {members.length === 0 ? 'No members yet. Add your first member to get started.' : 'No members match these filters.'}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

@@ -181,7 +181,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
           <table className="stack w-full text-left text-on-surface text-xs">
             <thead>
               <tr className="text-outline uppercase text-xs bg-surface-container-lowest/50 border-b border-surface-container-high">
-                <th className="py-3 px-4">Transaction ID</th>
+                <th className="py-3 px-4">Invoice No</th>
                 <th className="py-3 px-4">Member</th>
                 <th className="py-3 px-4">Plan Category</th>
                 <th className="py-3 px-4">Amount</th>
@@ -193,8 +193,8 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
             <tbody className="divide-y divide-surface-container-high">
               {filtered.map((txn) => (
                 <tr key={txn.id} className="hover:bg-surface-container/60 transition-colors">
-                  <td data-label="Transaction ID" className="py-3 px-4 font-mono text-secondary font-semibold">
-                    {txn.id}
+                  <td data-label="Invoice No" className="py-3 px-4 font-mono text-secondary font-semibold">
+                    {txn.invoiceNo}
                   </td>
                   <td data-label="Member" className="py-3 px-4">
                     <div className="font-medium text-on-surface">{txn.memberName}</div>
@@ -363,10 +363,6 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
               <div className="flex justify-between">
                 <span className="text-outline">Date:</span>
                 <span>{selectedReceipt.timestamp}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-outline">Transaction ID:</span>
-                <span className="font-mono">{selectedReceipt.id}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-outline">Member:</span>

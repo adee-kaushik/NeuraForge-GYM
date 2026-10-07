@@ -11,3 +11,14 @@ export const nextId = (existing: string[], prefix: string, start: number, pad = 
 
 export const invoiceFor = (txnId: string, date: Date): string =>
   `INV-${date.getFullYear()}-${txnId.replace(/\D/g, '')}`;
+
+// Next invoice number for a year, e.g. INV-2026-0007 -> INV-2026-0008
+export const nextInvoiceNo = (existing: string[], year: number): string => {
+  const prefix = `INV-${year}-`;
+  const max = existing.reduce((acc, no) => {
+    if (!no.startsWith(prefix)) return acc;
+    const n = parseInt(no.slice(prefix.length), 10);
+    return Number.isNaN(n) ? acc : Math.max(acc, n);
+  }, 0);
+  return `${prefix}${String(max + 1).padStart(4, '0')}`;
+};

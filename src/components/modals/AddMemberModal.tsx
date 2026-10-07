@@ -5,7 +5,7 @@ interface AddMemberModalProps {
   isOpen: boolean;
   plans: MembershipPlan[];
   onClose: () => void;
-  onAddMember: (input: NewMemberInput) => void;
+  onAddMember: (input: NewMemberInput) => Promise<boolean>;
 }
 
 const labelClass = 'block text-xs font-bold uppercase tracking-wider text-outline mb-1';
@@ -23,6 +23,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('UPI');
   const [recordPayment, setRecordPayment] = useState(true);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
@@ -33,7 +34,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
     onClose();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
@@ -43,7 +44,10 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
       return;
     }
 
-    onAddMember({ name, phone, email, planId: plan.id, recordPayment, paymentMode });
+    setSubmitting(true);
+    const ok = await onAddMember({ name, phone, email, planId: plan.id, recordPayment, paymentMode });
+    setSubmitting(false);
+    if (!ok) return; // keep the form open so nothing typed is lost
 
     // Reset the form for the next member
     setName('');
@@ -186,9 +190,10 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold transition-all shadow-[0_0_16px_rgba(148,125,255,0.35)] cursor-pointer"
+              disabled={submitting}
+              className="px-5 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold transition-all shadow-[0_0_16px_rgba(148,125,255,0.35)] cursor-pointer disabled:opacity-60"
             >
-              Add Member
+              {submitting ? 'Adding...' : 'Add Member'}
             </button>
           </div>
         </form>

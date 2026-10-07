@@ -1,5 +1,5 @@
-// Single source of truth for gym-level details.
-// Later this comes from the `Gym` table (per-gym, loaded after login).
+// Gym-level details used across the UI. Loaded from the `Gym` table after login.
+// GYM below is only a fallback/demo value for the mock data.
 export interface GymConfig {
   name: string;
   shortName: string;
@@ -20,10 +20,10 @@ export const GYM: GymConfig = {
   monthlyRevenueGoal: 100000,
 };
 
-// Logged-in user. Later this comes from the auth session.
-export const CURRENT_USER = {
-  name: 'Karan Singhania',
-  initials: 'KS',
-  role: 'Gym Owner',
-  email: 'admin@ironpulsegym.in',
-};
+// The logged-in owner/staff member, shown in the header. Comes from the auth session.
+export interface CurrentUser {
+  name: string;
+  initials: string;
+  role: string;
+  email: string;
+}

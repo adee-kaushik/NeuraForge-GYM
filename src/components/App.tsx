@@ -1,18 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { ActiveScreen, CheckInRecord, Member, MemberRecord, NewMemberInput, NewPaymentInput, TransactionRecord } from '../types';
-import {
-  MEMBERSHIP_PLANS,
-  createInitialMembers,
-  createInitialTransactions,
-  createInitialCheckIns,
-} from '../data/mockData';
-import { GYM, GymConfig } from '../config/gym';
-import { addMonths, formatDate, gstIncluded, isSameDay } from '../lib/format';
-import { nextId, invoiceFor } from '../lib/ids';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { ActiveScreen, CheckInRecord, Member, MemberRecord, MembershipPlan, NewMemberInput, NewPaymentInput, TransactionRecord } from '../types';
+import { CurrentUser, GymConfig } from '../config/gym';
+import { isSameDay } from '../lib/format';
+import { nextId } from '../lib/ids';
 import { toMembers, toTransactions, toCheckInLogs } from '../lib/mappers';
 import { computeDashboardStats } from '../lib/stats';
+import { addMember, renewMembership } from '../actions/members';
+import { markPaymentPaid, recordPayment } from '../actions/payments';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { DashboardView } from './DashboardView';
@@ -26,16 +22,27 @@ import { BulkWhatsAppModal } from './modals/BulkWhatsAppModal';
 import { MemberDetailModal } from './modals/MemberDetailModal';
 import { QuickSearchModal } from './QuickSearchModal';
 
-export default function App() {
+interface AppProps {
+  initialGym: GymConfig;
+  currentUser: CurrentUser;
+  plans: MembershipPlan[];
+  initialMembers: MemberRecord[];
+  initialTransactions: TransactionRecord[];
+}
+
+export default function App({ initialGym, currentUser, plans, initialMembers, initialTransactions }: AppProps) {
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('dashboard');
 
-  // "Database" for the frontend-only phase: raw records with ISO dates.
-  // Everything the UI shows is derived from these below.
+  // Records come from the database (loaded on the server). Everything the UI shows is derived from them.
   const [now, setNow] = useState(() => new Date());
-  const [gym, setGym] = useState<GymConfig>(GYM);
-  const [memberRecords, setMemberRecords] = useState<MemberRecord[]>(() => createInitialMembers(new Date()));
-  const [txnRecords, setTxnRecords] = useState<TransactionRecord[]>(() => createInitialTransactions(new Date()));
-  const [checkInRecords, setCheckInRecords] = useState<CheckInRecord[]>(() => createInitialCheckIns(new Date()));
+  const [gym, setGym] = useState<GymConfig>(initialGym);
+  const [memberRecords, setMemberRecords] = useState<MemberRecord[]>(initialMembers);
+  const [txnRecords, setTxnRecords] = useState<TransactionRecord[]>(initialTransactions);
+  // Attendance is not saved to the database yet (next step), so it starts empty and resets on refresh
+  const [checkInRecords, setCheckInRecords] = useState<CheckInRecord[]>([]);
+
+  // Stops a double click from running the same action twice
+  const inFlight = useRef(new Set<string>());
 
   // Keep "days left", "today" etc. fresh while the dashboard stays open
   useEffect(() => {
@@ -44,7 +51,7 @@ export default function App() {
   }, []);
 
   const members = useMemo(
-    () => toMembers(memberRecords, MEMBERSHIP_PLANS, checkInRecords, txnRecords, now),
+    () => toMembers(memberRecords, plans, checkInRecords, txnRecords, now),
     [memberRecords, checkInRecords, txnRecords, now]
   );
   const transactions = useMemo(() => toTransactions(txnRecords, now), [txnRecords, now]);
@@ -87,51 +94,20 @@ export default function App() {
   // The member modal holds a snapshot; keep it in sync with the latest derived data
   const selectedMemberLive = selectedMember ? members.find((m) => m.id === selectedMember.id) ?? null : null;
 
-  // ── Handlers (each one becomes an API call / server action later) ──
-  const buildTransaction = (
-    member: { id: string; name: string; email: string },
-    planCategory: string,
-    amount: number,
-    paymentMode: NewPaymentInput['paymentMode'],
-    status: TransactionRecord['status'],
-    existing: TransactionRecord[]
-  ): TransactionRecord => {
-    const id = nextId(existing.map((t) => t.id), '#TXN-', 9001);
-    return {
-      id,
-      memberId: member.id,
-      memberName: member.name,
-      memberEmail: member.email,
-      planCategory,
-      amount,
-      paymentMode,
-      status,
-      invoiceNo: invoiceFor(id, new Date()),
-      gstAmount: gstIncluded(amount, gym.gstRatePercent),
-      createdAt: new Date().toISOString(),
-    };
-  };
-
-  const handleAddMember = (input: NewMemberInput) => {
-    const plan = MEMBERSHIP_PLANS.find((p) => p.id === input.planId);
-    if (!plan) return;
-
-    const joined = new Date();
-    const record: MemberRecord = {
-      id: nextId(memberRecords.map((m) => m.id), 'MEM-', 1, 3),
-      name: input.name.trim(),
-      phone: input.phone.trim(),
-      email: input.email.trim(),
-      planId: plan.id,
-      joinedAt: joined.toISOString(),
-      expiresAt: addMonths(joined, plan.durationMonths).toISOString(),
-    };
-
-    setMemberRecords((prev) => [record, ...prev]);
-    if (input.recordPayment) {
-      setTxnRecords((prev) => [buildTransaction(record, plan.name, plan.price, input.paymentMode, 'PAID', prev), ...prev]);
+  // ── Handlers: each one calls a server action (which checks login and gym), then updates the screen ──
+  const handleAddMember = async (input: NewMemberInput): Promise<boolean> => {
+    const res = await addMember(input);
+    if ('error' in res) {
+      showToast(res.error);
+      return false;
     }
-    showToast(`${record.name} added as a new member.`);
+    setMemberRecords((prev) => [res.member, ...prev]);
+    if (res.payment) {
+      const payment = res.payment;
+      setTxnRecords((prev) => [payment, ...prev]);
+    }
+    showToast(`${res.member.name} added as a new member.`);
+    return true;
   };
 
   const handleCheckIn = (m: Member) => {
@@ -152,31 +128,50 @@ export default function App() {
     showToast(`${m.name} marked present.`);
   };
 
-  const handleRenewPlan = (memberId: string) => {
-    const rec = memberRecords.find((m) => m.id === memberId);
-    const plan = rec && MEMBERSHIP_PLANS.find((p) => p.id === rec.planId);
-    if (!rec || !plan) return;
-
-    // Renew from the later of today / current expiry, so early renewals don't lose days
-    const base = new Date(Math.max(Date.now(), new Date(rec.expiresAt).getTime()));
-    const newExpiry = addMonths(base, plan.durationMonths);
-    setMemberRecords((prev) => prev.map((m) => (m.id === memberId ? { ...m, expiresAt: newExpiry.toISOString() } : m)));
-    showToast(`${rec.name} renewed till ${formatDate(newExpiry.toISOString())}.`);
+  const handleRenewPlan = async (memberId: string) => {
+    const key = `renew:${memberId}`;
+    if (inFlight.current.has(key)) return;
+    inFlight.current.add(key);
+    try {
+      const res = await renewMembership(memberId);
+      if ('error' in res) {
+        showToast(res.error);
+        return;
+      }
+      setMemberRecords((prev) => prev.map((m) => (m.id === memberId ? { ...m, expiresAt: res.expiresAt } : m)));
+      const name = memberRecords.find((m) => m.id === memberId)?.name ?? 'Member';
+      showToast(`${name}'s membership renewed.`);
+    } finally {
+      inFlight.current.delete(key);
+    }
   };
 
-  const handleMarkPaid = (txnId: string) => {
-    setTxnRecords((prev) => prev.map((t) => (t.id === txnId ? { ...t, status: 'PAID' } : t)));
-    showToast(`Payment ${txnId} marked as paid.`);
+  const handleMarkPaid = async (txnId: string) => {
+    const key = `paid:${txnId}`;
+    if (inFlight.current.has(key)) return;
+    inFlight.current.add(key);
+    try {
+      const res = await markPaymentPaid(txnId);
+      if ('error' in res) {
+        showToast(res.error);
+        return;
+      }
+      setTxnRecords((prev) => prev.map((t) => (t.id === txnId ? { ...t, status: 'PAID' } : t)));
+      showToast('Payment marked as paid.');
+    } finally {
+      inFlight.current.delete(key);
+    }
   };
 
-  const handleRecordPayment = (input: NewPaymentInput) => {
-    const member = members.find((m) => m.id === input.memberId);
-    if (!member) return;
-    setTxnRecords((prev) => [
-      buildTransaction(member, member.planName, input.amount, input.paymentMode, 'PAID', prev),
-      ...prev,
-    ]);
-    showToast(`Payment of ₹${input.amount.toLocaleString('en-IN')} recorded for ${member.name}.`);
+  const handleRecordPayment = async (input: NewPaymentInput) => {
+    const res = await recordPayment(input);
+    if ('error' in res) {
+      showToast(res.error);
+      return;
+    }
+    const payment = res.payment;
+    setTxnRecords((prev) => [payment, ...prev]);
+    showToast(`Payment of ₹${payment.amount.toLocaleString('en-IN')} recorded for ${payment.memberName}.`);
   };
 
   const handleSendSingleReminder = (member: Member) => {
@@ -217,6 +212,7 @@ export default function App() {
       <div className="flex-1 flex flex-col min-w-0 lg:pl-72">
         {/* Fixed Header */}
         <Header
+          user={currentUser}
           stats={stats}
           onOpenAddMember={() => setIsAddMemberOpen(true)}
           onOpenSearch={() => setIsQuickSearchOpen(true)}
@@ -249,7 +245,7 @@ export default function App() {
             />
           )}
 
-          {activeScreen === 'memberships' && <MembershipsView plans={MEMBERSHIP_PLANS} members={members} />}
+          {activeScreen === 'memberships' && <MembershipsView plans={plans} members={members} />}
 
           {activeScreen === 'attendance' && (
             <AttendanceView checkIns={todayCheckIns} members={members} onMarkPresent={handleCheckIn} />
@@ -258,7 +254,7 @@ export default function App() {
           {activeScreen === 'payments' && (
             <PaymentsView
               gym={gym}
-              plans={MEMBERSHIP_PLANS}
+              plans={plans}
               members={members}
               transactions={transactions}
               onMarkPaid={handleMarkPaid}
@@ -273,7 +269,7 @@ export default function App() {
       {/* Modals & Drawers */}
       <AddMemberModal
         isOpen={isAddMemberOpen}
-        plans={MEMBERSHIP_PLANS}
+        plans={plans}
         onClose={() => setIsAddMemberOpen(false)}
         onAddMember={handleAddMember}
       />

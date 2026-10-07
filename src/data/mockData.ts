@@ -9,55 +9,14 @@ import { invoiceFor } from '../lib/ids';
 // Replaced by Prisma queries in the backend phase.
 // ─────────────────────────────────────────────────────────────
 
-export const MEMBERSHIP_PLANS: MembershipPlan[] = [
-  {
-    id: 'PLAN-VIP',
-    name: 'VIP',
-    durationLabel: '12 months, all perks',
-    durationMonths: 12,
-    price: 32000,
-    originalPrice: 38000,
-    features: ['All gym areas', 'Personal locker', 'Steam and sauna', '2 guest passes per month', 'Personal trainer'],
-  },
-  {
-    id: 'PLAN-YEARLY',
-    name: 'Yearly',
-    durationLabel: '12 months',
-    durationMonths: 12,
-    price: 18500,
-    originalPrice: 22000,
-    popular: true,
-    features: ['All gym areas', 'Free locker for 12 months', 'Monthly body check', 'Group classes'],
-  },
-  {
-    id: 'PLAN-HALF',
-    name: 'Half-Yearly',
-    durationLabel: '6 months',
-    durationMonths: 6,
-    price: 11000,
-    originalPrice: 13500,
-    features: ['Cardio and weights area', 'Steam room on weekends', 'Free diet consultation'],
-  },
-  {
-    id: 'PLAN-QUARTERLY',
-    name: 'Quarterly',
-    durationLabel: '3 months',
-    durationMonths: 3,
-    price: 6200,
-    originalPrice: 7500,
-    features: ['Gym floor 6:00 AM to 10:30 PM', 'Locker room and shower', 'Starter workout plan'],
-  },
-  {
-    id: 'PLAN-MONTHLY',
-    name: 'Monthly',
-    durationLabel: '1 month',
-    durationMonths: 1,
-    price: 2500,
-    features: ['Gym floor access', 'Locker for the day'],
-  },
-];
-
-const planOf = (planId: string) => MEMBERSHIP_PLANS.find((p) => p.id === planId)!;
+// Mock members refer to the standard plan names; they are matched to the gym's real plans.
+const PLAN_NAME_BY_KEY: Record<string, string> = {
+  'PLAN-VIP': 'VIP',
+  'PLAN-YEARLY': 'Yearly',
+  'PLAN-HALF': 'Half-Yearly',
+  'PLAN-QUARTERLY': 'Quarterly',
+  'PLAN-MONTHLY': 'Monthly',
+};
 
 // [id, name, phone, email, planId, days until expiry (negative = already expired)]
 const MEMBER_ROWS: [string, string, string, string, string, number][] = [
@@ -81,17 +40,20 @@ const MEMBER_ROWS: [string, string, string, string, string, number][] = [
   ['MEM-018', 'Karan Malhotra', '+91 98280 71526', 'karan.m@gmail.com', 'PLAN-MONTHLY', -3],
 ];
 
-export const createInitialMembers = (now: Date): MemberRecord[] =>
-  MEMBER_ROWS.map(([id, name, phone, email, planId, daysToExpiry]) => {
+export const createInitialMembers = (now: Date, plans: MembershipPlan[]): MemberRecord[] =>
+  MEMBER_ROWS.map(([id, name, phone, email, planKey, daysToExpiry]) => {
+    const plan = plans.find((p) => p.name === PLAN_NAME_BY_KEY[planKey]) ?? plans[0];
+    const planId = plan.id;
     const expires = addDays(startOfDay(now), daysToExpiry);
     return {
       id,
+      memberCode: id,
       name,
       phone,
       email,
       planId,
       expiresAt: expires.toISOString(),
-      joinedAt: addMonths(expires, -planOf(planId).durationMonths).toISOString(),
+      joinedAt: addMonths(expires, -plan.durationMonths).toISOString(),
     };
   });
 

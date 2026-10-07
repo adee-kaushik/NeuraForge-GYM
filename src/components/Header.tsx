@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { CURRENT_USER } from '../config/gym';
+import { CurrentUser } from '../config/gym';
+import { logout } from '@/app/login/actions';
 import { DashboardStats } from '../lib/stats';
 import { inr } from '../lib/format';
 
 interface HeaderProps {
+  user: CurrentUser;
   stats: DashboardStats;
   onOpenAddMember: () => void;
   onOpenSearch: () => void;
@@ -12,6 +14,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
+  user,
   stats,
   onOpenAddMember,
   onOpenSearch,
@@ -155,19 +158,29 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={() => setShowProfileMenu(!showProfileMenu)}
             className="ring-1 ring-secondary/40 hover:ring-secondary rounded-full transition-all focus:outline-none"
           >
-            <span className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs">{CURRENT_USER.initials}</span>
+            <span className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs">{user.initials}</span>
           </button>
 
           {showProfileMenu && (
             <div className="absolute right-0 top-12 w-64 bg-surface-container-low border border-surface-container-highest rounded-xl shadow-[0_12px_36px_rgba(0,0,0,0.7)] p-3 z-50">
               <div className="flex items-center gap-3 pb-3 border-b border-surface-container-high">
-                <span className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm shrink-0">{CURRENT_USER.initials}</span>
+                <span className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm shrink-0">{user.initials}</span>
                 <div className="overflow-hidden">
-                  <p className="text-xs font-bold text-on-surface truncate">{CURRENT_USER.name}</p>
-                  <p className="text-xs text-secondary font-semibold">{CURRENT_USER.role}</p>
-                  <p className="text-xs text-outline truncate">{CURRENT_USER.email}</p>
+                  <p className="text-xs font-bold text-on-surface truncate">{user.name}</p>
+                  <p className="text-xs text-secondary font-semibold">{user.role}</p>
+                  <p className="text-xs text-outline truncate">{user.email}</p>
                 </div>
               </div>
+
+              <form action={logout} className="pt-3">
+                <button
+                  type="submit"
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs font-semibold text-error hover:bg-error-container/30 transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-base">logout</span>
+                  <span>Sign out</span>
+                </button>
+              </form>
             </div>
           )}
         </div>

@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────────────────────
 
 export type PaymentMode = 'UPI' | 'Card' | 'Cash';
-export type PaymentStatus = 'PAID' | 'PENDING' | 'FAILED';
+export type PaymentStatus = 'PAID' | 'PENDING';
 export type MemberStatus = 'active' | 'expiring' | 'expired';
 
 // Plans are created by each gym owner, so the name is free text (not a fixed union).
@@ -27,6 +27,7 @@ export interface MembershipPlan {
 
 export interface MemberRecord {
   id: string;
+  memberCode: string; // e.g. 'MEM-001', unique within a gym
   name: string;
   phone: string;
   email: string;

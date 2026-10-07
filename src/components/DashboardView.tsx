@@ -545,7 +545,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <table className="stack w-full text-left text-on-surface text-xs">
               <thead>
                 <tr className="text-outline uppercase text-xs bg-surface-container-lowest/50 rounded-lg">
-                  <th className="py-2.5 px-3">Transaction ID</th>
+                  <th className="py-2.5 px-3">Invoice No</th>
                   <th className="py-2.5 px-3">Member</th>
                   <th className="py-2.5 px-3">Plan / Category</th>
                   <th className="py-2.5 px-3">Amount</th>
@@ -557,8 +557,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <tbody className="divide-y divide-surface-container-high/60">
                 {pageRows.map((txn) => (
                   <tr key={txn.id} className="hover:bg-surface-container/60 transition-colors">
-                    <td data-label="Transaction ID" className="py-3 px-3 font-mono text-secondary font-medium">
-                      {txn.id}
+                    <td data-label="Invoice No" className="py-3 px-3 font-mono text-secondary font-medium">
+                      {txn.invoiceNo}
                     </td>
                     <td data-label="Member" className="py-3 px-3">
                       <div className="font-medium text-on-surface">{txn.memberName}</div>
