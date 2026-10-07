@@ -16,6 +16,7 @@ export const toMemberRecord = (m: MemberWithLatestMembership): MemberRecord => {
     planId: latest?.planId ?? '',
     joinedAt: m.joinedAt.toISOString(),
     expiresAt: (latest?.expiresAt ?? m.joinedAt).toISOString(),
+    hasLogin: m.authUserId !== null,
   };
 };
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Member, CheckInLog } from '../../types';
 import { formatTimestamp } from '../../lib/format';
+import { createMemberLogin, resetMemberPassword, type MemberLoginResult } from '@/actions/member-login';
 
 interface MemberDetailModalProps {
   member: Member | null;
@@ -20,8 +21,30 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   recentLogs = [],
 }) => {
   const [copied, setCopied] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [login, setLogin] = useState<{ memberId: string; result: MemberLoginResult } | null>(null);
 
   if (!member) return null;
+
+  const shown = login?.memberId === member.id ? login.result : null;
+  const created = shown && 'password' in shown ? shown : null;
+  const failure = shown && 'error' in shown ? shown.error : null;
+  const hasLogin = member.hasLogin || created !== null;
+
+  const handleLogin = async () => {
+    setBusy(true);
+    const result = await (hasLogin ? resetMemberPassword : createMemberLogin)(member.id);
+    setBusy(false);
+    setLogin({ memberId: member.id, result });
+  };
+
+  const sendLoginOnWhatsApp = (r: { gymCode: string; memberCode: string; password: string }) => {
+    const text = `Hi ${member.name}, your ${gymName} member login:\nGym code: ${r.gymCode}\nMember ID: ${r.memberCode}\nPassword: ${r.password}\nLogin: ${window.location.origin}/member/login`;
+    window.open(
+      `https://api.whatsapp.com/send?phone=${encodeURIComponent(member.phone.replace(/[^0-9]/g, ''))}&text=${encodeURIComponent(text)}`,
+      '_blank'
+    );
+  };
 
   const memberLogs = recentLogs.filter((log) => log.memberId === member.id).slice(0, 5);
 
@@ -133,6 +156,43 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
             >
               Renew {member.planName}
             </button>
+          </div>
+
+          {/* Member app login */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-outline">Member app login</span>
+              <button
+                onClick={handleLogin}
+                disabled={busy}
+                className="text-xs text-secondary hover:underline font-bold disabled:opacity-50 cursor-pointer"
+              >
+                {busy ? 'Please wait...' : hasLogin ? 'Reset password' : 'Create login'}
+              </button>
+            </div>
+            {created ? (
+              <div className="rounded-lg border border-secondary/30 bg-secondary/10 p-3 text-xs space-y-1">
+                <p className="text-on-surface">
+                  Gym code: <b>{created.gymCode}</b> · Member ID: <b>{created.memberCode}</b>
+                </p>
+                <p className="text-on-surface">
+                  Password: <b className="font-mono">{created.password}</b>
+                </p>
+                <p className="text-outline">Shown only once. Send it to the member now.</p>
+                <button
+                  onClick={() => sendLoginOnWhatsApp(created)}
+                  className="font-bold text-tertiary hover:underline cursor-pointer"
+                >
+                  Send on WhatsApp
+                </button>
+              </div>
+            ) : failure ? (
+              <p className="text-xs text-error">{failure}</p>
+            ) : (
+              <p className="text-xs text-outline">
+                {hasLogin ? 'This member can log in to the member app.' : 'No login yet.'}
+              </p>
+            )}
           </div>
 
           {/* Recent check-ins */}

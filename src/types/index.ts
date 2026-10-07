@@ -34,6 +34,7 @@ export interface MemberRecord {
   planId: string;
   joinedAt: string; // ISO
   expiresAt: string; // ISO
+  hasLogin?: boolean; // true once the owner has created the member's app login
 }
 
 export interface TransactionRecord {
