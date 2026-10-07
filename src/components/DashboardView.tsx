@@ -14,6 +14,8 @@ interface DashboardViewProps {
   onViewAllExpiring: () => void;
   onSelectMember: (member: Member) => void;
   onSendSingleReminder: (member: Member) => void;
+  onOpenAddMember?: () => void;
+  onOpenImport?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -25,6 +27,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onViewAllExpiring,
   onSelectMember,
   onSendSingleReminder,
+  onOpenAddMember,
+  onOpenImport,
 }) => {
   const [noticeDismissed, setNoticeDismissed] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState<'All' | 'UPI' | 'Cash' | 'Card' | 'Pending'>('All');
@@ -51,6 +55,72 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+      {/* 0. ONBOARDING HERO FOR EMPTY GYM */}
+      {members.length === 0 && (
+        <section className="relative w-full overflow-hidden bg-surface-container-low rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.5)] border border-primary/40 p-6 sm:p-8">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-3 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 border border-primary/30 text-primary text-xs font-bold uppercase tracking-wider">
+                <span className="material-symbols-outlined text-sm">rocket_launch</span>
+                <span>Welcome to NeuraForge Gym OS</span>
+              </div>
+              <h2 className="font-sora text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight">
+                Your Gym Workspace is Ready
+              </h2>
+              <p className="text-xs sm:text-sm text-outline leading-relaxed">
+                Add your members manually or import them in bulk from an Excel or CSV spreadsheet to start tracking memberships, check-ins, payments, and automated WhatsApp renewals.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-3 w-full sm:w-auto shrink-0">
+              {onOpenAddMember && (
+                <button
+                  onClick={onOpenAddMember}
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-primary-container hover:bg-[#cabeff] text-on-primary-container font-bold text-xs sm:text-sm shadow-[0_0_20px_rgba(148,125,255,0.4)] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">person_add</span>
+                  <span>Add First Member</span>
+                </button>
+              )}
+              {onOpenImport && (
+                <button
+                  onClick={onOpenImport}
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-surface-container-high hover:bg-surface-container-highest text-secondary font-bold text-xs sm:text-sm border border-secondary/30 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-lg">upload_file</span>
+                  <span>Import Excel / CSV</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-surface-container-high/60 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-surface-container-lowest/60 border border-surface-container-high/40">
+              <span className="material-symbols-outlined text-secondary text-2xl shrink-0">badge</span>
+              <div>
+                <h4 className="font-bold text-xs text-on-surface">1. Member Portal</h4>
+                <p className="text-[11px] text-outline mt-0.5">Send members their login credentials with 1 tap via WhatsApp.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-surface-container-lowest/60 border border-surface-container-high/40">
+              <span className="material-symbols-outlined text-tertiary text-2xl shrink-0">how_to_reg</span>
+              <div>
+                <h4 className="font-bold text-xs text-on-surface">2. Floor Check-ins</h4>
+                <p className="text-[11px] text-outline mt-0.5">Track daily attendance, busy peak hours, and member consistency.</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-surface-container-lowest/60 border border-surface-container-high/40">
+              <span className="material-symbols-outlined text-primary text-2xl shrink-0">receipt_long</span>
+              <div>
+                <h4 className="font-bold text-xs text-on-surface">3. Receipts & GST Dues</h4>
+                <p className="text-[11px] text-outline mt-0.5">Collect fees in cash or UPI and share instant payment receipts.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* 1. ALERT STRIP */}
       {!noticeDismissed && stats.expiringIn48h > 0 && (
         <section className="relative w-full overflow-hidden bg-surface-container-low rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.45)] border border-surface-container-high">

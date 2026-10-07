@@ -44,17 +44,25 @@ export default function MemberLoginPage() {
         <button
           type="submit"
           disabled={pending}
-          className="w-full px-4 py-3 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-base font-bold disabled:opacity-60"
+          className="w-full px-4 py-3 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-base font-bold disabled:opacity-60 flex items-center justify-center gap-2"
         >
+          {pending && (
+            <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
+          )}
           {pending ? 'Logging in...' : 'Log in'}
         </button>
 
-        <p className="text-xs text-outline text-center">
-          Gym owner or staff?{' '}
-          <Link href="/login" className="text-secondary font-semibold">
-            Log in here
-          </Link>
-        </p>
+        <div className="pt-1 flex flex-col items-center gap-2">
+          <p className="text-xs text-outline/80 text-center">
+            Forgot password or ID? Ask your gym front desk to resend your credentials.
+          </p>
+          <p className="text-xs text-outline text-center">
+            Gym owner or staff?{' '}
+            <Link href="/login" className="text-secondary font-semibold">
+              Log in here
+            </Link>
+          </p>
+        </div>
       </form>
     </main>
   );

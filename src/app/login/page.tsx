@@ -34,13 +34,22 @@ export default function LoginPage() {
           <input id="password" name="password" type="password" required className={inputClass} />
         </div>
 
+        <div className="flex justify-end">
+          <Link href="/login/forgot-password" className="text-xs text-secondary font-semibold hover:underline">
+            Forgot password?
+          </Link>
+        </div>
+
         {state.error && <p className="text-xs text-error font-semibold">{state.error}</p>}
 
         <button
           type="submit"
           disabled={pending}
-          className="w-full px-4 py-2.5 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-sm font-bold disabled:opacity-60"
+          className="w-full px-4 py-2.5 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-sm font-bold disabled:opacity-60 flex items-center justify-center gap-2"
         >
+          {pending && (
+            <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
+          )}
           {pending ? 'Logging in...' : 'Log in'}
         </button>
 

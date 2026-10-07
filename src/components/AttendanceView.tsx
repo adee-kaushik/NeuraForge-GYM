@@ -9,10 +9,17 @@ interface AttendanceViewProps {
 
 export const AttendanceView: React.FC<AttendanceViewProps> = ({ checkIns, members, onMarkPresent }) => {
   const [query, setQuery] = useState('');
+  const [busyId, setBusyId] = useState<string | null>(null);
   const q = query.trim().toLowerCase();
   const results = q
     ? members.filter((m) => m.name.toLowerCase().includes(q) || m.phone.includes(q)).slice(0, 5)
     : [];
+
+  const handleMarkPresent = async (m: Member) => {
+    setBusyId(m.id);
+    await onMarkPresent(m);
+    setBusyId(null);
+  };
 
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
@@ -25,9 +32,20 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ checkIns, member
         <p className="text-xs text-outline mt-1">Mark members present and see who came in today</p>
       </div>
 
-      {/* Mark attendance */}
-      <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col gap-3">
-        <h2 className="font-sora text-sm font-semibold text-on-surface">Mark Attendance</h2>
+      {members.length === 0 ? (
+        <div className="p-8 rounded-xl bg-surface-container-low border border-surface-container-high text-center">
+          <div className="w-12 h-12 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary mx-auto mb-3">
+            <span className="material-symbols-outlined text-2xl">how_to_reg</span>
+          </div>
+          <h3 className="font-sora text-sm font-semibold text-on-surface">No Members Registered</h3>
+          <p className="text-xs text-outline mt-1 max-w-md mx-auto">
+            Add members to your gym from the Members tab to start recording check-ins and tracking floor visits.
+          </p>
+        </div>
+      ) : (
+        /* Mark attendance */
+        <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high flex flex-col gap-3">
+          <h2 className="font-sora text-sm font-semibold text-on-surface">Mark Attendance</h2>
         <div className="relative max-w-md">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-lg">
             search
@@ -46,6 +64,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ checkIns, member
         {results.map((m) => {
           const alreadyIn = checkIns.some((c) => c.memberId === m.id);
           const expired = m.status === 'expired';
+          const isBusy = busyId === m.id;
           return (
             <div
               key={m.id}
@@ -63,16 +82,20 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ checkIns, member
                 </div>
               </div>
               <button
-                onClick={() => onMarkPresent(m)}
-                disabled={alreadyIn || expired}
-                className="px-4 py-1.5 rounded-lg bg-[#4edea3] hover:bg-[#34c78b] text-[#002113] text-xs font-bold transition-all cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                onClick={() => handleMarkPresent(m)}
+                disabled={alreadyIn || expired || isBusy}
+                className="px-4 py-1.5 rounded-lg bg-[#4edea3] hover:bg-[#34c78b] text-[#002113] text-xs font-bold transition-all cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
-                {expired ? 'Renew first' : alreadyIn ? 'Already present' : 'Mark Present'}
+                {isBusy && (
+                  <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                )}
+                {expired ? 'Renew first' : alreadyIn ? 'Already present' : isBusy ? 'Marking...' : 'Mark Present'}
               </button>
             </div>
           );
         })}
       </div>
+      )}
 
       {/* Today's attendance */}
       <div className="rounded-xl bg-surface-container-low border border-surface-container-high overflow-hidden">
@@ -100,7 +123,8 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({ checkIns, member
               ))}
               {checkIns.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="py-6 px-4 text-center text-outline">
+                  <td colSpan={3} className="py-8 px-4 text-center text-outline">
+                    <span className="material-symbols-outlined text-2xl block mb-1 text-outline/50">event_busy</span>
                     No one has been marked present yet today.
                   </td>
                 </tr>

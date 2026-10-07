@@ -8,8 +8,8 @@ interface PaymentsViewProps {
   plans: MembershipPlan[];
   members: Member[];
   transactions: Transaction[];
-  onMarkPaid: (txnId: string) => void;
-  onNewPayment: (input: NewPaymentInput) => void;
+  onMarkPaid: (txnId: string) => Promise<void> | void;
+  onNewPayment: (input: NewPaymentInput) => Promise<Transaction | null | void> | void;
 }
 
 export const PaymentsView: React.FC<PaymentsViewProps> = ({
@@ -26,6 +26,8 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
   const [amount, setAmount] = useState('');
   const [mode, setMode] = useState<PaymentMode>('Cash');
   const [selectedReceipt, setSelectedReceipt] = useState<Transaction | null>(null);
+  const [busyPaidId, setBusyPaidId] = useState<string | null>(null);
+  const [submittingPayment, setSubmittingPayment] = useState(false);
 
   const now = new Date();
   const paidThisMonth = transactions.filter((t) => t.status === 'PAID' && isSameMonth(t.createdAt, now));
@@ -59,13 +61,24 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
     if (plan) setAmount(String(plan.price));
   };
 
-  const handleCreateManual = (e: React.FormEvent) => {
+  const handleCreateManual = async (e: React.FormEvent) => {
     e.preventDefault();
     const amt = parseInt(amount, 10);
     if (!memberId || !Number.isFinite(amt) || amt <= 0) return;
 
-    onNewPayment({ memberId, amount: amt, paymentMode: mode });
+    setSubmittingPayment(true);
+    const created = await onNewPayment({ memberId, amount: amt, paymentMode: mode });
+    setSubmittingPayment(false);
     setShowManualModal(false);
+    if (created && typeof created === 'object' && 'invoiceNo' in created) {
+      setSelectedReceipt(created as Transaction);
+    }
+  };
+
+  const handleMarkPaid = async (txnId: string) => {
+    setBusyPaidId(txnId);
+    await onMarkPaid(txnId);
+    setBusyPaidId(null);
   };
 
   return (
@@ -235,16 +248,51 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                       </button>
                     ) : (
                       <button
-                        onClick={() => onMarkPaid(txn.id)}
-                        className="inline-flex items-center gap-1 px-3 py-1 rounded bg-error-container/50 hover:bg-error-container text-on-error-container text-xs font-bold border border-error/40 cursor-pointer transition-colors shadow-[0_0_8px_rgba(255,180,171,0.2)]"
+                        onClick={() => handleMarkPaid(txn.id)}
+                        disabled={busyPaidId === txn.id}
+                        className="inline-flex items-center gap-1 px-3 py-1 rounded bg-error-container/50 hover:bg-error-container text-on-error-container text-xs font-bold border border-error/40 cursor-pointer transition-colors shadow-[0_0_8px_rgba(255,180,171,0.2)] disabled:opacity-50"
                       >
-                        <span className="material-symbols-outlined text-sm">check_circle</span>
-                        <span>Collect Cash</span>
+                        {busyPaidId === txn.id ? (
+                          <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                        ) : (
+                          <span className="material-symbols-outlined text-sm">check_circle</span>
+                        )}
+                        <span>{busyPaidId === txn.id ? 'Saving...' : 'Collect Cash'}</span>
                       </button>
                     )}
                   </td>
                 </tr>
               ))}
+              {filtered.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="py-14 px-4 text-center">
+                    {transactions.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center gap-3 max-w-sm mx-auto">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                          <span className="material-symbols-outlined text-2xl">receipt_long</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-on-surface">No payments recorded yet</p>
+                          <p className="text-xs text-outline mt-1">
+                            Record a cash, UPI, or card payment to generate official invoices and WhatsApp receipts.
+                          </p>
+                        </div>
+                        <button
+                          onClick={openManualModal}
+                          className="px-3.5 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold cursor-pointer transition-colors mt-2"
+                        >
+                          + Record First Payment
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-outline">
+                        <span className="material-symbols-outlined text-2xl block mb-1">filter_alt_off</span>
+                        No payments found for the &ldquo;{filterMode}&rdquo; filter.
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -324,9 +372,13 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container font-bold"
+                  disabled={submittingPayment}
+                  className="px-4 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container font-bold disabled:opacity-60 flex items-center gap-1.5"
                 >
-                  Record Payment
+                  {submittingPayment && (
+                    <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                  )}
+                  {submittingPayment ? 'Recording...' : 'Record Payment'}
                 </button>
               </div>
             </form>
@@ -385,20 +437,49 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
               </div>
             </div>
 
-            <div className="pt-2 flex justify-end gap-2">
+            <div className="pt-2 flex flex-col gap-3">
               <button
-                onClick={() => window.print()}
-                className="px-4 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-secondary font-bold flex items-center gap-1 cursor-pointer"
+                onClick={() => {
+                  const r = selectedReceipt;
+                  const text =
+                    `*${gym.name} — Payment Receipt*\n` +
+                    `──────────────────\n` +
+                    `Invoice: ${r.invoiceNo}\n` +
+                    `Date: ${r.timestamp}\n` +
+                    `Plan: ${r.planCategory}\n` +
+                    `Amount: ₹${r.amount.toLocaleString('en-IN')}\n` +
+                    `Mode: ${r.paymentMode}\n` +
+                    (gym.gstNumber ? `GSTIN: ${gym.gstNumber}\n` : '') +
+                    `GST (${gym.gstRatePercent}%): ${inr(r.gstAmount)}\n` +
+                    `──────────────────\n` +
+                    `Status: ✅ PAID\n` +
+                    `\nThank you, ${r.memberName}!`;
+                  const phone = members.find((m) => m.id === r.memberId)?.phone?.replace(/\D/g, '') ?? '';
+                  window.open(
+                    `https://api.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}`,
+                    '_blank'
+                  );
+                }}
+                className="w-full px-4 py-2.5 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] font-bold flex items-center justify-center gap-2 cursor-pointer transition-all border border-[#25D366]/40"
               >
-                <span className="material-symbols-outlined text-sm">print</span>
-                <span>Print Tax Invoice</span>
+                <span className="material-symbols-outlined text-base">chat</span>
+                <span>Share Receipt on WhatsApp</span>
               </button>
-              <button
-                onClick={() => setSelectedReceipt(null)}
-                className="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-bold cursor-pointer"
-              >
-                Done
-              </button>
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="px-4 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-secondary font-bold flex items-center gap-1 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">print</span>
+                  <span>Print Tax Invoice</span>
+                </button>
+                <button
+                  onClick={() => setSelectedReceipt(null)}
+                  className="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-bold cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
             </div>
           </div>
         </div>

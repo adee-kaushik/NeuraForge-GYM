@@ -25,6 +25,8 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
   const [login, setLogin] = useState<{ memberId: string; result: MemberLoginResult } | null>(null);
+  const [renewBusy, setRenewBusy] = useState(false);
+  const [checkInBusy, setCheckInBusy] = useState(false);
 
   if (!member) return null;
 
@@ -62,8 +64,16 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleRenew = () => {
-    onRenewPlan(member.id);
+  const handleRenew = async () => {
+    setRenewBusy(true);
+    await onRenewPlan(member.id);
+    setRenewBusy(false);
+  };
+
+  const handleQuickCheckIn = async () => {
+    setCheckInBusy(true);
+    await onQuickCheckIn(member);
+    setCheckInBusy(false);
   };
 
   return (
@@ -160,9 +170,13 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
             </div>
             <button
               onClick={handleRenew}
-              className="px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container font-bold text-xs transition-all shadow-[0_0_12px_rgba(148,125,255,0.3)] cursor-pointer"
+              disabled={renewBusy}
+              className="px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container font-bold text-xs transition-all shadow-[0_0_12px_rgba(148,125,255,0.3)] cursor-pointer disabled:opacity-60 flex items-center gap-1.5"
             >
-              Renew {member.planName}
+              {renewBusy && (
+                <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+              )}
+              {renewBusy ? 'Renewing...' : `Renew ${member.planName}`}
             </button>
           </div>
 
@@ -173,8 +187,11 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
               <button
                 onClick={handleLogin}
                 disabled={busy}
-                className="text-xs text-secondary hover:underline font-bold disabled:opacity-50 cursor-pointer"
+                className="text-xs text-secondary hover:underline font-bold disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
               >
+                {busy && (
+                  <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span>
+                )}
                 {busy ? 'Please wait...' : hasLogin ? 'Reset password' : 'Create login'}
               </button>
             </div>
@@ -210,11 +227,16 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                 Recent Check-ins
               </span>
               <button
-                onClick={() => onQuickCheckIn(member)}
-                className="text-xs text-tertiary hover:underline font-bold flex items-center gap-1 cursor-pointer"
+                onClick={handleQuickCheckIn}
+                disabled={checkInBusy}
+                className="text-xs text-tertiary hover:underline font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-sm">how_to_reg</span>
-                <span>Mark Present</span>
+                {checkInBusy ? (
+                  <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                ) : (
+                  <span className="material-symbols-outlined text-sm">how_to_reg</span>
+                )}
+                <span>{checkInBusy ? 'Marking...' : 'Mark Present'}</span>
               </button>
             </div>
 

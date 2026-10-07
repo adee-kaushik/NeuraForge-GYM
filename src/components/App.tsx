@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { ActiveScreen, CheckInRecord, Member, MemberRecord, MembershipPlan, NewMemberInput, NewPaymentInput, TransactionRecord } from '../types';
+import { ActiveScreen, CheckInRecord, Member, MemberRecord, MembershipPlan, NewMemberInput, NewPaymentInput, Transaction, TransactionRecord } from '../types';
 import { CurrentUser, GymConfig, GymSettingsInput } from '../config/gym';
-import { isSameDay } from '../lib/format';
+import { formatTimestamp, isSameDay } from '../lib/format';
 import { toMembers, toTransactions, toCheckInLogs } from '../lib/mappers';
 import { computeDashboardStats } from '../lib/stats';
 import { addMember, renewMembership, updateMember } from '../actions/members';
@@ -193,15 +193,19 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
     }
   };
 
-  const handleRecordPayment = async (input: NewPaymentInput) => {
+  const handleRecordPayment = async (input: NewPaymentInput): Promise<Transaction | null> => {
     const res = await recordPayment(input);
     if ('error' in res) {
       showToast(res.error);
-      return;
+      return null;
     }
     const payment = res.payment;
     setTxnRecords((prev) => [payment, ...prev]);
     showToast(`Payment of ₹${payment.amount.toLocaleString('en-IN')} recorded for ${payment.memberName}.`);
+    return {
+      ...payment,
+      timestamp: formatTimestamp(payment.createdAt, now),
+    };
   };
 
   const handleSendSingleReminder = (member: Member) => {
@@ -268,12 +272,15 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
               onViewAllExpiring={() => setActiveScreen('members')}
               onSelectMember={(m) => setSelectedMember(m)}
               onSendSingleReminder={handleSendSingleReminder}
+              onOpenAddMember={() => setIsAddMemberOpen(true)}
+              onOpenImport={() => setIsImportOpen(true)}
             />
           )}
 
           {activeScreen === 'members' && (
             <MembersView
               members={members}
+              todayCheckInsCount={todayCheckIns.length}
               onSelectMember={(m) => setSelectedMember(m)}
               onOpenAddMember={() => setIsAddMemberOpen(true)}
               onOpenImport={() => setIsImportOpen(true)}

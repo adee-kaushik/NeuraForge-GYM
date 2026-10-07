@@ -111,6 +111,26 @@ export const MembershipsView: React.FC<MembershipsViewProps> = ({ plans, members
         ))}
       </div>
 
+      {plans.length === 0 && (
+        <div className="p-12 text-center rounded-xl bg-surface-container-low border border-surface-container-high">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto mb-3">
+            <span className="material-symbols-outlined text-2xl">card_membership</span>
+          </div>
+          <h3 className="font-sora text-sm font-semibold text-on-surface">No Membership Plans Configured</h3>
+          <p className="text-xs text-outline mt-1 mb-4 max-w-sm mx-auto">
+            Create membership packages (e.g. Monthly, Quarterly, Annual) with custom pricing and features.
+          </p>
+          {canEdit && (
+            <button
+              onClick={() => setEditing('new')}
+              className="px-4 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold cursor-pointer transition-colors"
+            >
+              + Create First Plan
+            </button>
+          )}
+        </div>
+      )}
+
       {editing && (
         <PlanModal
           key={editing === 'new' ? 'new' : editing.id}

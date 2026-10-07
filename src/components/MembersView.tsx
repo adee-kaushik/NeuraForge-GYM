@@ -3,6 +3,7 @@ import { Member } from '../types';
 
 interface MembersViewProps {
   members: Member[];
+  todayCheckInsCount?: number;
   onSelectMember: (member: Member) => void;
   onOpenAddMember: () => void;
   onOpenImport: () => void;
@@ -13,6 +14,7 @@ interface MembersViewProps {
 
 export const MembersView: React.FC<MembersViewProps> = ({
   members,
+  todayCheckInsCount,
   onSelectMember,
   onOpenAddMember,
   onOpenImport,
@@ -124,7 +126,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
             <span className="text-xs font-bold uppercase tracking-wider text-outline">
               Here Today
             </span>
-            <p className="font-sora text-2xl font-bold text-tertiary mt-1">74</p>
+            <p className="font-sora text-2xl font-bold text-tertiary mt-1">{todayCheckInsCount ?? 0}</p>
           </div>
           <span className="material-symbols-outlined text-tertiary text-2xl">verified_user</span>
         </div>
@@ -273,8 +275,39 @@ export const MembersView: React.FC<MembersViewProps> = ({
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-10 px-4 text-center text-xs text-outline">
-                    {members.length === 0 ? 'No members yet. Add your first member to get started.' : 'No members match these filters.'}
+                  <td colSpan={6} className="py-14 px-4 text-center">
+                    {members.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center gap-3 max-w-sm mx-auto">
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                          <span className="material-symbols-outlined text-2xl">person_add</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-on-surface">No members added yet</p>
+                          <p className="text-xs text-outline mt-1">
+                            Build your member roster manually or import existing member records from a spreadsheet.
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 mt-2">
+                          <button
+                            onClick={onOpenAddMember}
+                            className="px-3.5 py-2 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold cursor-pointer transition-colors"
+                          >
+                            + Add Member
+                          </button>
+                          <button
+                            onClick={onOpenImport}
+                            className="px-3.5 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high text-secondary text-xs font-bold border border-secondary/30 cursor-pointer transition-colors"
+                          >
+                            Import Excel / CSV
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-outline">
+                        <span className="material-symbols-outlined text-2xl block mb-1">search_off</span>
+                        No members match the current filter or search query.
+                      </div>
+                    )}
                   </td>
                 </tr>
               )}
