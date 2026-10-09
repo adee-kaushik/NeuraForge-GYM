@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // Keeps the Supabase login session fresh on every request.
+// getClaims() checks the token locally and only contacts Supabase when the token has expired and must be refreshed.
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -22,10 +23,10 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Only make the remote auth refresh call if an auth cookie exists
+  // Skip all of this for visitors who are not logged in
   const hasAuthCookie = request.cookies.getAll().some((c) => c.name.includes('-auth-token'));
   if (hasAuthCookie) {
-    await supabase.auth.getUser();
+    await supabase.auth.getClaims();
   }
 
   return response;
