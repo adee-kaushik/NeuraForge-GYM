@@ -20,6 +20,8 @@ export async function updateGymSettings(input: GymSettingsInput): Promise<SaveSe
   const address = input.address.trim();
   const gstNumber = input.gstNumber.trim().toUpperCase();
   const goal = input.monthlyRevenueGoal;
+  const upiId = input.upiId?.trim() || null;
+  const paymentQrUrl = input.paymentQrUrl?.trim() || null;
 
   if (!name || name.length > 80) return { ok: false, error: 'Gym name must be 1 to 80 characters.' };
   if (address.length > 200) return { ok: false, error: 'Address is too long.' };
@@ -33,7 +35,14 @@ export async function updateGymSettings(input: GymSettingsInput): Promise<SaveSe
   // Always the logged-in user's own gym
   const gym = await prisma.gym.update({
     where: { id: staff.gymId },
-    data: { name, address: address || null, gstNumber: gstNumber || null, monthlyRevenueGoal: goal },
+    data: {
+      name,
+      address: address || null,
+      gstNumber: gstNumber || null,
+      monthlyRevenueGoal: goal,
+      upiId,
+      paymentQrUrl,
+    },
   });
 
   return { ok: true, gym: toGymConfig(gym) };

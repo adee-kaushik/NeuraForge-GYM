@@ -20,6 +20,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
   const [phone, setPhone] = useState(DEFAULT_PHONE);
   const [email, setEmail] = useState('');
   const [planId, setPlanId] = useState(defaultPlanId);
+  const [biometricId, setBiometricId] = useState('');
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('UPI');
   const [recordPayment, setRecordPayment] = useState(true);
   const [error, setError] = useState('');
@@ -45,7 +46,15 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
     }
 
     setSubmitting(true);
-    const ok = await onAddMember({ name, phone, email, planId: plan.id, recordPayment, paymentMode });
+    const ok = await onAddMember({
+      name,
+      phone,
+      email,
+      planId: plan.id,
+      recordPayment,
+      paymentMode,
+      biometricId: biometricId.trim() || undefined,
+    });
     setSubmitting(false);
     if (!ok) return; // keep the form open so nothing typed is lost
 
@@ -53,6 +62,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
     setName('');
     setPhone(DEFAULT_PHONE);
     setEmail('');
+    setBiometricId('');
     setPlanId(defaultPlanId);
     setPaymentMode('UPI');
     setRecordPayment(true);
@@ -124,6 +134,38 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
                 placeholder="name@example.com"
                 className={inputClass}
               />
+            </div>
+          </div>
+
+          {/* Biometrics & Machine Hardware Punch Registration */}
+          <div className="p-3.5 rounded-xl bg-surface-container border border-surface-container-high space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-wider text-secondary flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm">fingerprint</span>
+                <span>Biometrics / Device Registration</span>
+              </label>
+              <span className="text-[10px] font-bold text-outline uppercase bg-surface-container-high px-1.5 py-0.5 rounded">
+                Optional
+              </span>
+            </div>
+            <p className="text-[11px] text-outline">
+              Assign a biometric punch ID or RFID Card number (e.g. MEM-005). If left blank, a code is auto-generated.
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={biometricId}
+                onChange={(e) => setBiometricId(e.target.value)}
+                placeholder="e.g. MEM-005 or Fingerprint User ID"
+                className="flex-1 bg-surface-container-lowest border border-surface-container-high focus:border-secondary rounded-lg px-3 py-2 text-xs text-on-surface font-mono focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={() => setBiometricId(`MEM-${Math.floor(100 + Math.random() * 900)}`)}
+                className="px-3 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-secondary text-xs font-bold transition-colors cursor-pointer shrink-0"
+              >
+                Auto-generate
+              </button>
             </div>
           </div>
 

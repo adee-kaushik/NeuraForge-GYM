@@ -9,6 +9,8 @@ export interface GymConfig {
   gstNumber: string; // empty string = not registered / not shown on invoices
   gstRatePercent: number;
   monthlyRevenueGoal: number;
+  upiId?: string; // UPI ID for member QR payments
+  paymentQrUrl?: string; // Custom uploaded UPI QR code image or data URL
 }
 
 // What the owner can edit on the Settings screen
@@ -17,6 +19,8 @@ export interface GymSettingsInput {
   address: string;
   gstNumber: string;
   monthlyRevenueGoal: number;
+  upiId?: string;
+  paymentQrUrl?: string;
 }
 
 export const GYM: GymConfig = {
@@ -28,6 +32,8 @@ export const GYM: GymConfig = {
   gstNumber: '',
   gstRatePercent: 18,
   monthlyRevenueGoal: 100000,
+  upiId: '',
+  paymentQrUrl: '',
 };
 
 // The logged-in owner/staff member, shown in the header. Comes from the auth session.

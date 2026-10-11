@@ -8,6 +8,8 @@ type GymRow = {
   gstNumber: string | null;
   gstRatePercent: number;
   monthlyRevenueGoal: number;
+  upiId?: string | null;
+  paymentQrUrl?: string | null;
 };
 
 type UserRow = {
@@ -34,6 +36,8 @@ export const toGymConfig = (gym: GymRow): GymConfig => ({
   gstNumber: gym.gstNumber ?? '',
   gstRatePercent: gym.gstRatePercent,
   monthlyRevenueGoal: gym.monthlyRevenueGoal,
+  upiId: gym.upiId ?? '',
+  paymentQrUrl: gym.paymentQrUrl ?? '',
 });
 
 export const toCurrentUser = (user: UserRow): CurrentUser => ({

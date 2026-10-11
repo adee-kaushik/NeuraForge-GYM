@@ -110,6 +110,7 @@ export interface NewMemberInput {
   planId: string;
   recordPayment: boolean;
   paymentMode: PaymentMode;
+  biometricId?: string;
 }
 
 export interface NewPaymentInput {

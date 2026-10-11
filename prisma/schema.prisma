@@ -32,6 +32,8 @@ model Gym {
   gstNumber          String?
   gstRatePercent     Int      @default(18)
   monthlyRevenueGoal Int      @default(0)
+  upiId              String?
+  paymentQrUrl       String?
   createdAt          DateTime @default(now())
 
   users       User[]

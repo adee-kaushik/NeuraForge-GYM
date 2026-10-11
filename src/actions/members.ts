@@ -37,18 +37,26 @@ export async function addMember(input: NewMemberInput): Promise<AddMemberResult>
       const result = await prisma.$transaction(async (tx) => {
         const now = new Date();
 
-        const codes = await tx.member.findMany({
-          where: { gymId, memberCode: { startsWith: 'MEM-' } },
-          select: { memberCode: true },
-          orderBy: { createdAt: 'desc' },
-          take: 100,
-        });
-        const memberCode = nextId(
-          codes.map((c) => c.memberCode),
-          'MEM-',
-          1,
-          3
-        );
+        let memberCode = input.biometricId?.trim().toUpperCase();
+        if (memberCode) {
+          const existing = await tx.member.findFirst({ where: { gymId, memberCode } });
+          if (existing) {
+            throw new Error(`Biometric / Member Code "${memberCode}" is already in use by another member.`);
+          }
+        } else {
+          const codes = await tx.member.findMany({
+            where: { gymId, memberCode: { startsWith: 'MEM-' } },
+            select: { memberCode: true },
+            orderBy: { createdAt: 'desc' },
+            take: 100,
+          });
+          memberCode = nextId(
+            codes.map((c) => c.memberCode),
+            'MEM-',
+            1,
+            3
+          );
+        }
 
         const member = await tx.member.create({
           data: {

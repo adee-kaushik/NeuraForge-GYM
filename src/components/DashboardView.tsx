@@ -37,6 +37,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [noticeDismissed, setNoticeDismissed] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState<'All' | 'UPI' | 'Cash' | 'Card' | 'Pending'>('All');
   const [currentPage, setCurrentPage] = useState(1);
+  const [activeStatModal, setActiveStatModal] = useState<
+    'total-members' | 'active-members' | 'expiring' | 'pending-due' | 'floor-entries' | null
+  >(null);
+  const [statSearch, setStatSearch] = useState('');
 
   // Filter transactions
   const filteredTransactions = transactions.filter((t) => {
@@ -346,9 +350,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <section className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
         {/* Card 1: Total Members */}
         <div
-          onClick={() => onNavigateScreen?.('members')}
+          onClick={() => {
+            setActiveStatModal('total-members');
+            setStatSearch('');
+          }}
           className="relative bg-surface-container-low rounded-xl p-4 flex flex-col justify-between overflow-hidden group hover:bg-surface-container hover:scale-[1.02] active:scale-[0.99] transition-all shadow-[0_4px_20px_rgba(0,0,0,0.3)] border border-surface-container-high hover:border-secondary/60 cursor-pointer"
-          title="Click to view all members"
+          title="Click to view all members list in popup"
         >
           <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-secondary opacity-70"></div>
           <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-secondary opacity-70"></div>
@@ -371,9 +378,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Card 2: Active Members (renamed from Active Roster) */}
         <div
-          onClick={() => onNavigateScreen?.('members')}
+          onClick={() => {
+            setActiveStatModal('active-members');
+            setStatSearch('');
+          }}
           className="relative bg-surface-container-low rounded-xl p-4 flex flex-col justify-between overflow-hidden group hover:bg-surface-container hover:scale-[1.02] active:scale-[0.99] transition-all shadow-[0_4px_20px_rgba(0,0,0,0.3)] border border-surface-container-high hover:border-tertiary/60 cursor-pointer"
-          title="Click to view active members"
+          title="Click to view active members list in popup"
         >
           <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-tertiary opacity-70"></div>
           <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-tertiary opacity-70"></div>
@@ -397,9 +407,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
         {/* Card 3: Expiring This Week */}
         <div
-          onClick={() => onViewAllExpiring()}
+          onClick={() => {
+            setActiveStatModal('expiring');
+            setStatSearch('');
+          }}
           className="relative bg-surface-container-low rounded-xl p-4 flex flex-col justify-between overflow-hidden group hover:bg-surface-container hover:scale-[1.02] active:scale-[0.99] transition-all shadow-[0_4px_20px_rgba(0,0,0,0.3)] border border-surface-container-high hover:border-error/60 cursor-pointer"
-          title="Click to view expiring members"
+          title="Click to view expiring members list in popup"
         >
           <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-error opacity-70"></div>
           <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-error opacity-70"></div>
@@ -416,16 +429,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {stats.expiringThisWeek}
             </div>
             <div className="flex items-center gap-1 mt-1 text-on-surface-variant text-xs">
-              <span>Needs renewal · Click to follow up</span>
+              <span>Needs renewal · Click to view</span>
             </div>
           </div>
         </div>
 
         {/* Card 4: Pending Payments */}
         <div
-          onClick={() => onNavigateScreen?.('payments')}
+          onClick={() => {
+            setActiveStatModal('pending-due');
+            setStatSearch('');
+          }}
           className="relative bg-surface-container-low rounded-xl p-4 flex flex-col justify-between overflow-hidden group hover:bg-surface-container hover:scale-[1.02] active:scale-[0.99] transition-all shadow-[0_4px_20px_rgba(0,0,0,0.3)] border border-surface-container-high hover:border-secondary/60 cursor-pointer"
-          title="Click to view pending payments"
+          title="Click to view pending dues list in popup"
         >
           <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-secondary opacity-70"></div>
           <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-secondary opacity-70"></div>
@@ -440,16 +456,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               {inr(stats.pendingAmount)}
             </div>
             <div className="flex items-center gap-1 mt-1 text-secondary text-xs">
-              <span>{stats.pendingCount} dues · Click to collect</span>
+              <span>{stats.pendingCount} dues · Click to view</span>
             </div>
           </div>
         </div>
 
         {/* Card 5: Today's Floor Entries */}
         <div
-          onClick={() => onNavigateScreen?.('attendance')}
+          onClick={() => {
+            setActiveStatModal('floor-entries');
+            setStatSearch('');
+          }}
           className="relative bg-surface-container-low rounded-xl p-4 flex flex-col justify-between overflow-hidden group hover:bg-surface-container hover:scale-[1.02] active:scale-[0.99] transition-all shadow-[0_4px_20px_rgba(0,0,0,0.3)] border border-surface-container-high hover:border-tertiary/60 cursor-pointer"
-          title="Click to view attendance & biometric terminal check-ins"
+          title="Click to view today's floor entries in popup"
         >
           <div className="absolute top-1.5 right-1.5 w-2 h-2 border-t border-r border-tertiary opacity-70"></div>
           <div className="absolute bottom-1.5 left-1.5 w-2 h-2 border-b border-l border-tertiary opacity-70"></div>
@@ -722,6 +741,297 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </section>
+
+      {/* POPUP MODAL ON STAT BOX CLICKS (With Top-Right Cross to Close) */}
+      {activeStatModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="relative w-full max-w-3xl bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_50px_rgba(123,208,255,0.2)] overflow-hidden flex flex-col max-h-[88vh]">
+            {/* Modal Header */}
+            <div className="p-4 sm:p-5 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-secondary text-2xl">
+                  {activeStatModal === 'total-members' && 'groups'}
+                  {activeStatModal === 'active-members' && 'verified_user'}
+                  {activeStatModal === 'expiring' && 'warning'}
+                  {activeStatModal === 'pending-due' && 'pending_actions'}
+                  {activeStatModal === 'floor-entries' && 'how_to_reg'}
+                </span>
+                <div>
+                  <h3 className="font-sora text-base font-bold text-on-surface">
+                    {activeStatModal === 'total-members' && `Total Members Roster (${members.length})`}
+                    {activeStatModal === 'active-members' && `Active Members (${stats.activeMembers})`}
+                    {activeStatModal === 'expiring' && `Expiring This Week (${stats.expiringThisWeek})`}
+                    {activeStatModal === 'pending-due' && `Pending Payments (${stats.pendingCount})`}
+                    {activeStatModal === 'floor-entries' && `Today's Floor Entries (${checkIns.length})`}
+                  </h3>
+                  <p className="text-xs text-outline">
+                    {activeStatModal === 'total-members' && 'Complete list of all registered members and plans'}
+                    {activeStatModal === 'active-members' && 'Members with valid, active memberships'}
+                    {activeStatModal === 'expiring' && 'Members needing renewal in the next 7 days'}
+                    {activeStatModal === 'pending-due' && 'Members with pending fee dues to collect'}
+                    {activeStatModal === 'floor-entries' && 'Floor check-ins recorded today via biometrics or QR'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Close Button (Cross in Top-Right) */}
+              <button
+                onClick={() => setActiveStatModal(null)}
+                className="w-8 h-8 rounded-xl bg-surface-container hover:bg-surface-container-high text-outline hover:text-on-surface flex items-center justify-center transition-colors cursor-pointer border border-surface-container-high"
+                aria-label="Close popup"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            {/* Search within Popup */}
+            <div className="px-4 py-2.5 bg-surface-container border-b border-surface-container-high flex items-center gap-2">
+              <span className="material-symbols-outlined text-outline text-base">search</span>
+              <input
+                type="text"
+                value={statSearch}
+                onChange={(e) => setStatSearch(e.target.value)}
+                placeholder="Search by member name, phone or plan..."
+                className="bg-transparent border-none text-xs text-on-surface placeholder-outline focus:outline-none flex-1"
+              />
+              {statSearch && (
+                <button onClick={() => setStatSearch('')} className="text-xs text-outline hover:text-on-surface">
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 overflow-y-auto max-h-[60vh]">
+              {/* 1. TOTAL MEMBERS & 2. ACTIVE MEMBERS */}
+              {(activeStatModal === 'total-members' || activeStatModal === 'active-members') && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="text-outline uppercase text-[11px] border-b border-surface-container-high pb-2">
+                        <th className="py-2 px-3">Member</th>
+                        <th className="py-2 px-3">Plan</th>
+                        <th className="py-2 px-3">Expiry Date</th>
+                        <th className="py-2 px-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-container-high/60">
+                      {members
+                        .filter((m) => (activeStatModal === 'active-members' ? m.status === 'active' : true))
+                        .filter(
+                          (m) =>
+                            !statSearch ||
+                            m.name.toLowerCase().includes(statSearch.toLowerCase()) ||
+                            m.phone.includes(statSearch) ||
+                            m.planName.toLowerCase().includes(statSearch.toLowerCase())
+                        )
+                        .map((m) => (
+                          <tr
+                            key={m.id}
+                            onClick={() => {
+                              setActiveStatModal(null);
+                              onSelectMember(m);
+                            }}
+                            className="hover:bg-surface-container/60 cursor-pointer transition-colors"
+                          >
+                            <td className="py-2.5 px-3">
+                              <div className="font-semibold text-on-surface hover:text-secondary">{m.name}</div>
+                              <div className="text-[11px] text-outline font-mono">{m.phone}</div>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="px-2 py-0.5 rounded bg-primary/15 text-primary font-semibold text-[11px]">
+                                {m.planName}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-on-surface-variant font-mono text-[11px]">{m.expiryDate}</td>
+                            <td className="py-2.5 px-3">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                                  m.status === 'active'
+                                    ? 'bg-tertiary-container/30 text-tertiary'
+                                    : m.status === 'expiring'
+                                    ? 'bg-secondary-container/30 text-secondary'
+                                    : 'bg-error-container/30 text-error'
+                                }`}
+                              >
+                                {m.daysLeft < 0 ? 'Expired' : `${m.daysLeft}d left`}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* 3. EXPIRING THIS WEEK */}
+              {activeStatModal === 'expiring' && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="text-outline uppercase text-[11px] border-b border-surface-container-high pb-2">
+                        <th className="py-2 px-3">Member</th>
+                        <th className="py-2 px-3">Plan</th>
+                        <th className="py-2 px-3">Expiry Date</th>
+                        <th className="py-2 px-3">Days Left</th>
+                        <th className="py-2 px-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-container-high/60">
+                      {members
+                        .filter((m) => m.daysLeft >= 0 && m.daysLeft <= 7)
+                        .filter(
+                          (m) =>
+                            !statSearch ||
+                            m.name.toLowerCase().includes(statSearch.toLowerCase()) ||
+                            m.phone.includes(statSearch) ||
+                            m.planName.toLowerCase().includes(statSearch.toLowerCase())
+                        )
+                        .map((m) => (
+                          <tr key={m.id} className="hover:bg-surface-container/60 transition-colors">
+                            <td className="py-2.5 px-3">
+                              <div className="font-semibold text-on-surface">{m.name}</div>
+                              <div className="text-[11px] text-outline font-mono">{m.phone}</div>
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="px-2 py-0.5 rounded bg-primary/15 text-primary font-semibold text-[11px]">
+                                {m.planName}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-on-surface-variant font-mono text-[11px]">{m.expiryDate}</td>
+                            <td className="py-2.5 px-3 font-bold text-error">{m.daysLeft} days left</td>
+                            <td className="py-2.5 px-3 text-right">
+                              <button
+                                onClick={() => onSendSingleReminder(m)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] font-bold text-[11px] transition-all cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-xs">chat</span>
+                                <span>Remind</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* 4. PENDING DUES */}
+              {activeStatModal === 'pending-due' && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="text-outline uppercase text-[11px] border-b border-surface-container-high pb-2">
+                        <th className="py-2 px-3">Member</th>
+                        <th className="py-2 px-3">Phone</th>
+                        <th className="py-2 px-3">Plan</th>
+                        <th className="py-2 px-3">Due Amount</th>
+                        <th className="py-2 px-3 text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-container-high/60">
+                      {members
+                        .filter((m) => typeof m.pendingDue === 'number' && m.pendingDue > 0)
+                        .filter(
+                          (m) =>
+                            !statSearch ||
+                            m.name.toLowerCase().includes(statSearch.toLowerCase()) ||
+                            m.phone.includes(statSearch) ||
+                            m.planName.toLowerCase().includes(statSearch.toLowerCase())
+                        )
+                        .map((m) => (
+                          <tr key={m.id} className="hover:bg-surface-container/60 transition-colors">
+                            <td className="py-2.5 px-3 font-semibold text-on-surface">{m.name}</td>
+                            <td className="py-2.5 px-3 font-mono text-secondary font-bold text-[11px]">{m.phone}</td>
+                            <td className="py-2.5 px-3">
+                              <span className="px-2 py-0.5 rounded bg-primary/15 text-primary font-semibold text-[11px]">
+                                {m.planName}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 font-sora font-bold text-error">{inr(m.pendingDue || 0)}</td>
+                            <td className="py-2.5 px-3 text-right">
+                              <button
+                                onClick={() => onSendSingleReminder(m)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] font-bold text-[11px] transition-all cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-xs">chat</span>
+                                <span>Remind</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      {members.filter((m) => typeof m.pendingDue === 'number' && m.pendingDue > 0).length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="py-8 text-center text-outline">
+                            No members with pending dues!
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* 5. FLOOR ENTRIES */}
+              {activeStatModal === 'floor-entries' && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="text-outline uppercase text-[11px] border-b border-surface-container-high pb-2">
+                        <th className="py-2 px-3">Member Name</th>
+                        <th className="py-2 px-3">Gym Plan</th>
+                        <th className="py-2 px-3">Time</th>
+                        <th className="py-2 px-3 text-right">Verification</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-container-high/60">
+                      {checkIns
+                        .filter(
+                          (c) =>
+                            !statSearch ||
+                            c.memberName.toLowerCase().includes(statSearch.toLowerCase()) ||
+                            c.planDuration.toLowerCase().includes(statSearch.toLowerCase())
+                        )
+                        .map((c) => (
+                          <tr key={c.id} className="hover:bg-surface-container/60 transition-colors">
+                            <td className="py-2.5 px-3 font-semibold text-on-surface">{c.memberName}</td>
+                            <td className="py-2.5 px-3">
+                              <span className="px-2 py-0.5 rounded bg-primary/15 text-primary font-semibold text-[11px]">
+                                {c.planDuration}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 text-outline font-mono text-[11px]">{c.time}</td>
+                            <td className="py-2.5 px-3 text-right text-tertiary font-bold text-[11px]">
+                              Verified Check-in
+                            </td>
+                          </tr>
+                        ))}
+                      {checkIns.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="py-8 text-center text-outline">
+                            No floor check-ins recorded yet today.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-3 bg-surface-container-lowest border-t border-surface-container-high flex items-center justify-between text-xs text-outline">
+              <span>Press close or ESC to dismiss</span>
+              <button
+                onClick={() => setActiveStatModal(null)}
+                className="px-4 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-xs cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

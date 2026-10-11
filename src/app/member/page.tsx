@@ -98,9 +98,73 @@ export default async function MemberPage() {
           </div>
           <div className="rounded-xl border border-surface-container-high bg-surface-container-low p-5">
             <p className="text-xs uppercase tracking-wider text-outline">Pending due</p>
-            <p className={`font-sora text-2xl font-bold mt-2 ${pendingDue > 0 ? 'text-error' : ''}`}>{inr(pendingDue)}</p>
+            <p className={`font-sora text-2xl font-bold mt-2 ${pendingDue > 0 ? 'text-error' : 'text-tertiary'}`}>
+              {inr(pendingDue)}
+            </p>
           </div>
         </section>
+
+        {/* Gym UPI Payment QR Card (Visible to members if owner has configured UPI/QR) */}
+        {(member.gym.paymentQrUrl || member.gym.upiId) && (
+          <section className="rounded-2xl border border-secondary/40 bg-surface-container-low p-6 space-y-4 shadow-[0_0_25px_rgba(123,208,255,0.12)]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-secondary text-2xl">qr_code_2</span>
+                <div>
+                  <h3 className="font-sora text-base font-bold text-on-surface">Pay Online via UPI</h3>
+                  <p className="text-xs text-outline">Scan to pay membership fee &amp; dues</p>
+                </div>
+              </div>
+              {pendingDue > 0 && (
+                <span className="px-2.5 py-1 rounded-full bg-error/15 text-error border border-error/30 text-xs font-bold">
+                  {inr(pendingDue)} Due
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-5 pt-2">
+              {/* QR Image */}
+              <div className="p-3 bg-white rounded-2xl shadow-md border border-surface-container-high shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={
+                    member.gym.paymentQrUrl ||
+                    `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+                      `upi://pay?pa=${member.gym.upiId}&pn=${member.gym.name}${pendingDue > 0 ? `&am=${pendingDue}` : ''}&cu=INR`
+                    )}`
+                  }
+                  alt={`${member.gym.name} UPI QR`}
+                  className="w-36 h-36 object-contain"
+                />
+              </div>
+
+              <div className="space-y-2 text-center sm:text-left flex-1 min-w-0">
+                {member.gym.upiId && (
+                  <div>
+                    <span className="text-[11px] uppercase tracking-wider text-outline block">Gym UPI ID</span>
+                    <span className="font-mono text-xs font-bold text-secondary select-all bg-surface-container px-2.5 py-1 rounded-lg border border-surface-container-high inline-block mt-0.5">
+                      {member.gym.upiId}
+                    </span>
+                  </div>
+                )}
+                <p className="text-xs text-on-surface-variant leading-relaxed">
+                  Open GPay, PhonePe, Paytm or any UPI app and scan this QR code to complete your payment directly to the gym.
+                </p>
+                {member.gym.upiId && (
+                  <a
+                    href={`upi://pay?pa=${member.gym.upiId}&pn=${encodeURIComponent(member.gym.name)}${
+                      pendingDue > 0 ? `&am=${pendingDue}` : ''
+                    }&cu=INR`}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-secondary text-[#001f28] font-bold text-xs shadow-xs hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <span className="material-symbols-outlined text-sm">payments</span>
+                    <span>Pay Now with UPI App</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         <section>
           <h2 className={sectionTitle}>Recent visits</h2>
