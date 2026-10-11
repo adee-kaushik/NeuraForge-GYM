@@ -28,10 +28,22 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
   const password = String(formData.get('password') ?? '');
   const inviteCode = String(formData.get('inviteCode') ?? '').trim();
 
-  // Signup is invite-only for now. With no SIGNUP_CODE set, it is closed for everyone.
+  const plan = String(formData.get('plan') ?? '').trim();
+  const mandateId = String(formData.get('mandateId') ?? '').trim();
+  const validPlans = ['trial', '6months', '1year'];
+
+  // User must either have a valid subscription plan / mandate or a valid invite code
+  const hasValidPlan = validPlans.includes(plan);
   const expectedCode = process.env.SIGNUP_CODE;
-  if (!expectedCode) return { error: 'Signups are closed right now.' };
-  if (!safeEqual(inviteCode, expectedCode)) return { error: 'Invalid invite code.' };
+  const hasValidInvite = expectedCode && inviteCode ? safeEqual(inviteCode, expectedCode) : false;
+
+  if (!hasValidPlan && !hasValidInvite) {
+    return { error: 'Please select a subscription plan or activate your 14-day free trial first.' };
+  }
+
+  if (plan === 'trial' && !mandateId && !hasValidInvite) {
+    return { error: 'UPI or Card Autopay mandate is required for the 14-day free trial.' };
+  }
 
   if (!gymName || !name || !email) return { error: 'Please fill in all fields.' };
   if (!SLUG_RE.test(slug) || RESERVED_SLUGS.has(slug)) {
