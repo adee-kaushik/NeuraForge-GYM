@@ -32,11 +32,39 @@ export async function updateGymSettings(input: GymSettingsInput): Promise<SaveSe
     return { ok: false, error: 'Enter a valid monthly revenue goal.' };
   }
 
+  // Validate and clean unique gym code (slug) if provided
+  let cleanedSlug: string | undefined = undefined;
+  if (input.slug !== undefined) {
+    cleanedSlug = input.slug
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
+
+    if (!cleanedSlug || cleanedSlug.length < 2 || cleanedSlug.length > 50) {
+      return { ok: false, error: 'Gym code must be between 2 and 50 characters (letters, numbers, hyphens).' };
+    }
+
+    // Ensure unique across all gyms
+    const existingGymWithSlug = await prisma.gym.findFirst({
+      where: {
+        slug: cleanedSlug,
+        NOT: { id: staff.gymId },
+      },
+    });
+
+    if (existingGymWithSlug) {
+      return { ok: false, error: `Gym code "${cleanedSlug}" is already taken by another gym. Please choose a unique code.` };
+    }
+  }
+
   // Always the logged-in user's own gym
   const gym = await prisma.gym.update({
     where: { id: staff.gymId },
     data: {
       name,
+      ...(cleanedSlug ? { slug: cleanedSlug } : {}),
       address: address || null,
       gstNumber: gstNumber || null,
       monthlyRevenueGoal: goal,

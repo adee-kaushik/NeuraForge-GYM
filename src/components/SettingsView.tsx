@@ -14,6 +14,7 @@ interface SettingsViewProps {
 
 export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave, isOwner }) => {
   const [gymName, setGymName] = useState(gym.name);
+  const [gymCode, setGymCode] = useState(gym.slug || '');
   const [address, setAddress] = useState(gym.address);
   const [gstNumber, setGstNumber] = useState(gym.gstNumber);
   const [revenueGoal, setRevenueGoal] = useState(String(gym.monthlyRevenueGoal));
@@ -41,6 +42,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave, isOwner
     setSaving(true);
     await onSave({
       name: gymName,
+      slug: gymCode,
       address,
       gstNumber,
       monthlyRevenueGoal: Number.isFinite(goal) && goal >= 0 ? goal : -1,
@@ -75,6 +77,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave, isOwner
         <div>
           <label className={labelClass}>Gym name</label>
           <input type="text" value={gymName} onChange={(e) => setGymName(e.target.value)} className={inputClass} />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className={labelClass}>Unique Gym Code</label>
+            <span className="text-[10px] font-mono text-secondary font-bold">Member Login Code</span>
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              value={gymCode}
+              onChange={(e) =>
+                setGymCode(
+                  e.target.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9_-]/g, '-')
+                    .replace(/-+/g, '-')
+                )
+              }
+              placeholder="e.g. iron-fitness"
+              className={`${inputClass} font-mono`}
+            />
+          </div>
+          <p className="text-[11px] text-outline mt-1 leading-relaxed">
+            Your members enter this code + their phone number at{' '}
+            <span className="text-secondary font-mono">/member/login</span> to access their digital pass. Must be unique.
+          </p>
         </div>
 
         <div>

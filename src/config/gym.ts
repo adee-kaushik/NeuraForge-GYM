@@ -16,6 +16,7 @@ export interface GymConfig {
 // What the owner can edit on the Settings screen
 export interface GymSettingsInput {
   name: string;
+  slug?: string;
   address: string;
   gstNumber: string;
   monthlyRevenueGoal: number;
