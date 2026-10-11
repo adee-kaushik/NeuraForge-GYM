@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { requestPasswordReset } from './actions';
 
 const labelClass = 'block text-xs font-bold uppercase tracking-wider text-outline mb-1.5';
@@ -13,6 +13,13 @@ export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
+
+  // /auth/confirm sends people back here when the email link is old or was already used
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('expired')) {
+      setError('That reset link has expired or was already used. Request a new one.');
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
