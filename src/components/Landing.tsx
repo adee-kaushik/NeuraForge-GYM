@@ -86,9 +86,8 @@ const unifiedPlanFeatures = [
   '1-Tap WhatsApp Receipts, Expiry Alerts & Reminders',
   'Automated Billing & Sequential GST Invoicing',
   'Complete Member History Migration from Old Software / Excel',
-  'Daily Encrypted Cloud Backups & Instant Restore',
-  'Priority Technical & Hardware Installation Support',
 ];
+
 
 const pricingPlans = [
   {

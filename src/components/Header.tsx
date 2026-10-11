@@ -3,6 +3,7 @@ import { CurrentUser } from '../config/gym';
 import { logout } from '@/app/login/actions';
 import { DashboardStats } from '../lib/stats';
 import { inr } from '../lib/format';
+import { ActiveScreen } from '../types';
 
 interface HeaderProps {
   user: CurrentUser;
@@ -11,6 +12,7 @@ interface HeaderProps {
   onOpenSearch: () => void;
   onToggleMobileMenu: () => void;
   onOpenBulkWhatsApp: () => void;
+  onNavigateScreen: (screen: ActiveScreen) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -20,12 +22,25 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSearch,
   onToggleMobileMenu,
   onOpenBulkWhatsApp,
+  onNavigateScreen,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [notificationsRead, setNotificationsRead] = useState(false);
 
   const hasExpiryAlert = stats.expiringIn48h > 0;
-  const notificationCount = (hasExpiryAlert ? 1 : 0) + 1; // expiry alert + goal progress
+  const rawNotificationCount = (hasExpiryAlert ? 1 : 0) + 1; // expiry alert + goal progress
+  const unreadCount = notificationsRead ? 0 : rawNotificationCount;
+
+  const handleToggleNotifications = () => {
+    const nextState = !showNotifications;
+    setShowNotifications(nextState);
+    setShowProfileMenu(false);
+    if (nextState) {
+      // Mark notifications as viewed when opened
+      setNotificationsRead(true);
+    }
+  };
 
   return (
     <header className="fixed top-0 left-0 lg:left-72 right-0 h-16 bg-surface-container-lowest/90 backdrop-blur-xl z-40 px-3 sm:px-6 flex items-center justify-between border-b border-surface-container-high shadow-xs">
@@ -57,18 +72,23 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Notifications button */}
         <div className="relative">
           <button
-            onClick={() => {
-              setShowNotifications(!showNotifications);
-              setShowProfileMenu(false);
-            }}
-            className="relative h-10 w-10 rounded-xl flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container border border-transparent hover:border-surface-container-high transition-colors"
-            title="Notifications"
+            onClick={handleToggleNotifications}
+            className={`relative h-10 w-10 rounded-xl flex items-center justify-center border transition-all cursor-pointer ${
+              unreadCount > 0
+                ? 'text-on-surface bg-surface-container border-error/40'
+                : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container border-transparent hover:border-surface-container-high'
+            }`}
+            title={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications (All caught up)'}
             aria-label="View notifications"
           >
-            <span className="material-symbols-outlined text-2xl">notifications</span>
-            <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-error text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-surface-container-lowest">
-              {notificationCount}
+            <span className="material-symbols-outlined text-2xl">
+              {unreadCount > 0 ? 'notifications_active' : 'notifications'}
             </span>
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-error text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-surface-container-lowest animate-pulse">
+                {unreadCount}
+              </span>
+            )}
           </button>
 
           {/* Notifications Dropdown: Responsive pinned on mobile, anchored on desktop */}
@@ -87,7 +107,12 @@ export const Header: React.FC<HeaderProps> = ({
                     <span className="font-sora font-semibold text-sm text-on-surface">Notifications</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-secondary font-bold">{notificationCount} New</span>
+                    <button
+                      onClick={() => setNotificationsRead(!notificationsRead)}
+                      className="text-[11px] font-bold text-outline hover:text-secondary transition-colors cursor-pointer"
+                    >
+                      {notificationsRead ? 'Mark as Unread' : 'Mark all as read'}
+                    </button>
                     <button
                       onClick={() => setShowNotifications(false)}
                       className="text-outline hover:text-on-surface sm:hidden p-1"
@@ -107,7 +132,7 @@ export const Header: React.FC<HeaderProps> = ({
                       className="py-3 px-2 hover:bg-surface-container-low rounded-xl cursor-pointer transition-colors"
                     >
                       <div className="flex items-start gap-2.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-error mt-1 shrink-0 animate-ping" />
+                        <span className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${notificationsRead ? 'bg-error/40' : 'bg-error animate-ping'}`} />
                         <div>
                           <p className="text-xs sm:text-sm text-error font-bold">
                             {stats.expiringIn48h} {stats.expiringIn48h === 1 ? 'membership expires' : 'memberships expire'} in 2 days
@@ -122,7 +147,7 @@ export const Header: React.FC<HeaderProps> = ({
 
                   <div className="py-3 px-2 hover:bg-surface-container-low rounded-xl transition-colors">
                     <div className="flex items-start gap-2.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-secondary mt-1 shrink-0" />
+                      <span className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${notificationsRead ? 'bg-secondary/40' : 'bg-secondary'}`} />
                       <div>
                         <p className="text-xs sm:text-sm text-on-surface font-semibold">
                           Monthly goal: {Math.round(stats.goalPercent)}% reached
@@ -163,7 +188,7 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </button>
 
-          {/* Profile Dropdown: Fully responsive */}
+          {/* Profile Dropdown: Fully responsive with Enquiries & Settings */}
           {showProfileMenu && (
             <>
               {/* Outside click backdrop */}
@@ -184,7 +209,39 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 </div>
 
-                <form action={logout} className="pt-3">
+                {/* Dropdown Navigation: Enquiries Section just above Settings */}
+                <div className="py-2 border-b border-surface-container-high space-y-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      onNavigateScreen('enquiries');
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="material-symbols-outlined text-lg text-secondary">contact_phone</span>
+                      <span>Enquiries & Leads</span>
+                    </div>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-secondary/15 text-secondary border border-secondary/30">
+                      Prospects
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      onNavigateScreen('settings');
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer text-left"
+                  >
+                    <span className="material-symbols-outlined text-lg text-outline">settings</span>
+                    <span>Gym Settings</span>
+                  </button>
+                </div>
+
+                <form action={logout} className="pt-2">
                   <button
                     type="submit"
                     className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-error hover:bg-error-container/30 transition-colors cursor-pointer"

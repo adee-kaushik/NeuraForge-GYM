@@ -100,7 +100,7 @@ export interface CheckInLog extends CheckInRecord {
   time: string; // formatted time
 }
 
-export type ActiveScreen = 'dashboard' | 'members' | 'memberships' | 'attendance' | 'payments' | 'settings';
+export type ActiveScreen = 'dashboard' | 'members' | 'memberships' | 'attendance' | 'payments' | 'enquiries' | 'settings';
 
 // ── Form inputs (UI -> App handlers; App/backend builds the records) ──
 export interface NewMemberInput {

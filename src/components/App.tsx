@@ -18,6 +18,7 @@ import { MembershipsView } from './MembershipsView';
 import { AttendanceView } from './AttendanceView';
 import { PaymentsView } from './PaymentsView';
 import { SettingsView } from './SettingsView';
+import { EnquiriesView } from './EnquiriesView';
 import { AddMemberModal } from './modals/AddMemberModal';
 import { BulkWhatsAppModal } from './modals/BulkWhatsAppModal';
 import { MemberDetailModal } from './modals/MemberDetailModal';
@@ -289,6 +290,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
           onOpenSearch={() => setIsQuickSearchOpen(true)}
           onToggleMobileMenu={() => setMobileSidebarOpen(!mobileSidebarOpen)}
           onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
+          onNavigateScreen={setActiveScreen}
         />
 
         {/* View Routing */}
@@ -305,6 +307,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
               onSendSingleReminder={handleSendSingleReminder}
               onOpenAddMember={() => setIsAddMemberOpen(true)}
               onOpenImport={() => setIsImportOpen(true)}
+              onNavigateScreen={setActiveScreen}
             />
           )}
 
@@ -340,6 +343,16 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
               transactions={transactions}
               onMarkPaid={handleMarkPaid}
               onNewPayment={handleRecordPayment}
+            />
+          )}
+
+          {activeScreen === 'enquiries' && (
+            <EnquiriesView
+              gymName={gym.name}
+              plans={plans}
+              onConvertMember={(_data) => {
+                setIsAddMemberOpen(true);
+              }}
             />
           )}
 
