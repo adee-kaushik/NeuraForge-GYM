@@ -334,6 +334,19 @@ export const Header: React.FC<HeaderProps> = ({
                       Co-Founders
                     </span>
                   </button>
+
+                  <a
+                    href="/admin"
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="material-symbols-outlined text-lg text-emerald-400">flight_takeoff</span>
+                      <span>Admin Cockpit</span>
+                    </div>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      Master
+                    </span>
+                  </a>
                 </div>
 
                 <form action={logout} className="pt-2">
