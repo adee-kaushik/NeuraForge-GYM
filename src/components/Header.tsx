@@ -9,6 +9,7 @@ interface HeaderProps {
   user: CurrentUser;
   stats: DashboardStats;
   onOpenAddMember: () => void;
+  showAddMember?: boolean;
   onOpenSearch: () => void;
   onToggleMobileMenu: () => void;
   onOpenBulkWhatsApp: () => void;
@@ -19,6 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   user,
   stats,
   onOpenAddMember,
+  showAddMember = true,
   onOpenSearch,
   onToggleMobileMenu,
   onOpenBulkWhatsApp,
@@ -165,13 +167,15 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Add Member Button: Touch-friendly 40px height */}
-        <button
-          onClick={onOpenAddMember}
-          className="h-10 px-3 sm:px-4 rounded-xl bg-primary text-on-primary font-bold text-xs sm:text-sm shadow-sm hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
-        >
-          <span className="material-symbols-outlined text-lg">person_add</span>
-          <span className="hidden sm:inline whitespace-nowrap">Add Member</span>
-        </button>
+        {showAddMember && (
+          <button
+            onClick={onOpenAddMember}
+            className="h-10 px-3 sm:px-4 rounded-xl bg-primary text-on-primary font-bold text-xs sm:text-sm shadow-sm hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-lg">person_add</span>
+            <span className="hidden sm:inline whitespace-nowrap">Add Member</span>
+          </button>
+        )}
 
         {/* User Profile Avatar */}
         <div className="relative">

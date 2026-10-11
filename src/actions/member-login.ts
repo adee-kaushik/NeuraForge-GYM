@@ -52,3 +52,27 @@ export async function resetMemberPassword(memberId: string): Promise<MemberLogin
 
   return { ok: true, gymCode: staff.gym.slug, memberCode: member.memberCode, password };
 }
+
+// Revokes the app login for a member (e.g. member has left the gym or cancelled)
+export async function revokeMemberLogin(memberId: string): Promise<{ ok: boolean; error?: string }> {
+  const staff = await requireStaff();
+
+  const member = await prisma.member.findFirst({ where: { id: memberId, gymId: staff.gymId } });
+  if (!member) return { ok: false, error: 'Member not found.' };
+  if (!member.authUserId) return { ok: true };
+
+  const admin = createAdminClient();
+  try {
+    await admin.auth.admin.deleteUser(member.authUserId);
+  } catch (err) {
+    console.warn('Could not delete auth user from Supabase admin:', err);
+  }
+
+  await prisma.member.update({
+    where: { id: member.id },
+    data: { authUserId: null },
+  });
+
+  return { ok: true };
+}
+

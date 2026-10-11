@@ -15,7 +15,6 @@ import { Header } from './Header';
 import { DashboardView } from './DashboardView';
 import { MembersView } from './MembersView';
 import { MembershipsView } from './MembershipsView';
-import { AttendanceView } from './AttendanceView';
 import { PaymentsView } from './PaymentsView';
 import { SettingsView } from './SettingsView';
 import { EnquiriesView } from './EnquiriesView';
@@ -287,6 +286,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
           user={currentUser}
           stats={stats}
           onOpenAddMember={() => setIsAddMemberOpen(true)}
+          showAddMember={activeScreen !== 'members'}
           onOpenSearch={() => setIsQuickSearchOpen(true)}
           onToggleMobileMenu={() => setMobileSidebarOpen(!mobileSidebarOpen)}
           onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
@@ -311,29 +311,23 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
             />
           )}
 
-          {activeScreen === 'members' && (
+          {(activeScreen === 'members' || activeScreen === 'attendance') && (
             <MembersView
               members={members}
+              plans={plans}
+              checkIns={checkIns}
               todayCheckInsCount={todayCheckIns.length}
               onSelectMember={(m) => setSelectedMember(m)}
               onOpenAddMember={() => setIsAddMemberOpen(true)}
               onOpenImport={() => setIsImportOpen(true)}
               onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
               onSendSingleReminder={handleSendSingleReminder}
+              gymSlug={gym.slug}
+              onCheckInByCode={handleCheckInByCode}
             />
           )}
 
           {activeScreen === 'memberships' && <MembershipsView plans={plans} members={members} canEdit={currentUser.role === 'Gym Owner'} />}
-
-          {activeScreen === 'attendance' && (
-            <AttendanceView
-              checkIns={todayCheckIns}
-              members={members}
-              onMarkPresent={handleCheckIn}
-              onCheckInByCode={handleCheckInByCode}
-              gymSlug={gym.slug}
-            />
-          )}
 
           {activeScreen === 'payments' && (
             <PaymentsView
@@ -396,7 +390,6 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
         onRenewPlan={handleRenewPlan}
         onExtendMembership={handleExtendMembership}
         onEdit={(m) => setEditingMemberId(m.id)}
-        onQuickCheckIn={handleCheckIn}
         recentLogs={checkIns}
       />
 

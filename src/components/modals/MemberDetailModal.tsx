@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Member, CheckInLog } from '../../types';
 import { formatTimestamp } from '../../lib/format';
-import { createMemberLogin, resetMemberPassword, type MemberLoginResult } from '@/actions/member-login';
+import { createMemberLogin, resetMemberPassword, revokeMemberLogin, type MemberLoginResult } from '@/actions/member-login';
 
 interface MemberDetailModalProps {
   member: Member | null;
@@ -9,7 +9,6 @@ interface MemberDetailModalProps {
   onClose: () => void;
   onRenewPlan: (memberId: string) => void;
   onEdit: (member: Member) => void;
-  onQuickCheckIn: (member: Member) => void;
   onExtendMembership?: (memberId: string, days: number) => Promise<boolean> | void;
   recentLogs?: CheckInLog[];
 }
@@ -20,15 +19,15 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   onClose,
   onRenewPlan,
   onEdit,
-  onQuickCheckIn,
   onExtendMembership,
   recentLogs = [],
 }) => {
   const [copied, setCopied] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [revokeBusy, setRevokeBusy] = useState(false);
+  const [loginRevoked, setLoginRevoked] = useState(false);
   const [login, setLogin] = useState<{ memberId: string; result: MemberLoginResult } | null>(null);
   const [renewBusy, setRenewBusy] = useState(false);
-  const [checkInBusy, setCheckInBusy] = useState(false);
   const [showExtendBox, setShowExtendBox] = useState(false);
   const [extendDays, setExtendDays] = useState(14);
   const [customDays, setCustomDays] = useState('');
@@ -39,13 +38,25 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   const shown = login?.memberId === member.id ? login.result : null;
   const created = shown && 'password' in shown ? shown : null;
   const failure = shown && 'error' in shown ? shown.error : null;
-  const hasLogin = member.hasLogin || created !== null;
+  const hasLogin = (member.hasLogin || created !== null) && !loginRevoked;
 
   const handleLogin = async () => {
     setBusy(true);
     const result = await (hasLogin ? resetMemberPassword : createMemberLogin)(member.id);
     setBusy(false);
     setLogin({ memberId: member.id, result });
+    setLoginRevoked(false);
+  };
+
+  const handleRevokeLogin = async () => {
+    if (!confirm(`Are you sure you want to remove digital pass login access for ${member.name}? They will no longer be able to log in.`)) return;
+    setRevokeBusy(true);
+    const res = await revokeMemberLogin(member.id);
+    setRevokeBusy(false);
+    if (res.ok) {
+      setLoginRevoked(true);
+      setLogin(null);
+    }
   };
 
   const sendLoginOnWhatsApp = (r: { gymCode: string; memberCode: string; password: string }) => {
@@ -74,12 +85,6 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
     setRenewBusy(true);
     await onRenewPlan(member.id);
     setRenewBusy(false);
-  };
-
-  const handleQuickCheckIn = async () => {
-    setCheckInBusy(true);
-    await onQuickCheckIn(member);
-    setCheckInBusy(false);
   };
 
   const targetDays = customDays ? parseInt(customDays, 10) || 0 : extendDays;
@@ -284,19 +289,32 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
           </div>
 
           {/* Member app login */}
+          {/* Member app login */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-outline">Member app login</span>
-              <button
-                onClick={handleLogin}
-                disabled={busy}
-                className="text-xs text-secondary hover:underline font-bold disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
-              >
-                {busy && (
-                  <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span>
+              <div className="flex items-center gap-2">
+                {hasLogin && (
+                  <button
+                    onClick={handleRevokeLogin}
+                    disabled={revokeBusy}
+                    className="text-xs text-error hover:underline font-bold disabled:opacity-50 cursor-pointer flex items-center gap-1"
+                    title="Remove member's app login access if they left the gym"
+                  >
+                    {revokeBusy ? 'Removing...' : 'Remove Login Access'}
+                  </button>
                 )}
-                {busy ? 'Please wait...' : hasLogin ? 'Reset password' : 'Create login'}
-              </button>
+                <button
+                  onClick={handleLogin}
+                  disabled={busy}
+                  className="text-xs text-secondary hover:underline font-bold disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                >
+                  {busy && (
+                    <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span>
+                  )}
+                  {busy ? 'Please wait...' : hasLogin ? 'Reset password' : 'Create login'}
+                </button>
+              </div>
             </div>
             {created ? (
               <div className="rounded-lg border border-secondary/30 bg-secondary/10 p-3 text-xs space-y-1">
@@ -318,29 +336,20 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
               <p className="text-xs text-error">{failure}</p>
             ) : (
               <p className="text-xs text-outline">
-                {hasLogin ? 'This member can log in to the member app.' : 'No login yet.'}
+                {hasLogin ? 'Member has active login access. You can revoke it if they leave the gym.' : 'No login created yet.'}
               </p>
             )}
           </div>
 
-          {/* Recent check-ins */}
+          {/* Recent check-ins (Mark Present removed) */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs font-bold uppercase tracking-wider text-outline">
                 Recent Check-ins
               </span>
-              <button
-                onClick={handleQuickCheckIn}
-                disabled={checkInBusy}
-                className="text-xs text-tertiary hover:underline font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
-              >
-                {checkInBusy ? (
-                  <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
-                ) : (
-                  <span className="material-symbols-outlined text-sm">how_to_reg</span>
-                )}
-                <span>{checkInBusy ? 'Marking...' : 'Mark Present'}</span>
-              </button>
+              <span className="text-[11px] text-outline font-semibold">
+                Biometric &amp; QR logs
+              </span>
             </div>
 
             <div className="rounded-lg border border-surface-container-high bg-surface-container-lowest divide-y divide-surface-container-high max-h-36 overflow-y-auto">
@@ -364,10 +373,11 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
         <div className="px-6 py-3.5 bg-surface-container-lowest border-t border-surface-container-high flex items-center justify-between">
           <button
             onClick={handleCopyWhatsAppLink}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] text-xs font-bold transition-all border border-[#25D366]/30 cursor-pointer"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] text-xs font-bold transition-all border border-[#25D366]/30 cursor-pointer shadow-xs active:scale-95"
+            title="1-Click automatic WhatsApp reminder"
           >
             <span className="material-symbols-outlined text-base">chat</span>
-            <span>{copied ? 'WhatsApp Opened!' : 'Send WhatsApp Reminder'}</span>
+            <span>{copied ? 'WhatsApp Opened!' : 'Remind'}</span>
           </button>
 
           <button

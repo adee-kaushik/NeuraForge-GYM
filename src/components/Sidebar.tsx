@@ -24,7 +24,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
     { id: 'members', label: 'Members', icon: 'group' },
     { id: 'memberships', label: 'Plans', icon: 'card_membership' },
-    { id: 'attendance', label: 'Attendance', icon: 'fact_check' },
     { id: 'payments', label: 'Payments', icon: 'payments' },
     { id: 'enquiries', label: 'Enquiries', icon: 'contact_phone' },
     { id: 'settings', label: 'Settings', icon: 'settings' },

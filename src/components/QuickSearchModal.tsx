@@ -68,7 +68,6 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({
                 { label: 'Dashboard', screen: 'dashboard' as ActiveScreen, icon: 'dashboard' },
                 { label: 'Members', screen: 'members' as ActiveScreen, icon: 'group' },
                 { label: 'Membership Plans', screen: 'memberships' as ActiveScreen, icon: 'card_membership' },
-                { label: 'Attendance', screen: 'attendance' as ActiveScreen, icon: 'fact_check' },
                 { label: 'Payments', screen: 'payments' as ActiveScreen, icon: 'payments' },
                 { label: 'Enquiries & Leads', screen: 'enquiries' as ActiveScreen, icon: 'contact_phone' },
                 { label: 'Settings', screen: 'settings' as ActiveScreen, icon: 'settings' },
