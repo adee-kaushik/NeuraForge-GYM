@@ -60,9 +60,11 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   };
 
   const sendLoginOnWhatsApp = (r: { gymCode: string; memberCode: string; password: string }) => {
-    const text = `Hi ${member.name}, your ${gymName} member login:\nGym code: ${r.gymCode}\nMember ID: ${r.memberCode}\nPassword: ${r.password}\nLogin: ${window.location.origin}/member/login`;
+    const text = `Hi ${member.name}, your ${gymName} member login:\nGym Code: ${r.gymCode}\nMember ID (Phone): ${r.memberCode}\nPassword: ${r.password}\nLogin: ${window.location.origin}/member/login`;
+    const digits = member.phone.replace(/[^0-9]/g, '');
+    const waPhone = digits.length === 10 ? `91${digits}` : digits;
     window.open(
-      `https://api.whatsapp.com/send?phone=${encodeURIComponent(member.phone.replace(/[^0-9]/g, ''))}&text=${encodeURIComponent(text)}`,
+      `https://api.whatsapp.com/send?phone=${encodeURIComponent(waPhone)}&text=${encodeURIComponent(text)}`,
       '_blank'
     );
   };
@@ -319,7 +321,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
             {created ? (
               <div className="rounded-lg border border-secondary/30 bg-secondary/10 p-3 text-xs space-y-1">
                 <p className="text-on-surface">
-                  Gym code: <b>{created.gymCode}</b> · Member ID: <b>{created.memberCode}</b>
+                  Gym code: <b>{created.gymCode}</b> · Member ID (Phone): <b>{created.memberCode}</b>
                 </p>
                 <p className="text-on-surface">
                   Password: <b className="font-mono">{created.password}</b>

@@ -5,6 +5,7 @@ import { inr, isSameDay, startOfDayIST } from '@/lib/format';
 import { statusFromDaysLeft } from '@/lib/mappers';
 import { logoutMember } from './actions';
 import { DigitalPassCard } from '@/components/member/DigitalPassCard';
+import { MemberHeaderActions } from '@/components/member/MemberHeaderActions';
 
 // Dates are shown in IST, because the server runs in UTC
 const dateIST = (d: Date) =>
@@ -50,20 +51,29 @@ export default async function MemberPage() {
       <div className="mx-auto w-full max-w-md space-y-8">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-outline">{member.gym.name}</p>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-outline">{member.gym.name}</span>
+              <span className="px-2 py-0.5 rounded-full bg-surface-container border border-surface-container-high text-[10px] font-mono text-secondary">
+                Code: {member.gym.slug}
+              </span>
+            </div>
             <h1 className="font-sora text-2xl font-bold mt-1">Hi, {member.name.split(' ')[0]}</h1>
-            <p className="text-sm text-outline mt-1">{member.memberCode}</p>
+            <p className="text-xs text-outline mt-1 font-mono">
+              Member ID (Phone): <span className="text-on-surface font-bold">{member.phone}</span>
+            </p>
           </div>
-          <form action={logoutMember}>
-            <button className="text-xs font-bold text-secondary hover:underline cursor-pointer">Log out</button>
-          </form>
+          <MemberHeaderActions
+            gymCode={member.gym.slug}
+            phone={member.phone}
+            memberName={member.name}
+          />
         </header>
 
         {/* Digital Gym Pass & QR / Biometrics */}
         <DigitalPassCard
           gymSlug={member.gym.slug}
           gymName={member.gym.name}
-          memberCode={member.memberCode}
+          memberCode={member.phone || member.memberCode}
           memberName={member.name}
           planName={membership ? membership.plan.name : 'No active plan'}
           expiryDateStr={membership ? dateIST(membership.expiresAt) : 'N/A'}
