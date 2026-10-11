@@ -145,3 +145,13 @@ model Attendance {
   @@index([gymId, checkedInAt])
   @@index([memberId])
 }
+
+model CouponRedemption {
+  id         String   @id @default(cuid())
+  couponCode String
+  gymSlug    String?
+  createdAt  DateTime @default(now())
+
+  @@index([couponCode])
+}
+

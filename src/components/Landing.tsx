@@ -63,8 +63,8 @@ const features = [
 const steps = [
   {
     number: '01',
-    title: 'Select a plan or free trial',
-    text: 'Activate your 14-day free trial or choose a 6-month or 1-year license with biometric integration.',
+    title: 'Select a plan or 1-month trial',
+    text: 'Activate your 1-month free trial or choose a 6-month or 1-year license with biometric integration.',
   },
   {
     number: '02',
@@ -78,48 +78,46 @@ const steps = [
   },
 ];
 
+// Unified services across all plans: only duration and price differ
+const unifiedPlanFeatures = [
+  'Unlimited Gym Members & Staff Accounts',
+  'Biometric Terminal & Turnstile Sync (eSSL, ZKTeco, Mantra)',
+  'Dynamic Mobile QR Pass Portal for Members',
+  '1-Tap WhatsApp Receipts, Expiry Alerts & Reminders',
+  'Automated Billing & Sequential GST Invoicing',
+  'Complete Member History Migration from Old Software / Excel',
+  'Daily Encrypted Cloud Backups & Instant Restore',
+  'Priority Technical & Hardware Installation Support',
+];
+
 const pricingPlans = [
   {
     id: 'trial' as PlanType,
-    name: '14-Day Free Trial',
-    badge: '100% Risk Free',
+    name: '1-Month Free Trial',
+    badge: '100% Risk Free · 30 Days',
     price: '₹0',
-    period: 'For 14 Days',
+    period: 'For 1 Full Month',
     effective: '₹0 charged today',
-    setupFee: 'Setup fee deferred',
-    description: 'Experience the complete power of NeuraForge in your gym. Zero risk, cancel anytime.',
-    features: [
-      '14 Days Full Access to All Features',
-      'Unlimited Members & Records',
-      'Biometric Terminal & Turnstile Sync',
-      'Dynamic QR Member Passes',
-      '1-Tap WhatsApp Receipts & Reminders',
-      'Free Assisted Data Migration',
-    ],
+    setupFee: 'Setup fee deferred for 30 days',
+    description: 'Experience the complete power of NeuraForge in your gym for 30 days. Full features unlocked, cancel anytime.',
+    features: unifiedPlanFeatures,
     mandateNote:
-      'Card or UPI Autopay details required at checkout. Renews at ₹5,000/yr (+ setup fee) after 14 days. We notify you 36 hours before deducting.',
-    btnText: 'Start 14-Day Free Trial',
+      'Card or UPI Autopay details required at checkout. Renews at ₹5,000/yr (+ setup fee) after 30 days. We notify you 36 hours before deducting.',
+    btnText: 'Start 1-Month Free Trial',
     popular: false,
   },
   {
     id: '6months' as PlanType,
     name: 'Semi-Annual Plan',
-    badge: 'Flexible License',
+    badge: 'Flexible 6 Months',
     price: '₹3,000',
     period: 'For 6 Months',
     effective: 'Effective ₹500 / month',
     setupFee: '+ ₹10,000 One-Time Setup',
-    description: 'Perfect for established gyms looking for medium-term flexibility and cloud backups.',
-    features: [
-      '6 Months Complete Cloud License',
-      'Multi-Device Biometric Cloud Gateway',
-      'Full Billing & GST Tax Invoicing',
-      'WhatsApp Automation Engine',
-      'Daily Encrypted Cloud Backups',
-      'Complete Member History Migration',
-    ],
+    description: 'Semi-annual cloud license for growing gyms with full biometric and WhatsApp automation.',
+    features: unifiedPlanFeatures,
     mandateNote:
-      'Total due at start: ₹13,000 (₹3,000 Plan + ₹10,000 One-time Onboarding & Hardware Setup). Renews at ₹3,000 every 6 months.',
+      'Base total: ₹13,000 (₹3,000 Plan + ₹10,000 One-time Setup). Apply coupon below for up to 50% OFF setup fee!',
     btnText: 'Choose 6 Months',
     popular: false,
   },
@@ -132,18 +130,38 @@ const pricingPlans = [
     effective: 'Effective ₹416 / month (Save ₹1,000)',
     setupFee: '+ ₹10,000 One-Time Setup',
     description: 'Our flagship plan for gym owners who want maximum savings, custom branding, and priority support.',
-    features: [
-      '1 Full Year Cloud License (Save ₹1,000)',
-      'All Multi-Device Biometric & Turnstile Sync',
-      'WhatsApp Automation & Custom Alerts',
-      'Custom Gym Logo & Theme on Member Pass',
-      'Dedicated Account Manager & Hardware Support',
-      'Complete Historical Data Migration from Old Software',
-    ],
+    features: unifiedPlanFeatures,
     mandateNote:
-      'Total due at start: ₹15,000 (₹5,000 Plan + ₹10,000 One-time Onboarding & Hardware Setup). Renews at ₹5,000 annually.',
+      'Base total: ₹15,000 (₹5,000 Plan + ₹10,000 One-time Setup). Apply coupon below for up to 50% OFF setup fee!',
     btnText: 'Choose 1 Year (Best Value)',
     popular: true,
+  },
+];
+
+const promotionalCoupons = [
+  {
+    code: 'SETUP50',
+    discount: '50% OFF',
+    saveText: 'Save ₹5,000',
+    remainingFee: '₹5,000',
+    tag: 'Highest Savings',
+    color: 'border-secondary/40 bg-secondary/10 text-secondary',
+  },
+  {
+    code: 'SETUP30',
+    discount: '30% OFF',
+    saveText: 'Save ₹3,000',
+    remainingFee: '₹7,000',
+    tag: 'Popular Choice',
+    color: 'border-tertiary/40 bg-tertiary/10 text-tertiary',
+  },
+  {
+    code: 'SETUP10',
+    discount: '10% OFF',
+    saveText: 'Save ₹1,000',
+    remainingFee: '₹9,000',
+    tag: 'Instant Discount',
+    color: 'border-outline/40 bg-surface-container text-on-surface-variant',
   },
 ];
 
@@ -165,10 +183,27 @@ const jsonLd = {
 export default function Landing() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('1year');
+  const [selectedCoupon, setSelectedCoupon] = useState<string>('');
+  const [copiedCoupon, setCopiedCoupon] = useState<string>('');
 
-  const handleOpenPlan = (p: PlanType) => {
+  const handleOpenPlan = (p: PlanType, couponCode?: string) => {
     setSelectedPlan(p);
+    if (couponCode) {
+      setSelectedCoupon(couponCode);
+    }
     setModalOpen(true);
+  };
+
+  const handleApplyCouponFromCard = (couponCode: string) => {
+    setSelectedCoupon(couponCode);
+    setSelectedPlan('1year');
+    setModalOpen(true);
+  };
+
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard?.writeText(code);
+    setCopiedCoupon(code);
+    setTimeout(() => setCopiedCoupon(''), 2000);
   };
 
   return (
@@ -199,94 +234,73 @@ export default function Landing() {
             >
               Pricing & Plans
             </a>
+            <a
+              href="#features"
+              className="hidden sm:inline-block text-xs sm:text-sm font-semibold text-outline hover:text-on-surface transition-colors"
+            >
+              Features
+            </a>
             <Link
               href="/member/login"
-              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold bg-secondary/15 text-secondary border border-secondary/30 hover:bg-secondary/25 transition-all shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-surface-container-highest bg-surface-container-lowest text-xs sm:text-sm font-bold text-on-surface hover:border-secondary hover:text-secondary transition-all shadow-xs cursor-pointer"
             >
-              <span className="material-symbols-outlined text-base">badge</span>
+              <span className="material-symbols-outlined text-sm sm:text-base text-secondary">
+                phone_android
+              </span>
               <span>Member Login</span>
             </Link>
           </nav>
         </div>
       </header>
 
-      <main>
+      {/* Main Container */}
+      <div className="space-y-16 sm:space-y-24">
         {/* Hero Section */}
-        <section className="mx-auto max-w-6xl px-4 pt-10 pb-16 sm:px-6 sm:pt-20 sm:pb-24">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-surface-container text-xs font-bold uppercase tracking-wider text-secondary border border-surface-container-high mb-6">
+        <section className="mx-auto max-w-6xl px-4 pt-12 sm:pt-20 sm:px-6">
+          <div className="text-center max-w-3xl mx-auto space-y-6">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-secondary/30 bg-secondary/10 text-secondary text-xs font-semibold">
               <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
-              Built for Indian Gyms & Fitness Centers
+              Built for Modern Indian Gyms · Biometrics, Turnstiles & QR
             </div>
 
-            <h1 className="font-sora text-3xl font-extrabold leading-tight text-on-surface sm:text-5xl lg:text-6xl tracking-tight">
-              Stop losing members to <br className="hidden sm:inline" />
+            <h1 className="font-sora text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-on-surface leading-[1.15]">
+              Run your entire gym on autopilot.{' '}
               <span className="text-secondary underline decoration-secondary/30 underline-offset-8">
-                forgotten renewals
+                Zero missed renewals.
               </span>
-              .
             </h1>
 
-            <p className="mt-5 text-base sm:text-xl text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
-              Every member, active plan, UPI payment, QR check-in & biometric attendance in one place. Send renewal reminders on WhatsApp in one tap.
+            <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
+              Replace Excel sheets with automated WhatsApp reminders, turnstile biometric integration, dynamic QR member passes, and GST billing.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            {/* Direct CTA Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
               <button
                 type="button"
                 onClick={() => handleOpenPlan('trial')}
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-primary text-on-primary text-sm sm:text-base font-bold shadow-md hover:opacity-90 transition-all cursor-pointer"
+                className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-primary text-on-primary text-sm sm:text-base font-bold shadow-md hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span className="material-symbols-outlined text-xl">bolt</span>
-                Start 14-Day Free Trial (₹0)
+                <span>Start 1-Month Free Trial</span>
+                <span className="material-symbols-outlined text-lg">arrow_forward</span>
               </button>
+
               <a
-                href="#pricing"
-                className="inline-flex items-center justify-center px-6 py-3.5 rounded-xl border border-surface-container-highest bg-surface-container-lowest text-sm sm:text-base font-bold text-on-surface hover:bg-surface-container transition-all"
+                href={DEMO_LINK}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full sm:w-auto px-6 py-3.5 rounded-xl border border-surface-container-highest bg-surface-container-lowest text-on-surface text-sm sm:text-base font-bold hover:border-secondary hover:text-secondary active:scale-[0.99] transition-all flex items-center justify-center gap-2"
               >
-                View Plans & Pricing
+                <span className="material-symbols-outlined text-lg text-[#25D366]">chat</span>
+                <span>Book Live WhatsApp Walkthrough</span>
               </a>
             </div>
-          </div>
 
-          {/* Quick Access Role Cards */}
-          <div className="mt-12 sm:mt-16 grid gap-4 sm:grid-cols-2 max-w-3xl mx-auto">
-            {/* Gym Owner Plan Activation Card */}
-            <div className="rounded-2xl border border-surface-container-high bg-surface-container-lowest p-5 sm:p-6 shadow-sm hover:border-secondary transition-all flex flex-col justify-between">
-              <div>
-                <div className="w-10 h-10 rounded-xl bg-secondary/10 text-secondary flex items-center justify-center font-bold mb-3">
-                  <span className="material-symbols-outlined">fitness_center</span>
-                </div>
-                <h2 className="font-sora text-base sm:text-lg font-bold text-on-surface">Gym Owner Portal</h2>
-                <p className="text-xs sm:text-sm text-on-surface-variant mt-1.5">
-                  Activate your gym subscription or 14-day free trial. Manage memberships, biometrics, fees, and WhatsApp renewals.
-                </p>
-              </div>
-              <div className="mt-5 pt-4 border-t border-surface-container-high flex items-center justify-between">
-                <a
-                  href="#pricing"
-                  className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-secondary hover:underline"
-                >
-                  View Subscription Plans <span className="material-symbols-outlined text-base">arrow_forward</span>
-                </a>
-                <Link href="/login" className="text-xs text-outline font-semibold hover:text-on-surface">
-                  Subscriber Login
-                </Link>
-              </div>
-            </div>
-
-            {/* Member Pass Portal Card */}
-            <div className="rounded-2xl border border-surface-container-high bg-surface-container-lowest p-5 sm:p-6 shadow-sm hover:border-secondary transition-all flex flex-col justify-between">
-              <div>
-                <div className="w-10 h-10 rounded-xl bg-tertiary/10 text-tertiary flex items-center justify-center font-bold mb-3">
-                  <span className="material-symbols-outlined">badge</span>
-                </div>
-                <h2 className="font-sora text-base sm:text-lg font-bold text-on-surface">Member Digital Pass</h2>
-                <p className="text-xs sm:text-sm text-on-surface-variant mt-1.5">
-                  Gym members never pay for pass access. Log in to view your live dynamic QR pass, active plan days, and payment receipts.
-                </p>
-              </div>
-              <div className="mt-5 pt-4 border-t border-surface-container-high flex items-center justify-between">
+            {/* Members Quick Access Notice */}
+            <div className="pt-2 text-center">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-surface-container-low border border-surface-container-high">
+                <span className="material-symbols-outlined text-tertiary text-base">badge</span>
+                <span className="text-xs text-on-surface-variant">Are you a gym member?</span>
                 <Link
                   href="/member/login"
                   className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-tertiary hover:underline"
@@ -307,15 +321,15 @@ export default function Landing() {
               Gym Owner Subscriptions
             </div>
             <h2 className="font-sora text-2xl sm:text-4xl font-extrabold text-on-surface">
-              Simple, High-ROI Plans for Your Gym
+              Simple, Transparent Plans with Identical Features
             </h2>
             <p className="mt-3 text-sm sm:text-base text-on-surface-variant">
-              Every plan includes full biometric hardware sync, QR digital passes, and WhatsApp automation.
+              Every plan includes the exact same complete suite: biometrics, turnstile hardware sync, WhatsApp automation, and GST billing. Only duration and price differ.
             </p>
           </div>
 
           {/* Setup Fee Banner */}
-          <div className="rounded-2xl border border-secondary/30 bg-surface-container-low p-5 sm:p-6 mb-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
+          <div className="rounded-2xl border border-secondary/30 bg-surface-container-low p-5 sm:p-6 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-2xl">handshake</span>
@@ -335,7 +349,84 @@ export default function Landing() {
               </div>
             </div>
             <div className="text-xs font-semibold text-outline shrink-0 bg-surface-container px-3 py-1.5 rounded-lg border border-surface-container-high">
-              Deferred during 14-day free trial
+              Deferred during 1-month free trial
+            </div>
+          </div>
+
+          {/* EXCLUSIVE PROMOTIONAL COUPONS SECTION (VALID TILL DEC 31) */}
+          <div className="rounded-3xl border border-tertiary/40 bg-surface-container-low p-6 sm:p-8 mb-10 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-tertiary/5 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-surface-container-high">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-tertiary text-2xl">confirmation_number</span>
+                  <h3 className="font-sora text-base sm:text-xl font-bold text-on-surface">
+                    Promotional Setup Coupons — Valid till December 31, 2026
+                  </h3>
+                </div>
+                <p className="text-xs sm:text-sm text-on-surface-variant mt-1">
+                  Enjoy massive savings on the additional ₹10,000 one-time onboarding fee. Each coupon can be redeemed a maximum of <strong className="text-on-surface">5 times</strong> before expiring.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 self-start md:self-auto">
+                <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-tertiary/15 text-tertiary border border-tertiary/30">
+                  ⚡ 5 Uses Cap per Category
+                </span>
+              </div>
+            </div>
+
+            {/* Coupons 3-Column Display */}
+            <div className="grid gap-4 sm:grid-cols-3">
+              {promotionalCoupons.map((c) => (
+                <div
+                  key={c.code}
+                  className="rounded-2xl border border-surface-container-high bg-surface-container-lowest p-5 flex flex-col justify-between hover:border-tertiary/50 transition-all shadow-xs"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-extrabold border ${c.color}`}>
+                        {c.discount} Setup Fee
+                      </span>
+                      <span className="text-[10px] text-outline font-semibold uppercase">{c.tag}</span>
+                    </div>
+
+                    <div className="my-2.5 p-2 rounded-xl bg-surface-container border border-surface-container-highest flex items-center justify-between">
+                      <span className="font-mono text-sm font-black tracking-wider text-on-surface">
+                        {c.code}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyCode(c.code)}
+                        className="text-[10px] font-bold text-secondary hover:underline cursor-pointer"
+                      >
+                        {copiedCoupon === c.code ? '✓ Copied' : 'Copy'}
+                      </button>
+                    </div>
+
+                    <div className="space-y-1 text-xs">
+                      <p className="font-bold text-tertiary flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm">savings</span>
+                        {c.saveText} on setup fee
+                      </p>
+                      <p className="text-outline text-[11px]">
+                        Pay setup fee: <span className="font-semibold text-on-surface">{c.remainingFee}</span> (was ₹10,000)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-3 border-t border-surface-container-high/60">
+                    <button
+                      type="button"
+                      onClick={() => handleApplyCouponFromCard(c.code)}
+                      className="w-full py-2.5 px-3 rounded-xl bg-surface-container hover:bg-tertiary hover:text-on-tertiary text-on-surface font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <span>Apply & Select Plan</span>
+                      <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -383,17 +474,22 @@ export default function Landing() {
                     {p.description}
                   </p>
 
-                  {/* Feature Checklist */}
-                  <ul className="space-y-2.5 py-5 text-xs text-on-surface">
-                    {p.features.map((feat, idx) => (
-                      <li key={idx} className="flex items-center gap-2">
-                        <span className="material-symbols-outlined text-tertiary text-base shrink-0">
-                          check_circle
-                        </span>
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  {/* Feature Checklist (Identical Across All Plans) */}
+                  <div className="py-3">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-outline mb-2">
+                      Included in this plan:
+                    </p>
+                    <ul className="space-y-2.5 text-xs text-on-surface">
+                      {p.features.map((feat, idx) => (
+                        <li key={idx} className="flex items-center gap-2">
+                          <span className="material-symbols-outlined text-tertiary text-base shrink-0">
+                            check_circle
+                          </span>
+                          <span>{feat}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
 
                 <div className="pt-4 border-t border-surface-container-high space-y-3">
@@ -509,7 +605,7 @@ export default function Landing() {
               Ready to upgrade your gym management?
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-sm sm:text-base text-on-surface-variant">
-              Message us on WhatsApp for a live walkthrough, or activate your 14-day free trial right now.
+              Message us on WhatsApp for a live walkthrough, or activate your 1-month free trial right now.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <button
@@ -518,24 +614,24 @@ export default function Landing() {
                 className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-primary text-on-primary text-sm sm:text-base font-bold shadow-md hover:opacity-90 transition-all cursor-pointer"
               >
                 <span className="material-symbols-outlined text-xl">bolt</span>
-                Start 14-Day Free Trial (₹0)
+                <span>Start 1-Month Free Trial</span>
               </button>
               <a
                 href={DEMO_LINK}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl border border-surface-container-highest bg-surface-container text-sm sm:text-base font-bold text-on-surface hover:bg-surface-container-low transition-all"
+                className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl border border-surface-container-highest bg-surface-container-lowest text-on-surface text-sm sm:text-base font-bold hover:border-secondary hover:text-secondary transition-all"
               >
                 <span className="material-symbols-outlined text-xl text-[#25D366]">chat</span>
-                Book WhatsApp Demo
+                <span>Chat on WhatsApp</span>
               </a>
             </div>
           </div>
         </section>
-      </main>
+      </div>
 
       {/* Footer */}
-      <footer className="border-t border-surface-container-high bg-surface-container-lowest py-8 text-xs text-outline">
+      <footer className="border-t border-surface-container-high bg-surface-container-lowest/50 py-8 text-xs text-outline">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="font-sora font-bold text-on-surface">NeuraForge Gym OS</span>
@@ -559,6 +655,7 @@ export default function Landing() {
       <SubscriptionModal
         isOpen={modalOpen}
         selectedPlan={selectedPlan}
+        initialCouponCode={selectedCoupon}
         onClose={() => setModalOpen(false)}
       />
     </div>

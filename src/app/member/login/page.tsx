@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useActionState } from 'react';
+import { useEffect, useState, useActionState } from 'react';
 import { loginMember, type MemberLoginState } from '../actions';
 
 const initialState: MemberLoginState = {};
@@ -12,6 +12,7 @@ const inputClass =
 
 export default function MemberLoginPage() {
   const [state, formAction, pending] = useActionState(loginMember, initialState);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (state.success) {
@@ -95,15 +96,27 @@ export default function MemberLoginPage() {
             <label className={labelClass} htmlFor="password">
               Password
             </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              autoCapitalize="none"
-              placeholder="••••••••"
-              className={inputClass}
-            />
+            <div className="relative">
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                autoCapitalize="none"
+                placeholder="••••••••"
+                className={`${inputClass} pr-12`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface focus:outline-none p-1 transition-colors cursor-pointer"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                <span className="material-symbols-outlined text-xl select-none leading-none">
+                  {showPassword ? 'visibility_off' : 'visibility'}
+                </span>
+              </button>
+            </div>
           </div>
 
           {state.error && (

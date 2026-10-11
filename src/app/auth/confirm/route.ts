@@ -7,19 +7,18 @@ export async function GET(request: NextRequest) {
   const tokenHash = request.nextUrl.searchParams.get('token_hash');
   const type = request.nextUrl.searchParams.get('type');
 
-  const target = request.nextUrl.clone();
-  target.search = '';
+  const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
+  const proto = request.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
+  const origin = host ? `${proto}://${host}` : request.nextUrl.origin;
 
   if (tokenHash && type === 'recovery') {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ type: 'recovery', token_hash: tokenHash });
     if (!error) {
-      target.pathname = '/login/reset-password';
-      return NextResponse.redirect(target);
+      return NextResponse.redirect(new URL('/login/reset-password', origin));
     }
   }
 
-  target.pathname = '/login/forgot-password';
-  target.search = '?expired=1';
-  return NextResponse.redirect(target);
+  return NextResponse.redirect(new URL('/login/forgot-password?expired=1', origin));
 }
+

@@ -30,6 +30,7 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
 
   const plan = String(formData.get('plan') ?? '').trim();
   const mandateId = String(formData.get('mandateId') ?? '').trim();
+  const couponCode = String(formData.get('couponCode') ?? '').trim();
   const validPlans = ['trial', '6months', '1year'];
 
   // User must either have a valid subscription plan / mandate or a valid invite code
@@ -38,11 +39,11 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
   const hasValidInvite = expectedCode && inviteCode ? safeEqual(inviteCode, expectedCode) : false;
 
   if (!hasValidPlan && !hasValidInvite) {
-    return { error: 'Please select a subscription plan or activate your 14-day free trial first.' };
+    return { error: 'Please select a subscription plan or activate your 1-month free trial first.' };
   }
 
   if (plan === 'trial' && !mandateId && !hasValidInvite) {
-    return { error: 'UPI or Card Autopay mandate is required for the 14-day free trial.' };
+    return { error: 'UPI or Card Autopay mandate is required for the 1-month free trial.' };
   }
 
   if (!gymName || !name || !email) return { error: 'Please fill in all fields.' };
@@ -76,6 +77,11 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
         plans: { create: DEFAULT_PLANS },
       },
     });
+
+    if (couponCode) {
+      const { recordCouponUsage } = await import('@/lib/coupons');
+      await recordCouponUsage(couponCode, slug);
+    }
   } catch {
     // Don't leave a login that belongs to no gym
     await admin.auth.admin.deleteUser(created.user.id);

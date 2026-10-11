@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useState, useActionState } from 'react';
 import { updatePassword, type ResetState } from './actions';
 
 const labelClass = 'block text-xs font-bold uppercase tracking-wider text-outline mb-1.5';
@@ -12,6 +12,8 @@ const initial: ResetState = {};
 
 export default function ResetForm() {
   const [state, formAction, pending] = useActionState(updatePassword, initial);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   if (state.done) {
     return (
@@ -37,12 +39,54 @@ export default function ResetForm() {
     <form action={formAction} className="space-y-5">
       <div>
         <label className={labelClass} htmlFor="password">New password</label>
-        <input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" className={inputClass} />
+        <div className="relative">
+          <input
+            id="password"
+            name="password"
+            type={showPassword ? 'text' : 'password'}
+            required
+            minLength={8}
+            autoComplete="new-password"
+            className={`${inputClass} pr-12`}
+            placeholder="••••••••"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface focus:outline-none p-1 transition-colors cursor-pointer"
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+          >
+            <span className="material-symbols-outlined text-xl select-none leading-none">
+              {showPassword ? 'visibility_off' : 'visibility'}
+            </span>
+          </button>
+        </div>
       </div>
 
       <div>
         <label className={labelClass} htmlFor="confirm">Confirm new password</label>
-        <input id="confirm" name="confirm" type="password" required minLength={8} autoComplete="new-password" className={inputClass} />
+        <div className="relative">
+          <input
+            id="confirm"
+            name="confirm"
+            type={showConfirm ? 'text' : 'password'}
+            required
+            minLength={8}
+            autoComplete="new-password"
+            className={`${inputClass} pr-12`}
+            placeholder="••••••••"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirm(!showConfirm)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface focus:outline-none p-1 transition-colors cursor-pointer"
+            aria-label={showConfirm ? 'Hide password' : 'Show password'}
+          >
+            <span className="material-symbols-outlined text-xl select-none leading-none">
+              {showConfirm ? 'visibility_off' : 'visibility'}
+            </span>
+          </button>
+        </div>
       </div>
 
       {state.error && (

@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { signupOwner } from '@/app/signup/actions';
+import { checkCoupon } from '@/app/actions/coupon';
+import { type CouponDefinition, BASE_SETUP_FEE } from '@/lib/coupons';
 
 export type PlanType = 'trial' | '6months' | '1year';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
   selectedPlan: PlanType;
+  initialCouponCode?: string;
   onClose: () => void;
 }
 
@@ -16,38 +19,38 @@ const PLAN_DETAILS: Record<
   {
     name: string;
     priceLabel: string;
+    basePrice: number;
     periodLabel: string;
     setupFee: number;
-    totalToday: number;
     billingNotice: string;
   }
 > = {
   trial: {
-    name: '14-Day Full Free Trial',
+    name: '1-Month Full Free Trial',
     priceLabel: '₹0 Today',
-    periodLabel: '14 Days Access',
+    basePrice: 0,
+    periodLabel: '30 Days Full Access',
     setupFee: 0,
-    totalToday: 0,
     billingNotice:
-      'Auto-debit begins after 14 days at ₹5,000/yr (+ ₹10,000 one-time setup fee). We will notify you via WhatsApp & SMS 36 hours before deducting. Cancel anytime in 1 click.',
+      'Auto-debit begins after 1 month (30 days) at ₹5,000/yr (+ one-time setup fee). We will notify you via WhatsApp & SMS 36 hours before deducting. Cancel anytime in 1 click.',
   },
   '6months': {
     name: 'Semi-Annual Plan (6 Months)',
     priceLabel: '₹3,000',
+    basePrice: 3000,
     periodLabel: '6 Months License',
-    setupFee: 10000,
-    totalToday: 13000,
+    setupFee: BASE_SETUP_FEE,
     billingNotice:
-      'Total due today: ₹13,000 (₹3,000 for 6 Months license + ₹10,000 one-time onboarding & biometric cloud setup fee).',
+      '6 Months full cloud license + one-time onboarding, turnstile and biometric cloud setup fee.',
   },
   '1year': {
     name: 'Annual Plan (1 Year) — Best Value',
     priceLabel: '₹5,000',
+    basePrice: 5000,
     periodLabel: '1 Year License',
-    setupFee: 10000,
-    totalToday: 15000,
+    setupFee: BASE_SETUP_FEE,
     billingNotice:
-      'Total due today: ₹15,000 (₹5,000 for 1 Year license + ₹10,000 one-time onboarding & biometric cloud setup fee). Save ₹1,000.',
+      '1 Full Year cloud license + one-time onboarding, turnstile and biometric cloud setup fee. Save ₹1,000.',
   },
 };
 
@@ -58,6 +61,7 @@ const labelClass = 'block text-[11px] font-bold uppercase tracking-wider text-ou
 export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   isOpen,
   selectedPlan: initialPlan,
+  initialCouponCode = '',
   onClose,
 }) => {
   const [plan, setPlan] = useState<PlanType>(initialPlan);
@@ -67,6 +71,13 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Coupon state
+  const [couponCodeInput, setCouponCodeInput] = useState(initialCouponCode);
+  const [appliedCoupon, setAppliedCoupon] = useState<CouponDefinition | null>(null);
+  const [couponError, setCouponError] = useState('');
+  const [couponLoading, setCouponLoading] = useState(false);
 
   // Payment / Mandate Details
   const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card'>('upi');
@@ -78,9 +89,58 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
+  // Sync plan and initial coupon when modal opens or props change
+  useEffect(() => {
+    if (isOpen) {
+      setPlan(initialPlan);
+      if (initialCouponCode && !appliedCoupon) {
+        setCouponCodeInput(initialCouponCode);
+        handleApplyCoupon(initialCouponCode);
+      }
+    }
+  }, [isOpen, initialPlan, initialCouponCode]);
+
   if (!isOpen) return null;
 
   const currentPlan = PLAN_DETAILS[plan];
+
+  // Coupon discount calculations
+  const setupDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const isPaidPlan = plan !== 'trial';
+  const effectiveSetupFee = isPaidPlan ? Math.max(0, currentPlan.setupFee - setupDiscount) : 0;
+  const remainingTotalToPay = isPaidPlan ? currentPlan.basePrice + effectiveSetupFee : 0;
+
+  const handleApplyCoupon = async (codeToTry?: string) => {
+    const code = (codeToTry || couponCodeInput).trim().toUpperCase();
+    if (!code) {
+      setCouponError('Please enter a coupon code.');
+      return;
+    }
+
+    setCouponLoading(true);
+    setCouponError('');
+    try {
+      const res = await checkCoupon(code);
+      if (res.valid && res.coupon) {
+        setAppliedCoupon(res.coupon);
+        setCouponCodeInput(res.coupon.code);
+        setCouponError('');
+      } else {
+        setAppliedCoupon(null);
+        setCouponError(res.error || 'Invalid or expired coupon code.');
+      }
+    } catch {
+      setCouponError('Could not verify coupon. Please try again.');
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCodeInput('');
+    setCouponError('');
+  };
 
   const handleGymNameChange = (val: string) => {
     setGymName(val);
@@ -131,7 +191,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
     const formData = new FormData();
     formData.append('gymName', gymName.trim());
-    formData.append('slug', (slug || gymName).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'gym');
+    formData.append(
+      'slug',
+      (slug || gymName).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'gym'
+    );
     formData.append('name', name.trim());
     formData.append('email', email.trim().toLowerCase());
     formData.append('password', password);
@@ -141,6 +204,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       `MANDATE-${paymentMethod.toUpperCase()}-${Date.now().toString(36)}`
     );
     formData.append('paymentMethod', paymentMethod);
+    if (appliedCoupon) {
+      formData.append('couponCode', appliedCoupon.code);
+    }
 
     try {
       const res = await signupOwner({}, formData);
@@ -174,7 +240,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 NF
               </span>
               <h2 className="font-sora text-sm sm:text-base font-bold text-on-surface">
-                {plan === 'trial' ? 'Start 14-Day Free Trial' : 'Activate Gym Subscription'}
+                {plan === 'trial' ? 'Start 1-Month Free Trial' : 'Activate Gym Subscription'}
               </h2>
             </div>
             <p className="text-[11px] text-outline mt-0.5">
@@ -210,7 +276,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   : 'text-outline hover:text-on-surface'
               }`}
             >
-              14-Day Trial (₹0)
+              1-Month Trial (₹0)
             </button>
             <button
               type="button"
@@ -236,8 +302,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             </button>
           </div>
 
-          {/* Pricing & Billing Summary Card */}
-          <div className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high space-y-2">
+          {/* Pricing & Billing Summary Card with Live Breakdown */}
+          <div className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high space-y-2.5">
             <div className="flex items-center justify-between">
               <div>
                 <span className="font-sora text-sm font-bold text-on-surface block">{currentPlan.name}</span>
@@ -245,13 +311,54 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </div>
               <div className="text-right">
                 <span className="font-sora text-lg font-extrabold text-secondary block">
-                  {currentPlan.priceLabel}
+                  {isPaidPlan ? `₹${remainingTotalToPay.toLocaleString('en-IN')}` : '₹0 Today'}
                 </span>
-                {currentPlan.setupFee > 0 && (
-                  <span className="text-[10px] text-outline block">+ ₹10,000 setup fee</span>
-                )}
+                <span className="text-[10px] text-outline block">
+                  {isPaidPlan ? 'Remaining amount to pay' : 'Setup fee deferred for 30 days'}
+                </span>
               </div>
             </div>
+
+            {/* Itemized Price Breakdown */}
+            {isPaidPlan && (
+              <div className="pt-2 border-t border-surface-container-high/60 space-y-1.5 text-[11px]">
+                <div className="flex items-center justify-between text-outline">
+                  <span>Plan License ({currentPlan.name}):</span>
+                  <span className="text-on-surface font-semibold">₹{currentPlan.basePrice.toLocaleString('en-IN')}</span>
+                </div>
+
+                <div className="flex items-center justify-between text-outline">
+                  <span>One-Time Hardware & Onboarding Setup:</span>
+                  <span className={appliedCoupon ? 'line-through text-outline' : 'text-on-surface font-semibold'}>
+                    ₹{BASE_SETUP_FEE.toLocaleString('en-IN')}
+                  </span>
+                </div>
+
+                {appliedCoupon && (
+                  <div className="flex items-center justify-between text-tertiary font-bold">
+                    <span className="flex items-center gap-1">
+                      <span className="material-symbols-outlined text-sm">local_activity</span>
+                      Coupon Discount ({appliedCoupon.code} - {appliedCoupon.discountPercent}% Off Setup):
+                    </span>
+                    <span>-₹{appliedCoupon.discountAmount.toLocaleString('en-IN')}</span>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between pt-1.5 border-t border-surface-container-high font-bold text-xs text-on-surface">
+                  <span>Remaining Amount to Pay Today:</span>
+                  <span className="text-secondary font-sora text-sm">₹{remainingTotalToPay.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+            )}
+
+            {plan === 'trial' && appliedCoupon && (
+              <div className="p-2 rounded-lg bg-tertiary/10 border border-tertiary/20 text-[11px] text-tertiary flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm shrink-0">check_circle</span>
+                <span>
+                  <strong>{appliedCoupon.code} Locked:</strong> You will get {appliedCoupon.discountPercent}% (₹{appliedCoupon.discountAmount}) off your setup fee when your 1-month trial converts.
+                </span>
+              </div>
+            )}
 
             {/* Advance Notice / Autopay Guarantee Notice */}
             <div className="p-2.5 rounded-lg bg-surface-container text-[11px] text-on-surface-variant flex items-start gap-2 border border-surface-container-high">
@@ -260,6 +367,95 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </span>
               <p className="leading-relaxed">{currentPlan.billingNotice}</p>
             </div>
+          </div>
+
+          {/* Section: Promotional Coupon Section */}
+          <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container-high space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-outline flex items-center gap-1">
+                <span className="material-symbols-outlined text-sm text-secondary">confirmation_number</span>
+                Have a Setup Fee Coupon? (Valid till Dec 31)
+              </label>
+              <span className="text-[10px] text-outline font-semibold">Max 5 uses per coupon</span>
+            </div>
+
+            {appliedCoupon ? (
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-tertiary/10 border border-tertiary/30">
+                <div className="flex items-center gap-2">
+                  <span className="material-symbols-outlined text-tertiary text-base">verified</span>
+                  <div>
+                    <span className="font-bold text-xs text-on-surface block">
+                      {appliedCoupon.code} Applied ({appliedCoupon.badge})
+                    </span>
+                    <span className="text-[10px] text-tertiary font-semibold">
+                      ₹{appliedCoupon.discountAmount.toLocaleString('en-IN')} saved on one-time setup fee
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemoveCoupon}
+                  className="text-xs text-error font-bold hover:underline px-2 py-1 rounded cursor-pointer"
+                >
+                  Remove
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={couponCodeInput}
+                    onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                    placeholder="Enter SETUP50, SETUP30, or SETUP10"
+                    className="flex-1 bg-surface-container-lowest border border-surface-container-high focus:border-secondary rounded-xl px-3 py-2 text-xs text-on-surface uppercase tracking-wider font-semibold focus:outline-none"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleApplyCoupon();
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleApplyCoupon()}
+                    disabled={couponLoading || !couponCodeInput.trim()}
+                    className="px-4 py-2 rounded-xl bg-secondary text-on-secondary font-bold text-xs hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer shrink-0"
+                  >
+                    {couponLoading ? 'Checking...' : 'Apply Coupon'}
+                  </button>
+                </div>
+
+                {couponError && (
+                  <p className="text-[11px] font-semibold text-error flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs">info</span>
+                    {couponError}
+                  </p>
+                )}
+
+                {/* Quick-Apply Coupon Chips */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[10px] text-outline font-medium mr-1">Quick Apply:</span>
+                  {[
+                    { code: 'SETUP50', label: 'SETUP50 (50% Off)' },
+                    { code: 'SETUP30', label: 'SETUP30 (30% Off)' },
+                    { code: 'SETUP10', label: 'SETUP10 (10% Off)' },
+                  ].map((c) => (
+                    <button
+                      key={c.code}
+                      type="button"
+                      onClick={() => {
+                        setCouponCodeInput(c.code);
+                        handleApplyCoupon(c.code);
+                      }}
+                      className="px-2 py-0.5 rounded-lg border border-surface-container-highest bg-surface-container text-[10px] font-bold text-on-surface-variant hover:border-secondary hover:text-secondary transition-all cursor-pointer"
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Section: Gym & Owner Details */}
@@ -335,15 +531,27 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
               <div>
                 <label className={labelClass}>Create Password (min 8 chars) *</label>
-                <input
-                  type="password"
-                  required
-                  minLength={8}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={inputClass}
-                />
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    minLength={8}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={`${inputClass} pr-10`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface focus:outline-none p-1 transition-colors cursor-pointer"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    <span className="material-symbols-outlined text-base select-none leading-none">
+                      {showPassword ? 'visibility_off' : 'visibility'}
+                    </span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -466,7 +674,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             </p>
           </div>
 
-          {/* Submit Button */}
+          {/* Submit Button showing Live Amount to Pay */}
           <div className="pt-2">
             <button
               type="submit"
@@ -480,8 +688,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 {busy
                   ? 'Activating Subscription & Setting Up...'
                   : plan === 'trial'
-                  ? 'Authorize Mandate & Start 14-Day Free Trial (₹0 Today)'
-                  : `Pay ₹${currentPlan.totalToday.toLocaleString('en-IN')} & Activate Gym OS`}
+                  ? 'Authorize Mandate & Start 1-Month Free Trial (₹0 Today)'
+                  : `Pay ₹${remainingTotalToPay.toLocaleString('en-IN')} & Activate Gym OS`}
               </span>
             </button>
           </div>
