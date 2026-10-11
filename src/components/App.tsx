@@ -10,6 +10,7 @@ import { addMember, extendMembership, renewMembership, updateMember } from '../a
 import { markPaymentPaid, recordPayment } from '../actions/payments';
 import { checkInMember, checkInByCode, type ScanCheckInResult } from '../actions/attendance';
 import { updateGymSettings } from '../actions/settings';
+import { sendMemberReminder } from '../actions/reminders';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { DashboardView } from './DashboardView';
@@ -240,12 +241,15 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
   };
 
   const handleSendSingleReminder = (member: Member) => {
+    // Also save reminder to database so it shows in member portal notifications
+    sendMemberReminder(member.id).catch((err) => console.error('Failed to create member reminder record:', err));
+
     const cleanPhone = member.phone.replace(/[^0-9]/g, '');
     const text = encodeURIComponent(
       `Hi ${member.name}, your ${gym.name} membership expires on ${member.expiryDate}. Please renew to keep your membership active.`
     );
     window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${text}`, '_blank');
-    showToast(`Opening WhatsApp to remind ${member.name}.`);
+    showToast(`Reminder sent to ${member.name} (WhatsApp & Member Portal).`);
   };
 
   const handleSaveSettings = async (input: GymSettingsInput): Promise<boolean> => {

@@ -11,7 +11,7 @@ export type SignupState = { error?: string; success?: boolean };
 
 // 3-30 chars: lowercase letters, numbers, hyphens (not at the start or end)
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
-const RESERVED_SLUGS = new Set(['admin', 'api', 'app', 'login', 'signup', 'www', 'neuraforge']);
+const RESERVED_SLUGS = new Set(['admin', 'api', 'app', 'login', 'signup', 'www', 'neuraforge', 'neurafitness']);
 
 // Compares two strings without leaking, through timing, how many characters matched
 const safeEqual = (a: string, b: string): boolean => {

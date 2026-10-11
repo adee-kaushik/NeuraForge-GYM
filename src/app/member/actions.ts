@@ -123,7 +123,7 @@ export async function resetMemberPasswordByPhone(gymCodeRaw: string, phoneOrIdRa
 
   const digits = member.phone.replace(/\D/g, '');
   const waPhone = digits.length === 10 ? `91${digits}` : digits;
-  const messageText = `Hi ${member.name}, your login credentials for ${gym.name}:\nGym Code: ${gym.slug}\nMember ID (Phone): ${cleanPhone || digits.slice(-10)}\nPassword: ${password}\nLogin portal: https://neuraforge.com/member/login`;
+  const messageText = `Hi ${member.name}, your login access for ${gym.name}:\nGym Code: ${gym.slug}\nMember ID (Phone): ${cleanPhone || digits.slice(-10)}\nInstant Access: https://neurafitness.com/member/login`;
   const whatsappUrl = `https://api.whatsapp.com/send?phone=${encodeURIComponent(waPhone)}&text=${encodeURIComponent(messageText)}`;
   const smsUrl = `sms:${digits}?body=${encodeURIComponent(messageText)}`;
 
@@ -178,6 +178,40 @@ export async function memberSelfCheckIn(): Promise<{ ok: boolean; error?: string
       gymId: member.gymId,
       memberId: member.id,
       checkedInAt: now,
+    },
+  });
+
+  return { ok: true };
+}
+
+export type SubmitQueryResult = { ok: boolean; error?: string };
+
+export async function submitMemberQuery(
+  categoryRaw: string,
+  subjectRaw: string,
+  messageRaw: string
+): Promise<SubmitQueryResult> {
+  const member = await getCurrentMember();
+  if (!member) return { ok: false, error: 'Please log in to submit a query.' };
+
+  const category = categoryRaw.trim().toUpperCase();
+  const subject = subjectRaw.trim();
+  const message = messageRaw.trim();
+
+  if (!subject) return { ok: false, error: 'Please provide a subject.' };
+  if (!message) return { ok: false, error: 'Please enter details for your query.' };
+
+  const validCategories = ['WORKOUT_PLAN', 'MACHINE_MALFUNCTION', 'TIMINGS', 'BILLING', 'OTHER'];
+  const effectiveCategory = validCategories.includes(category) ? category : 'OTHER';
+
+  await prisma.memberQuery.create({
+    data: {
+      gymId: member.gymId,
+      memberId: member.id,
+      category: effectiveCategory,
+      subject,
+      message,
+      status: 'PENDING',
     },
   });
 

@@ -102,7 +102,7 @@ export default function SignupPage() {
             <span className="material-symbols-outlined text-base">arrow_back</span>
             Back to Home
           </Link>
-          <span className="text-xs font-bold text-secondary">NeuraForge Gym OS</span>
+          <span className="text-xs font-bold text-secondary">NeuraFitness</span>
         </div>
 
         <form

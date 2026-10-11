@@ -23,15 +23,15 @@ export const viewport: Viewport = {
   colorScheme: 'light',
 };
 
-const title = 'NeuraForge Gym OS | Complete Gym Management Software';
+const title = 'NeuraFitness | Complete Gym Management Software';
 const description =
-  'All-in-one Gym Management Software for Indian Gyms. Manage member renewals, QR & biometric attendance, UPI/cash payments, automated WhatsApp reminders, and GST billing.';
+  'All-in-one Gym Management Software for Indian Gyms. Manage member renewals, biometric & QR attendance, UPI/cash payments, automated WhatsApp reminders, and GST billing.';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://neura-forge-gym.vercel.app'),
+  metadataBase: new URL('https://neurafitness.com'),
   title: {
     default: title,
-    template: '%s | NeuraForge Gym OS',
+    template: '%s | NeuraFitness',
   },
   description,
   keywords: [
@@ -45,9 +45,9 @@ export const metadata: Metadata = {
     'gym os',
     'fitness studio software',
   ],
-  authors: [{ name: 'NeuraForge' }],
-  creator: 'NeuraForge',
-  publisher: 'NeuraForge',
+  authors: [{ name: 'NeuraFitness' }],
+  creator: 'NeuraFitness',
+  publisher: 'NeuraFitness',
   robots: {
     index: true,
     follow: true,
@@ -62,8 +62,8 @@ export const metadata: Metadata = {
   openGraph: {
     title,
     description,
-    url: 'https://neura-forge-gym.vercel.app',
-    siteName: 'NeuraForge Gym OS',
+    url: 'https://neurafitness.com',
+    siteName: 'NeuraFitness',
     locale: 'en_IN',
     type: 'website',
   },

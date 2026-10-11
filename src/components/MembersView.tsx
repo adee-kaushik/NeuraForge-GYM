@@ -434,7 +434,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     <div className="flex items-center justify-between">
                       <span className="text-outline">Server Address:</span>
                       <span className="text-secondary font-bold select-all">
-                        {typeof window !== 'undefined' ? window.location.host : 'neuraforge.com'}
+                        {typeof window !== 'undefined' ? window.location.host : 'neurafitness.com'}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
@@ -458,11 +458,11 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     <strong>Local LAN Bridge:</strong> For offline WiFi/Ethernet devices on port 4370:
                   </p>
                   <code className="text-secondary block p-2 bg-surface-container rounded text-[11px] font-mono border border-surface-container-high select-all">
-                    node public/scripts/neuraforge-sync.js
+                    node public/scripts/neurafitness-sync.js
                   </code>
                   <a
-                    href="/scripts/neuraforge-sync.js"
-                    download="neuraforge-sync.js"
+                    href="/scripts/neurafitness-sync.js"
+                    download="neurafitness-sync.js"
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-high text-secondary text-xs font-bold hover:bg-surface-container-highest transition-colors"
                   >
                     <span className="material-symbols-outlined text-sm">download</span>

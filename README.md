@@ -1,4 +1,4 @@
-# NeuraForge Gym Management (MVP)
+# NeuraFitness Gym Management (MVP)
 
 Next.js (App Router) + TypeScript + Tailwind CSS v4.
 Data is mock data in `src/data/mockData.ts` for now. Supabase comes next.

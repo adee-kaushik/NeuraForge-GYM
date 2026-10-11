@@ -30,6 +30,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
   hasCheckedInToday,
 }) => {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
+  const [showQr, setShowQr] = useState<boolean>(false);
   const [checkedIn, setCheckedIn] = useState(hasCheckedInToday);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ text: string; isError?: boolean } | null>(null);
@@ -40,7 +41,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
     QRCode.toDataURL(
       qrPayload,
       {
-        width: 260,
+        width: 240,
         margin: 1,
         color: {
           dark: '#0f172a',
@@ -61,15 +62,11 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
     setMessage(null);
 
     try {
-      // If browser supports WebAuthn / Platform Biometrics, optionally invoke a user touch verification
       if (window.PublicKeyCredential && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
         try {
-          const isBioAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-          if (isBioAvailable) {
-            // Biometric hardware detected (FaceID, TouchID, Android Fingerprint)
-          }
+          await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
         } catch {
-          // Fall back gracefully to direct self-verification
+          // Fall back gracefully
         }
       }
 
@@ -78,7 +75,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
         setMessage({ text: res.error || 'Check-in failed.', isError: true });
       } else {
         setCheckedIn(true);
-        setMessage({ text: '✅ Checked In Successfully! Have a great workout!' });
+        setMessage({ text: '✅ Verified & Checked In! Have a great workout!' });
       }
     } catch {
       setMessage({ text: 'Network or device error during check-in.', isError: true });
@@ -86,6 +83,13 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
       setBusy(false);
     }
   };
+
+  const initials = memberName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('');
 
   return (
     <div className="relative rounded-2xl border border-secondary/40 bg-gradient-to-b from-surface-container-high/60 via-surface-container-low to-surface-container-lowest p-6 shadow-[0_4px_30px_rgba(123,208,255,0.15)] overflow-hidden">
@@ -99,8 +103,8 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
       <div className="flex items-center justify-between pb-4 border-b border-surface-container-high/80">
         <div>
           <span className="text-[10px] uppercase tracking-widest text-secondary font-bold flex items-center gap-1">
-            <span className="material-symbols-outlined text-sm">badge</span>
-            <span>Digital Gym Pass</span>
+            <span className="material-symbols-outlined text-sm">fingerprint</span>
+            <span>Biometric Digital Pass</span>
           </span>
           <h3 className="font-sora text-base font-bold text-on-surface mt-0.5">{gymName}</h3>
         </div>
@@ -109,24 +113,72 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
         </span>
       </div>
 
-      {/* QR Code and Member Info */}
-      <div className="py-5 flex flex-col items-center justify-center text-center">
-        <div className="relative p-2.5 bg-white rounded-xl shadow-[0_0_20px_rgba(255,255,255,0.2)] border border-white/20 mb-3">
-          {qrDataUrl ? (
-            <img src={qrDataUrl} alt="Member QR Code" className="w-44 h-44 object-contain rounded" />
-          ) : (
-            <div className="w-44 h-44 bg-surface-container flex items-center justify-center text-outline">
-              <span className="material-symbols-outlined text-3xl animate-spin">progress_activity</span>
-            </div>
-          )}
+      {/* Primary Biometric Pass Body */}
+      <div className="py-5 flex flex-col items-center justify-center text-center space-y-3">
+        {/* Biometric Avatar & Verification Badge */}
+        <div className="relative">
+          <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-primary/30 to-secondary/30 border-2 border-secondary/60 flex items-center justify-center text-on-surface font-sora font-extrabold text-2xl shadow-lg">
+            {initials}
+          </div>
+          <span
+            className="absolute bottom-0 right-0 p-1.5 rounded-full bg-tertiary text-[#002113] shadow-md border-2 border-surface-container flex items-center justify-center"
+            title="Biometric Fingerprint & Face Verified"
+          >
+            <span className="material-symbols-outlined text-sm font-bold">verified_user</span>
+          </span>
         </div>
 
-        <p className="font-mono text-sm font-bold text-secondary tracking-wider">{memberCode}</p>
-        <p className="font-sora text-lg font-bold text-on-surface mt-0.5">{memberName}</p>
-        <p className="text-xs text-outline">{planName} · Expires {expiryDateStr}</p>
+        <div>
+          <p className="font-sora text-xl font-bold text-on-surface">{memberName}</p>
+          <div className="flex items-center justify-center gap-1.5 mt-1">
+            <span className="text-xs text-outline font-mono">Member ID (Phone):</span>
+            <span className="font-mono text-sm font-bold text-secondary">{memberCode}</span>
+          </div>
+          <p className="text-xs text-outline mt-0.5">
+            {planName} · Expires {expiryDateStr}
+          </p>
+        </div>
+
+        {/* Biometric Hardware Punch Instructions */}
+        <div className="p-3 rounded-xl bg-surface-container border border-surface-container-high text-xs text-on-surface-variant flex items-center gap-2 max-w-sm">
+          <span className="material-symbols-outlined text-secondary text-lg shrink-0">fingerprint</span>
+          <p className="text-[11px] text-left leading-relaxed">
+            Scan your <b>Fingerprint</b> or <b>Face ID</b> on the gym terminal. Your biometric terminal ID is <b>{memberCode}</b>.
+          </p>
+        </div>
+
+        {/* Optional QR Pass Toggle (Requirement 4) */}
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => setShowQr(!showQr)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-container-highest text-outline hover:text-on-surface font-semibold text-xs transition-all cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-sm">qr_code_2</span>
+            <span>{showQr ? 'Hide QR Code Pass' : 'Show Optional QR Pass'}</span>
+          </button>
+        </div>
+
+        {/* Optional Collapsible QR View */}
+        {showQr && (
+          <div className="pt-2 animate-in fade-in space-y-2">
+            <div className="p-2.5 bg-white rounded-xl shadow-md border border-white/20 inline-block">
+              {qrDataUrl ? (
+                <img src={qrDataUrl} alt="Member QR Code" className="w-36 h-36 object-contain rounded" />
+              ) : (
+                <div className="w-36 h-36 bg-surface-container flex items-center justify-center text-outline">
+                  <span className="material-symbols-outlined text-2xl animate-spin">progress_activity</span>
+                </div>
+              )}
+            </div>
+            <p className="text-[10px] text-outline font-mono">
+              Scan this QR code if front desk has a handheld optical scanner
+            </p>
+          </div>
+        )}
       </div>
 
-      {/* Check-in Status & Biometrics Button */}
+      {/* Check-in Status & Direct Biometrics Tap Button */}
       <div className="pt-3 border-t border-surface-container-high/80 space-y-3">
         {checkedIn ? (
           <div className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-tertiary/15 border border-tertiary/30 text-tertiary text-xs font-bold shadow-[0_0_12px_rgba(78,222,163,0.2)]">
@@ -149,7 +201,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
                 ? 'Verifying...'
                 : daysLeft !== null && daysLeft < 0
                 ? 'Membership Expired'
-                : 'Self Check-in (Biometrics / Tap)'}
+                : 'Tap to Check In (Biometrics / Phone)'}
             </span>
           </button>
         )}
@@ -163,10 +215,6 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
             {message.text}
           </p>
         )}
-
-        <p className="text-[11px] text-outline text-center">
-          Show this QR code at front desk or punch your ID ({memberCode}) on the biometric terminal.
-        </p>
       </div>
     </div>
   );

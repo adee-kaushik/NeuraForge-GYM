@@ -6,7 +6,7 @@ import { SubscriptionModal, type PlanType } from './SubscriptionModal';
 
 const WHATSAPP = '919351219914';
 const DEMO_LINK = `https://wa.me/${WHATSAPP}?text=${encodeURIComponent(
-  'Hi, I want a live demo of NeuraForge Gym OS for my gym.'
+  'Hi, I want a live demo of NeuraFitness for my gym.'
 )}`;
 
 const problems = [
@@ -74,7 +74,7 @@ const steps = [
   {
     number: '03',
     title: 'Automate renewals & collections',
-    text: 'Open NeuraForge every morning to see who needs renewal and collect dues in 1 tap.',
+    text: 'Open NeuraFitness every morning to see who needs renewal and collect dues in 1 tap.',
   },
 ];
 
@@ -98,7 +98,7 @@ const pricingPlans = [
     period: 'For 1 Full Month',
     effective: '₹0 charged today',
     setupFee: 'Setup fee deferred for 30 days',
-    description: 'Experience the complete power of NeuraForge in your gym for 30 days. Full features unlocked, cancel anytime.',
+    description: 'Experience the complete power of NeuraFitness in your gym for 30 days. Full features unlocked, cancel anytime.',
     features: unifiedPlanFeatures,
     mandateNote:
       'Card or UPI Autopay details required at checkout. Renews at ₹5,000/yr (+ setup fee) after 30 days. We notify you 36 hours before deducting.',
@@ -167,7 +167,7 @@ const promotionalCoupons = [
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
-  name: 'NeuraForge Gym OS',
+  name: 'NeuraFitness',
   operatingSystem: 'Web, Android, iOS',
   applicationCategory: 'BusinessApplication',
   offers: {
@@ -221,7 +221,7 @@ export default function Landing() {
               NF
             </span>
             <span className="font-sora text-base sm:text-lg font-bold tracking-tight text-on-surface">
-              NeuraForge <span className="text-secondary font-semibold">Gym OS</span>
+              NeuraFitness
             </span>
           </Link>
 
@@ -633,7 +633,7 @@ export default function Landing() {
       <footer className="border-t border-surface-container-high bg-surface-container-lowest/50 py-8 text-xs text-outline">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-sora font-bold text-on-surface">NeuraForge Gym OS</span>
+            <span className="font-sora font-bold text-on-surface">NeuraFitness</span>
             <span>· All rights reserved © 2026</span>
           </div>
           <div className="flex items-center gap-6 font-semibold">

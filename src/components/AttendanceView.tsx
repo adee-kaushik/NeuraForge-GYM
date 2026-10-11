@@ -364,7 +364,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                     <span>Universal Biometric & Turnstile Hub</span>
                   </h2>
                   <p className="text-xs text-outline mt-0.5">
-                    Connects any eSSL, ZKTeco, Mantra, or Realtime device directly to NeuraForge with zero setup friction
+                    Connects any eSSL, ZKTeco, Mantra, or Realtime device directly to NeuraFitness with zero setup friction
                   </p>
                 </div>
 
@@ -388,7 +388,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                   </div>
 
                   <p className="text-xs text-outline">
-                    Test how your biometric machine communicates with NeuraForge by entering any member ID, biometric card number, or phone digits:
+                    Test how your biometric machine communicates with NeuraFitness by entering any member ID, biometric card number, or phone digits:
                   </p>
 
                   <div className="flex gap-2">
@@ -485,7 +485,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                           <div className="flex items-center justify-between">
                             <span className="text-outline">Server Address:</span>
                             <span className="text-secondary font-bold select-all">
-                              {typeof window !== 'undefined' ? window.location.host : 'neuraforge.com'}
+                              {typeof window !== 'undefined' ? window.location.host : 'neurafitness.com'}
                             </span>
                           </div>
                           <div className="flex items-center justify-between">
@@ -504,7 +504,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                         <ol className="list-decimal list-inside text-[11px] text-outline space-y-1">
                           <li>On machine keypad: Press <strong>M/OK (Menu)</strong> → <strong>Comm.</strong> → <strong>Cloud Server / ADMS</strong>.</li>
                           <li>Turn <strong>Enable Domain Name</strong> to ON. Enter your server domain and port 443.</li>
-                          <li>Save & restart. Every fingerprint punch is automatically received by NeuraForge!</li>
+                          <li>Save & restart. Every fingerprint punch is automatically received by NeuraFitness!</li>
                         </ol>
                       </div>
                     )}
@@ -518,14 +518,14 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                         <div className="p-3 bg-surface-container rounded-xl font-mono text-[11px] space-y-2 border border-surface-container-high">
                           <p className="text-outline text-[10px]">1-Command Reception PC Sync Bridge:</p>
                           <code className="text-secondary block p-2 bg-surface-container-low rounded border border-surface-container-high select-all">
-                            node public/scripts/neuraforge-sync.js
+                            node public/scripts/neurafitness-sync.js
                           </code>
                         </div>
                         <div className="flex items-center justify-between pt-1">
                           <span className="text-[11px] text-outline">Ready-to-run desktop sync script:</span>
                           <a
-                            href="/scripts/neuraforge-sync.js"
-                            download="neuraforge-sync.js"
+                            href="/scripts/neurafitness-sync.js"
+                            download="neurafitness-sync.js"
                             className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-secondary text-xs font-bold flex items-center gap-1.5 transition-colors"
                           >
                             <span className="material-symbols-outlined text-sm">download</span>

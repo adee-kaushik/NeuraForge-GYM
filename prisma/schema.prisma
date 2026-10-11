@@ -34,6 +34,7 @@ model Gym {
   monthlyRevenueGoal Int      @default(0)
   upiId              String?
   paymentQrUrl       String?
+  attendanceMode     String?  @default("biometric")
   createdAt          DateTime @default(now())
 
   users       User[]
@@ -42,6 +43,8 @@ model Gym {
   memberships Membership[]
   payments    Payment[]
   attendances Attendance[]
+  queries     MemberQuery[]
+  reminders   GymReminder[]
 }
 
 model User {
@@ -92,6 +95,8 @@ model Member {
   memberships Membership[]
   payments    Payment[]
   attendances Attendance[]
+  queries     MemberQuery[]
+  reminders   GymReminder[]
 
   @@unique([gymId, memberCode])
   @@index([gymId])
@@ -156,4 +161,41 @@ model CouponRedemption {
 
   @@index([couponCode])
 }
+
+model MemberQuery {
+  id        String   @id @default(cuid())
+  gymId     String
+  memberId  String
+  category  String   // WORKOUT_PLAN, MACHINE_MALFUNCTION, TIMINGS, BILLING, OTHER
+  subject   String
+  message   String
+  status    String   @default("PENDING") // PENDING, IN_PROGRESS, RESOLVED
+  reply     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  gym    Gym    @relation(fields: [gymId], references: [id])
+  member Member @relation(fields: [memberId], references: [id])
+
+  @@index([gymId])
+  @@index([memberId])
+}
+
+model GymReminder {
+  id        String   @id @default(cuid())
+  gymId     String
+  memberId  String?  // null = broadcast to all gym members
+  title     String
+  message   String
+  type      String   @default("GENERAL") // EXPIRY, PAYMENT_DUE, ANNOUNCEMENT, GENERAL
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  gym    Gym     @relation(fields: [gymId], references: [id])
+  member Member? @relation(fields: [memberId], references: [id])
+
+  @@index([gymId])
+  @@index([memberId])
+}
+
 

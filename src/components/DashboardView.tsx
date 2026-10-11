@@ -71,7 +71,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="space-y-3 max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/15 border border-primary/30 text-primary text-xs font-bold uppercase tracking-wider">
                 <span className="material-symbols-outlined text-sm">rocket_launch</span>
-                <span>Welcome to NeuraForge Gym OS</span>
+                <span>Welcome to NeuraFitness</span>
               </div>
               <h2 className="font-sora text-2xl sm:text-3xl font-extrabold text-on-surface tracking-tight">
                 Your Gym Workspace is Ready

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     const configResponse = [
       `GET OPTION FROM: ${sn}`,
       'ServerVersion=3.0.1',
-      'ServerName=NeuraForge',
+      'ServerName=NeuraFitness',
       'PushVersion=3.0.1',
       'ErrorDelay=60',
       'RequestDelay=5',
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     ok: true,
-    service: 'NeuraForge Biometric Attendance Gateway',
+    service: 'NeuraFitness Biometric Attendance Gateway',
     protocols: ['JSON', 'ZKTeco/eSSL ADMS', 'Desktop-Bridge'],
     version: '1.2.0',
     status: 'ONLINE',

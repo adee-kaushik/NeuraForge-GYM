@@ -184,7 +184,7 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
     const url = URL.createObjectURL(new Blob([TEMPLATE_CSV], { type: 'text/csv' }));
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'neuraforge-members-template.csv';
+    a.download = 'neurafitness-members-template.csv';
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -310,7 +310,7 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
           {stage === 'mapping' && (
             <div className="space-y-4">
               <div className="p-3 bg-secondary/10 border border-secondary/20 rounded-xl text-secondary text-xs font-medium">
-                We detected <strong>{table.length - 1} rows</strong> and <strong>{headers.length} columns</strong>. Please confirm or match your spreadsheet columns to NeuraForge fields.
+                We detected <strong>{table.length - 1} rows</strong> and <strong>{headers.length} columns</strong>. Please confirm or match your spreadsheet columns to NeuraFitness fields.
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -441,7 +441,7 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
           {stage === 'plans' && (
             <div className="space-y-4">
               <div className="p-3.5 rounded-xl bg-secondary/10 border border-secondary/20 text-secondary text-xs">
-                Found <strong>{unmatchedPlans.length} plan name(s)</strong> in your file that do not match existing plans in NeuraForge. Choose how to handle each plan:
+                Found <strong>{unmatchedPlans.length} plan name(s)</strong> in your file that do not match existing plans in NeuraFitness. Choose how to handle each plan:
               </div>
 
               <div className="space-y-3">
@@ -487,7 +487,7 @@ export const ImportMembersModal: React.FC<ImportMembersModalProps> = ({
                             }}
                             className="w-full bg-surface-container-lowest border border-surface-container-high rounded-lg p-2 text-xs text-on-surface focus:outline-none"
                           >
-                            <option value="create">✨ Auto-create as new plan in NeuraForge</option>
+                            <option value="create">✨ Auto-create as new plan in NeuraFitness</option>
                             <option value="map">🔄 Map to an existing plan</option>
                           </select>
                         </div>

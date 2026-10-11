@@ -69,7 +69,7 @@ export const EnquiriesView: React.FC<EnquiriesViewProps> = ({
   const [enquiries, setEnquiries] = useState<Enquiry[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const saved = localStorage.getItem('neuraforge_gym_enquiries');
+        const saved = localStorage.getItem('neurafitness_gym_enquiries') || localStorage.getItem('neuraforge_gym_enquiries');
         if (saved) return JSON.parse(saved);
       } catch {
         // fallback
@@ -92,7 +92,7 @@ export const EnquiriesView: React.FC<EnquiriesViewProps> = ({
 
   useEffect(() => {
     try {
-      localStorage.setItem('neuraforge_gym_enquiries', JSON.stringify(enquiries));
+      localStorage.setItem('neurafitness_gym_enquiries', JSON.stringify(enquiries));
     } catch {
       // storage unavailable
     }

@@ -15,7 +15,7 @@ export default async function ResetPasswordPage() {
             <span className="material-symbols-outlined text-base">arrow_back</span>
             Back to Login
           </Link>
-          <span className="text-xs font-bold text-secondary">NeuraForge Gym OS</span>
+          <span className="text-xs font-bold text-secondary">NeuraFitness</span>
         </div>
 
         <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-6 sm:p-8 space-y-5 shadow-sm">

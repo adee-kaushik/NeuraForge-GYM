@@ -69,7 +69,7 @@ export default async function AdminPage() {
       <div className="mx-auto w-full max-w-6xl space-y-10">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-secondary">NeuraForge admin</p>
+            <p className="text-xs font-bold uppercase tracking-wider text-secondary">NeuraFitness Admin</p>
             <h1 className="font-sora text-2xl font-bold mt-1">All gyms</h1>
             <p className="text-sm text-outline mt-1">
               {quiet > 0 ? `${quiet} gym${quiet === 1 ? ' has' : 's have'} had no activity in the last 7 days. Worth a call.` : 'Every gym was active in the last 7 days.'}
