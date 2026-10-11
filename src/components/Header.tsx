@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CurrentUser } from '../config/gym';
 import { logout } from '@/app/login/actions';
 import { DashboardStats } from '../lib/stats';
 import { inr } from '../lib/format';
 import { ActiveScreen } from '../types';
+import { getOwnerAdminNotifications, markAdminMessageAsRead } from '@/actions/feedback';
 
 interface HeaderProps {
   user: CurrentUser;
@@ -14,6 +15,16 @@ interface HeaderProps {
   onToggleMobileMenu: () => void;
   onOpenBulkWhatsApp: () => void;
   onNavigateScreen: (screen: ActiveScreen) => void;
+  onOpenFeedback?: () => void;
+}
+
+interface AdminMessageItem {
+  id: string;
+  title: string;
+  message: string;
+  priority: string;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -25,23 +36,37 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleMobileMenu,
   onOpenBulkWhatsApp,
   onNavigateScreen,
+  onOpenFeedback,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notificationsRead, setNotificationsRead] = useState(false);
+  const [adminMessages, setAdminMessages] = useState<AdminMessageItem[]>([]);
 
+  useEffect(() => {
+    getOwnerAdminNotifications()
+      .then((msgs) => setAdminMessages(msgs as AdminMessageItem[]))
+      .catch((err) => console.error('Failed to load admin messages:', err));
+  }, []);
+
+  const unreadAdminCount = adminMessages.filter((m) => !m.isRead).length;
   const hasExpiryAlert = stats.expiringIn48h > 0;
-  const rawNotificationCount = (hasExpiryAlert ? 1 : 0) + 1; // expiry alert + goal progress
-  const unreadCount = notificationsRead ? 0 : rawNotificationCount;
+  const rawNotificationCount = (hasExpiryAlert ? 1 : 0) + 1 + unreadAdminCount;
+  const unreadCount = notificationsRead && unreadAdminCount === 0 ? 0 : rawNotificationCount;
 
   const handleToggleNotifications = () => {
     const nextState = !showNotifications;
     setShowNotifications(nextState);
     setShowProfileMenu(false);
     if (nextState) {
-      // Mark notifications as viewed when opened
       setNotificationsRead(true);
     }
+  };
+
+  const handleDismissAdminMessage = async (e: React.MouseEvent, msgId: string) => {
+    e.stopPropagation();
+    await markAdminMessageAsRead(msgId);
+    setAdminMessages((prev) => prev.map((m) => (m.id === msgId ? { ...m, isRead: true } : m)));
   };
 
   return (
@@ -124,7 +149,56 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 </div>
 
-                <div className="divide-y divide-surface-container-high max-h-80 overflow-y-auto pt-1">
+                <div className="divide-y divide-surface-container-high max-h-80 overflow-y-auto pt-1 space-y-1">
+                  {/* Co-founder / Admin Messages */}
+                  {adminMessages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`p-3 rounded-xl transition-all border ${
+                        msg.isRead
+                          ? 'bg-surface-container-low border-surface-container-high'
+                          : msg.priority === 'URGENT'
+                          ? 'bg-error/10 border-error/40 text-on-surface ring-1 ring-error/20'
+                          : 'bg-secondary/10 border-secondary/40 text-on-surface ring-1 ring-secondary/20'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="material-symbols-outlined text-sm text-secondary">verified</span>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+                            NeuraFitness Co-Founders
+                          </span>
+                          {msg.priority !== 'NORMAL' && (
+                            <span className={`px-1.5 py-0.2 rounded text-[9px] font-bold ${
+                              msg.priority === 'URGENT' ? 'bg-error text-white' : 'bg-secondary text-on-secondary'
+                            }`}>
+                              {msg.priority}
+                            </span>
+                          )}
+                        </div>
+                        {!msg.isRead && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleDismissAdminMessage(e, msg.id)}
+                            className="text-[10px] font-bold text-outline hover:text-secondary underline cursor-pointer shrink-0"
+                          >
+                            Mark read
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-xs font-bold text-on-surface mt-1">{msg.title}</p>
+                      <p className="text-xs text-on-surface-variant mt-0.5 whitespace-pre-wrap">{msg.message}</p>
+                      <p className="text-[10px] text-outline mt-1.5">
+                        {new Date(msg.createdAt).toLocaleDateString('en-IN', {
+                          day: 'numeric',
+                          month: 'short',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </p>
+                    </div>
+                  ))}
+
                   {hasExpiryAlert && (
                     <div
                       onClick={() => {
@@ -242,6 +316,23 @@ export const Header: React.FC<HeaderProps> = ({
                   >
                     <span className="material-symbols-outlined text-lg text-outline">settings</span>
                     <span>Gym Settings</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      onOpenFeedback?.();
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-secondary hover:bg-surface-container transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="material-symbols-outlined text-lg text-secondary">support_agent</span>
+                      <span>Feedback & Help</span>
+                    </div>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-secondary/15 text-secondary border border-secondary/30">
+                      Co-Founders
+                    </span>
                   </button>
                 </div>
 

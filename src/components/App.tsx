@@ -24,6 +24,7 @@ import { BulkWhatsAppModal } from './modals/BulkWhatsAppModal';
 import { MemberDetailModal } from './modals/MemberDetailModal';
 import { EditMemberModal } from './modals/EditMemberModal';
 import { ImportMembersModal } from './modals/ImportMembersModal';
+import { OwnerFeedbackModal } from './modals/OwnerFeedbackModal';
 import { QuickSearchModal } from './QuickSearchModal';
 
 interface AppProps {
@@ -74,6 +75,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Toast notifications
@@ -281,6 +283,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
         mobileOpen={mobileSidebarOpen}
         setMobileOpen={setMobileSidebarOpen}
         expiringCount={stats.expiringThisWeek}
+        onOpenFeedback={() => setIsFeedbackModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -295,6 +298,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
           onToggleMobileMenu={() => setMobileSidebarOpen(!mobileSidebarOpen)}
           onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
           onNavigateScreen={setActiveScreen}
+          onOpenFeedback={() => setIsFeedbackModalOpen(true)}
         />
 
         {/* View Routing */}
@@ -412,6 +416,12 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
         members={members}
         onSelectMember={(m) => setSelectedMember(m)}
         onNavigateScreen={(screen) => setActiveScreen(screen)}
+      />
+
+      <OwnerFeedbackModal
+        isOpen={isFeedbackModalOpen}
+        onClose={() => setIsFeedbackModalOpen(false)}
+        gymName={gym.name}
       />
     </div>
   );

@@ -35,16 +35,24 @@ model Gym {
   upiId              String?
   paymentQrUrl       String?
   attendanceMode     String?  @default("biometric")
+  saasPlan           String   @default("TRIAL_14_DAYS")
+  saasStatus         String   @default("ACTIVE") // PENDING_APPROVAL, ACTIVE, TRIAL, EXPIRED, SUSPENDED
+  saasExpiresAt      DateTime?
+  saasApprovedAt     DateTime?
+  isSuspended        Boolean  @default(false)
+  subscriptionAmount Int      @default(0)
   createdAt          DateTime @default(now())
 
-  users       User[]
-  members     Member[]
-  plans       Plan[]
-  memberships Membership[]
-  payments    Payment[]
-  attendances Attendance[]
-  queries     MemberQuery[]
-  reminders   GymReminder[]
+  users          User[]
+  members        Member[]
+  plans          Plan[]
+  memberships    Membership[]
+  payments       Payment[]
+  attendances    Attendance[]
+  queries        MemberQuery[]
+  reminders      GymReminder[]
+  ownerFeedbacks OwnerFeedback[]
+  adminMessages  AdminMessage[]
 }
 
 model User {
@@ -196,6 +204,38 @@ model GymReminder {
 
   @@index([gymId])
   @@index([memberId])
+}
+
+model OwnerFeedback {
+  id         String   @id @default(cuid())
+  gymId      String
+  category   String   // FEATURE_REQUEST, BUG_REPORT, BILLING, HARDWARE, OTHER
+  subject    String
+  message    String
+  status     String   @default("OPEN") // OPEN, IN_REVIEW, RESOLVED
+  adminReply String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  gym Gym @relation(fields: [gymId], references: [id])
+
+  @@index([gymId])
+  @@index([status])
+}
+
+model AdminMessage {
+  id        String   @id @default(cuid())
+  gymId     String?  // null = broadcast to all gyms
+  title     String
+  message   String
+  priority  String   @default("NORMAL") // NORMAL, HIGH, URGENT
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  gym Gym? @relation(fields: [gymId], references: [id])
+
+  @@index([gymId])
+  @@index([createdAt])
 }
 
 

@@ -10,6 +10,7 @@ interface SidebarProps {
   setMobileOpen: (open: boolean) => void;
   pendingDueCount?: number;
   expiringCount?: number;
+  onOpenFeedback?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -19,6 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   mobileOpen,
   setMobileOpen,
   expiringCount = 0,
+  onOpenFeedback,
 }) => {
   const navItems: { id: ActiveScreen; label: string; icon: string; badge?: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -108,13 +110,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </nav>
         </div>
 
-        {/* Gym card */}
-        <div className="p-4 m-4 rounded-xl bg-surface-container-low border border-surface-container-high flex items-center gap-3 shadow-[0_0_12px_rgba(0,0,0,0.3)]">
-          <div className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs border border-primary/30 shrink-0">{gym.initials}</div>
-          <div className="flex flex-col min-w-0 flex-1">
-            <span className="text-[0.8125rem] font-medium text-on-surface truncate">{gym.name}</span>
-            <span className="text-[0.75rem] text-on-surface-variant truncate">{gym.address}</span>
+        {/* Gym card & Feedback option at the end of navigation */}
+        <div className="p-3 m-3 rounded-xl bg-surface-container-low border border-surface-container-high space-y-2.5 shadow-[0_0_12px_rgba(0,0,0,0.3)]">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs border border-primary/30 shrink-0">{gym.initials}</div>
+            <div className="flex flex-col min-w-0 flex-1">
+              <span className="text-[0.8125rem] font-bold text-on-surface truncate">{gym.name}</span>
+              <span className="text-[0.7rem] text-on-surface-variant truncate">{gym.address || `Code: ${gym.slug}`}</span>
+            </div>
           </div>
+
+          {/* Feedback & Query option just below gym name in navigation menu in the end */}
+          <button
+            type="button"
+            onClick={() => {
+              setMobileOpen(false);
+              onOpenFeedback?.();
+            }}
+            className="w-full py-2 px-2.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-secondary hover:text-on-surface transition-all flex items-center justify-between text-xs font-semibold cursor-pointer border border-surface-container-highest"
+          >
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-base">support_agent</span>
+              <span>Feedback / Query</span>
+            </div>
+            <span className="material-symbols-outlined text-sm text-outline">arrow_forward</span>
+          </button>
         </div>
       </aside>
     </>

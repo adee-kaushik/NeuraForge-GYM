@@ -115,19 +115,27 @@ export async function POST(req: NextRequest) {
     }
 
     // Determine target Gym:
-    let gym;
+    let gym = null;
     if (gymSlug) {
       gym = await prisma.gym.findUnique({
         where: { slug: String(gymSlug).trim().toLowerCase() },
       });
     } else {
-      // If gymSlug not in payload, match single gym or first gym in system
-      gym = await prisma.gym.findFirst();
+      // Security: Only fallback if there is strictly 1 gym registered in the system
+      const gymCount = await prisma.gym.count();
+      if (gymCount === 1) {
+        gym = await prisma.gym.findFirst();
+      } else {
+        return NextResponse.json(
+          { ok: false, status: 'DENIED', error: 'Ambiguous request: gymSlug required in multi-tenant SaaS.' },
+          { status: 400 }
+        );
+      }
     }
 
     if (!gym) {
       return NextResponse.json(
-        { ok: false, status: 'DENIED', error: 'Gym not found' },
+        { ok: false, status: 'DENIED', error: `Gym code "${gymSlug}" not found.` },
         { status: 404 }
       );
     }

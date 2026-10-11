@@ -5,7 +5,7 @@ const MEMBER_COOKIE_NAME = 'nf_member_session';
 const SESSION_SECRET =
   process.env.DIRECT_URL ||
   process.env.DATABASE_URL ||
-  'neuraforge-secure-member-session-key-2026';
+  'neurafitness-secure-member-session-key-2026';
 
 function signToken(memberId: string): string {
   const hmac = createHmac('sha256', SESSION_SECRET).update(`member-session:${memberId}`).digest('hex');

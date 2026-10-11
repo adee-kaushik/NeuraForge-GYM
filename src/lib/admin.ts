@@ -5,10 +5,30 @@ import { createClient } from '@/utils/supabase/server';
 export async function isNeuraFitnessAdmin(): Promise<boolean> {
   const supabase = await createClient();
   const { data } = await supabase.auth.getUser();
-  return (
+  if (!data?.user) return false;
+
+  // 1. Direct app_metadata set by Supabase service role
+  if (
     data.user?.app_metadata?.neurafitness_admin === true ||
-    data.user?.app_metadata?.neuraforge_admin === true
-  );
+    data.user?.app_metadata?.neuraforge_admin === true ||
+    data.user?.user_metadata?.is_admin === true
+  ) {
+    return true;
+  }
+
+  // 2. Co-founders / admin emails whitelist
+  const adminEmails = (
+    process.env.ADMIN_EMAILS ||
+    'admin@neurafitness.com,founder@neurafitness.com,aditya@neurafitness.com'
+  )
+    .split(',')
+    .map((e) => e.trim().toLowerCase());
+
+  if (data.user.email && adminEmails.includes(data.user.email.toLowerCase())) {
+    return true;
+  }
+
+  return false;
 }
 
 export const isNeuraForgeAdmin = isNeuraFitnessAdmin;
