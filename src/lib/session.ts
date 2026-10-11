@@ -3,6 +3,7 @@ import type { CurrentUser, GymConfig } from '@/config/gym';
 // Plain shapes of the database rows we need (kept structural so this file has no Prisma dependency)
 type GymRow = {
   name: string;
+  slug: string;
   address: string | null;
   gstNumber: string | null;
   gstRatePercent: number;
@@ -26,6 +27,7 @@ const initialsOf = (text: string): string =>
 
 export const toGymConfig = (gym: GymRow): GymConfig => ({
   name: gym.name,
+  slug: gym.slug,
   shortName: gym.name.replace(/\s+gym$/i, ''),
   initials: initialsOf(gym.name),
   address: gym.address ?? '',

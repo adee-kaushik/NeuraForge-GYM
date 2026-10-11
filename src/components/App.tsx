@@ -34,12 +34,13 @@ interface AppProps {
   initialCheckIns: CheckInRecord[];
 }
 
-export default function App({ initialGym, currentUser, plans, initialMembers, initialTransactions, initialCheckIns }: AppProps) {
+export default function App({ initialGym, currentUser, plans: initialPlans, initialMembers, initialTransactions, initialCheckIns }: AppProps) {
   const [activeScreen, setActiveScreen] = useState<ActiveScreen>('dashboard');
 
   // Records come from the database (loaded on the server). Everything the UI shows is derived from them.
   const [now, setNow] = useState(() => new Date());
   const [gym, setGym] = useState<GymConfig>(initialGym);
+  const [plans, setPlans] = useState<MembershipPlan[]>(initialPlans);
   const [memberRecords, setMemberRecords] = useState<MemberRecord[]>(initialMembers);
   const [txnRecords, setTxnRecords] = useState<TransactionRecord[]>(initialTransactions);
   const [checkInRecords, setCheckInRecords] = useState<CheckInRecord[]>(initialCheckIns);
@@ -327,6 +328,7 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
               members={members}
               onMarkPresent={handleCheckIn}
               onCheckInByCode={handleCheckInByCode}
+              gymSlug={gym.slug}
             />
           )}
 
@@ -358,9 +360,12 @@ export default function App({ initialGym, currentUser, plans, initialMembers, in
         plans={plans}
         members={members}
         onClose={() => setIsImportOpen(false)}
-        onImported={(imported) => {
+        onImported={(imported, newPlans) => {
           setMemberRecords((prev) => [...imported, ...prev]);
-          showToast(`${imported.length} members imported.`);
+          if (newPlans && newPlans.length > 0) {
+            setPlans((prev) => [...prev, ...newPlans]);
+          }
+          showToast(`${imported.length} members imported${newPlans?.length ? ` and ${newPlans.length} plans created.` : '.'}`);
         }}
       />
 

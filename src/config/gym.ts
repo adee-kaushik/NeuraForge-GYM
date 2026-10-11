@@ -2,6 +2,7 @@
 // GYM below is only a fallback/demo value for the mock data.
 export interface GymConfig {
   name: string;
+  slug: string;
   shortName: string;
   initials: string;
   address: string;
@@ -20,6 +21,7 @@ export interface GymSettingsInput {
 
 export const GYM: GymConfig = {
   name: 'Iron Pulse Gym',
+  slug: 'iron-pulse',
   shortName: 'Iron Pulse',
   initials: 'IP',
   address: 'Malviya Nagar, Jaipur',

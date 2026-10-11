@@ -4,21 +4,63 @@ import { startOfDayIST } from '@/lib/format';
 import { toCheckInRecord } from '@/lib/records';
 
 /**
- * Biometric & Turnstile Attendance API Endpoint
- * Enables biometric devices (eSSL, ZKTeco, Mantra, Realtime) or local sync scripts
- * to push attendance punches directly into NeuraForge OS.
+ * Universal Biometric & Turnstile Attendance API Endpoint
+ * Supports:
+ * 1. Standard JSON payload (used by Cloud terminals, Python/Node desktop agents, HTTP webhooks)
+ * 2. Native ZKTeco / eSSL ADMS protocol (table=ATTLOG push)
+ * 3. Query string auth or Header auth (?apiKey=... or x-api-key / Bearer)
  *
- * Request POST /api/attendance/biometric
- * Body: { "gymSlug": "iron-gym", "identifier": "MEM-001", "timestamp"?: "2026-10-08T00:50:00Z" }
+ * GET /api/attendance/biometric -> ADMS handshake or Device Ping
+ * POST /api/attendance/biometric -> Punch check-in
  */
+
+export async function GET(req: NextRequest) {
+  const sn = req.nextUrl.searchParams.get('SN') || req.nextUrl.searchParams.get('sn');
+
+  // ADMS / iClock handshake response
+  if (sn) {
+    const configResponse = [
+      `GET OPTION FROM: ${sn}`,
+      'ServerVersion=3.0.1',
+      'ServerName=NeuraForge',
+      'PushVersion=3.0.1',
+      'ErrorDelay=60',
+      'RequestDelay=5',
+      'TransTimes=00:00;14:00',
+      'TransInterval=1',
+      'TransFlag=TransData AttLog',
+      'TimeZone=5.5',
+      'Realtime=1',
+      'Encrypt=0',
+      '',
+    ].join('\n');
+
+    return new NextResponse(configResponse, {
+      status: 200,
+      headers: { 'Content-Type': 'text/plain' },
+    });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    service: 'NeuraForge Biometric Attendance Gateway',
+    protocols: ['JSON', 'ZKTeco/eSSL ADMS', 'Desktop-Bridge'],
+    version: '1.2.0',
+    status: 'ONLINE',
+  });
+}
+
 export async function POST(req: NextRequest) {
   try {
-    // Optional API Key protection if BIOMETRIC_API_KEY is configured in env
     const configuredKey = process.env.BIOMETRIC_API_KEY;
     if (configuredKey) {
       const authHeader = req.headers.get('authorization') || '';
       const apiKeyHeader = req.headers.get('x-api-key') || '';
-      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : apiKeyHeader.trim();
+      const queryKey = req.nextUrl.searchParams.get('apiKey') || '';
+      const token = authHeader.startsWith('Bearer ')
+        ? authHeader.slice(7).trim()
+        : apiKeyHeader.trim() || queryKey.trim();
+
       if (token !== configuredKey) {
         return NextResponse.json(
           { ok: false, status: 'DENIED', error: 'Unauthorized: Invalid or missing API key' },
@@ -27,40 +69,80 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const body = await req.json();
-    const { gymSlug, identifier, timestamp } = body ?? {};
+    const table = req.nextUrl.searchParams.get('table') || '';
+    const sn = req.nextUrl.searchParams.get('SN') || req.nextUrl.searchParams.get('sn') || '';
+    const queryGymSlug = req.nextUrl.searchParams.get('gymSlug') || '';
 
-    if (!gymSlug || !identifier || typeof gymSlug !== 'string' || typeof identifier !== 'string') {
+    let gymSlug = queryGymSlug;
+    let identifier = '';
+    let timestamp: Date | undefined;
+
+    const contentType = req.headers.get('content-type') || '';
+
+    // CASE 1: Native ZKTeco / eSSL ADMS attendance log push
+    if (table.toUpperCase() === 'ATTLOG' || !contentType.includes('application/json')) {
+      const rawText = await req.text();
+      // Formats: PIN \t Time \t Status ...
+      const firstLine = rawText.split(/\r?\n/).find((line) => line.trim().length > 0);
+      if (firstLine) {
+        const parts = firstLine.split(/\t|,|\s{2,}/);
+        if (parts.length >= 2) {
+          identifier = parts[0].trim();
+          const parsedDate = new Date(parts[1].trim());
+          if (!isNaN(parsedDate.getTime())) timestamp = parsedDate;
+        }
+      }
+    } else {
+      // CASE 2: Standard JSON Payload
+      const body = await req.json().catch(() => ({}));
+      gymSlug = body.gymSlug || queryGymSlug;
+      identifier = body.identifier;
+      if (body.timestamp) {
+        const parsedDate = new Date(body.timestamp);
+        if (!isNaN(parsedDate.getTime())) timestamp = parsedDate;
+      }
+    }
+
+    if (!identifier) {
+      // If ADMS handshake ping with no logs, respond OK
+      if (sn) {
+        return new NextResponse('OK: 0\n', { status: 200, headers: { 'Content-Type': 'text/plain' } });
+      }
       return NextResponse.json(
-        { ok: false, status: 'DENIED', error: 'Missing or invalid gymSlug or identifier' },
+        { ok: false, status: 'DENIED', error: 'Missing member identifier / PIN' },
         { status: 400 }
       );
     }
 
-    if (gymSlug.length > 50 || identifier.length > 50) {
-      return NextResponse.json(
-        { ok: false, status: 'DENIED', error: 'Input exceeded maximum allowed length' },
-        { status: 400 }
-      );
+    // Determine target Gym:
+    let gym;
+    if (gymSlug) {
+      gym = await prisma.gym.findUnique({
+        where: { slug: String(gymSlug).trim().toLowerCase() },
+      });
+    } else {
+      // If gymSlug not in payload, match single gym or first gym in system
+      gym = await prisma.gym.findFirst();
     }
 
-    const gym = await prisma.gym.findUnique({
-      where: { slug: String(gymSlug).trim().toLowerCase() },
-    });
     if (!gym) {
       return NextResponse.json(
-        { ok: false, status: 'DENIED', error: 'Invalid gymSlug' },
+        { ok: false, status: 'DENIED', error: 'Gym not found' },
         { status: 404 }
       );
     }
 
     const cleanIdentifier = String(identifier).trim();
+    const cleanPhoneDigits = cleanIdentifier.replace(/\D/g, '');
+
     const member = await prisma.member.findFirst({
       where: {
         gymId: gym.id,
         OR: [
           { memberCode: { equals: cleanIdentifier, mode: 'insensitive' } },
-          { phone: { equals: cleanIdentifier.replace(/\D/g, '') } },
+          ...(cleanPhoneDigits.length >= 10
+            ? [{ phone: { contains: cleanPhoneDigits.slice(-10) } }]
+            : []),
         ],
       },
       include: {
@@ -73,22 +155,35 @@ export async function POST(req: NextRequest) {
     });
 
     if (!member) {
+      if (sn) {
+        return new NextResponse('OK: 1\n', { status: 200, headers: { 'Content-Type': 'text/plain' } });
+      }
       return NextResponse.json(
-        { ok: false, status: 'DENIED', error: `Member "${cleanIdentifier}" not found` },
+        { ok: false, status: 'DENIED', relay: false, error: `Member "${cleanIdentifier}" not found in gym` },
         { status: 404 }
       );
     }
 
-    const punchTime = timestamp ? new Date(timestamp) : new Date();
-    const now = isNaN(punchTime.getTime()) ? new Date() : punchTime;
-
+    const now = timestamp || new Date();
     const latest = member.memberships[0];
+
+    // Check expiration
     if (!latest || latest.expiresAt < now) {
+      const daysOverdue = latest
+        ? Math.round((now.getTime() - latest.expiresAt.getTime()) / 86400000)
+        : null;
+
+      if (sn) {
+        // Return OK so machine doesn't endlessly re-push, but access is blocked
+        return new NextResponse('OK: 1\n', { status: 200, headers: { 'Content-Type': 'text/plain' } });
+      }
+
       return NextResponse.json(
         {
           ok: false,
           status: 'DENIED',
-          error: 'Membership has expired',
+          relay: false, // Turnstile relay locked
+          error: `Membership has expired${daysOverdue ? ` (${daysOverdue} days ago)` : ''}`,
           memberName: member.name,
           memberCode: member.memberCode,
         },
@@ -96,7 +191,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if already present today
+    // Check if already checked in today
     const alreadyIn = await prisma.attendance.findFirst({
       where: {
         gymId: gym.id,
@@ -106,9 +201,14 @@ export async function POST(req: NextRequest) {
     });
 
     if (alreadyIn) {
+      if (sn) {
+        return new NextResponse('OK: 1\n', { status: 200, headers: { 'Content-Type': 'text/plain' } });
+      }
+
       return NextResponse.json({
         ok: true,
         status: 'DUPLICATE',
+        relay: true,
         message: 'Member already checked in today',
         memberName: member.name,
         memberCode: member.memberCode,
@@ -116,6 +216,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // Record check-in
     const row = await prisma.attendance.create({
       data: {
         gymId: gym.id,
@@ -124,13 +225,21 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    const daysLeft = Math.round((latest.expiresAt.getTime() - now.getTime()) / 86400000);
+
+    if (sn) {
+      return new NextResponse('OK: 1\n', { status: 200, headers: { 'Content-Type': 'text/plain' } });
+    }
+
     return NextResponse.json({
       ok: true,
       status: 'GRANTED',
-      message: 'Access granted',
+      relay: true, // Turnstile relay unlock pulse
+      message: 'Access granted. Welcome to the gym!',
       memberName: member.name,
       memberCode: member.memberCode,
       planName: latest.plan.name,
+      daysLeft,
       checkIn: toCheckInRecord(row),
     });
   } catch (error: unknown) {

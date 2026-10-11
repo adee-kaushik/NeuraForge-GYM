@@ -9,6 +9,7 @@ interface AttendanceViewProps {
   members: Member[];
   onMarkPresent: (member: Member) => Promise<void> | void;
   onCheckInByCode?: (code: string) => Promise<ScanCheckInResult>;
+  gymSlug?: string;
 }
 
 type ModeTab = 'search' | 'qr-scanner' | 'biometric';
@@ -28,8 +29,11 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
   members,
   onMarkPresent,
   onCheckInByCode,
+  gymSlug = '',
 }) => {
   const [activeTab, setActiveTab] = useState<ModeTab>('search');
+  const [deviceGuideTab, setDeviceGuideTab] = useState<'essl' | 'lan' | 'json'>('essl');
+  const [copiedSlug, setCopiedSlug] = useState(false);
 
   // Search mode state
   const [query, setQuery] = useState('');
@@ -135,9 +139,15 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
     setBioId('');
   };
 
-  const copyApiUrl = () => {
-    const url = `${window.location.origin}/api/attendance/biometric`;
-    navigator.clipboard.writeText(url);
+  const copyGymSlug = () => {
+    if (!gymSlug) return;
+    navigator.clipboard.writeText(gymSlug);
+    setCopiedSlug(true);
+    setTimeout(() => setCopiedSlug(false), 2000);
+  };
+
+  const copyAdmsPath = () => {
+    navigator.clipboard.writeText('/iclock/cdata');
     setCopiedUrl(true);
     setTimeout(() => setCopiedUrl(false), 2000);
   };
@@ -344,56 +354,72 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
             </div>
           )}
 
-          {/* TAB 3: BIOMETRIC TERMINAL & HARDWARE PUNCH HUB */}
+          {/* TAB 3: BIOMETRIC TERMINAL & UNIVERSAL HARDWARE HUB */}
           {activeTab === 'biometric' && (
             <div className="p-4 sm:p-6 rounded-xl bg-surface-container-low border border-primary/40 flex flex-col gap-6 shadow-[0_0_30px_rgba(148,125,255,0.12)]">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h2 className="font-sora text-sm font-semibold text-on-surface flex items-center gap-2">
                     <span className="material-symbols-outlined text-primary text-xl">fingerprint</span>
-                    <span>Biometric Device Console</span>
+                    <span>Universal Biometric & Turnstile Hub</span>
                   </h2>
                   <p className="text-xs text-outline mt-0.5">
-                    Connects eSSL, ZKTeco, Mantra biometric attendance machines directly to NeuraForge
+                    Connects any eSSL, ZKTeco, Mantra, or Realtime device directly to NeuraForge with zero setup friction
                   </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-full bg-tertiary/15 text-tertiary text-[11px] font-bold border border-tertiary/30 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+                    Universal Cloud Gateway Active
+                  </span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Punch Keypad Terminal */}
-                <div className="lg:col-span-5 bg-surface-container-lowest p-4 rounded-xl border border-surface-container-high space-y-3">
-                  <span className="text-xs font-bold uppercase tracking-wider text-outline block">
-                    Biometric Punch Terminal
-                  </span>
+                {/* Punch Keypad & Test Terminal */}
+                <div className="lg:col-span-5 bg-surface-container-lowest p-4 sm:p-5 rounded-xl border border-surface-container-high space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-outline flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm text-primary">touch_app</span>
+                      <span>Hardware Punch Tester</span>
+                    </span>
+                    <span className="text-[10px] text-outline font-mono">Live Simulator</span>
+                  </div>
+
+                  <p className="text-xs text-outline">
+                    Test how your biometric machine communicates with NeuraForge by entering any member ID, biometric card number, or phone digits:
+                  </p>
+
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={bioId}
                       onChange={(e) => setBioId(e.target.value)}
-                      placeholder="Enter Member Code or Biometric ID..."
-                      className="flex-1 bg-surface-container px-3 py-2 rounded-lg text-xs font-mono text-on-surface border border-surface-container-high focus:border-primary focus:outline-none"
+                      placeholder="e.g. MEM-001 or 101 or 9876543210"
+                      className="flex-1 bg-surface-container px-3 py-2.5 rounded-xl text-xs font-mono text-on-surface border border-surface-container-high focus:border-primary focus:outline-none"
                     />
                     <button
                       onClick={() => handleBiometricPunch(bioId)}
                       disabled={bioBusy || !bioId.trim()}
-                      className="h-10 px-5 rounded-xl bg-primary text-on-primary text-xs sm:text-sm font-bold cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-sm hover:opacity-90 active:scale-95 transition-all"
+                      className="h-10 px-5 rounded-xl bg-primary text-on-primary text-xs font-bold cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-sm hover:opacity-90 active:scale-95 transition-all"
                     >
                       {bioBusy && (
                         <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span>
                       )}
-                      <span>Punch</span>
+                      <span>Test Punch</span>
                     </button>
                   </div>
 
-                  {/* Quick-punch suggestions from active roster */}
-                  <div className="pt-2">
-                    <span className="text-[11px] text-outline block mb-1.5">Quick punch members:</span>
+                  {/* Quick-punch suggestions */}
+                  <div className="pt-2 border-t border-surface-container-high">
+                    <span className="text-[11px] text-outline block mb-2">Simulate punch for active member:</span>
                     <div className="flex flex-wrap gap-1.5">
                       {members.slice(0, 6).map((m) => (
                         <button
                           key={m.id}
                           onClick={() => handleBiometricPunch(m.memberCode)}
-                          className="px-2 py-1 rounded bg-surface-container hover:bg-surface-container-high text-[11px] font-mono text-secondary border border-surface-container-high cursor-pointer transition-colors"
+                          className="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-[11px] font-mono text-secondary border border-surface-container-high cursor-pointer transition-colors"
                         >
                           {m.memberCode} ({m.name.split(' ')[0]})
                         </button>
@@ -402,40 +428,163 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                   </div>
                 </div>
 
-                {/* Hardware Webhook Integration Info */}
-                <div className="lg:col-span-7 bg-surface-container-lowest p-4 rounded-xl border border-surface-container-high space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-outline flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-sm text-secondary">lan</span>
-                      <span>Hardware Integration Webhook</span>
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-tertiary/15 text-tertiary text-[10px] font-bold border border-tertiary/30">
-                      LIVE API ACTIVE
-                    </span>
-                  </div>
-                  <p className="text-xs text-outline">
-                    Your local biometric machine sync service (eSSL eTimeTrackLite / ZK BioSecurity) can push punch logs directly:
-                  </p>
+                {/* Multi-Device Hardware Configuration Guides */}
+                <div className="lg:col-span-7 bg-surface-container-lowest p-4 sm:p-5 rounded-xl border border-surface-container-high flex flex-col justify-between space-y-4">
+                  {/* Brand Switcher Tabs */}
+                  <div>
+                    <div className="flex items-center justify-between pb-3 border-b border-surface-container-high mb-3">
+                      <span className="text-xs font-bold uppercase tracking-wider text-outline flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-sm text-secondary">settings_ethernet</span>
+                        <span>Machine Setup Guide</span>
+                      </span>
 
-                  <div className="p-2.5 rounded-lg bg-surface-container font-mono text-xs flex items-center justify-between gap-2 border border-surface-container-high">
-                    <span className="truncate text-secondary">POST /api/attendance/biometric</span>
-                    <button
-                      onClick={copyApiUrl}
-                      className="px-2 py-1 rounded bg-surface-container-high hover:bg-surface-container-highest text-[10px] font-sans font-bold text-on-surface shrink-0 cursor-pointer"
-                    >
-                      {copiedUrl ? 'Copied!' : 'Copy Full URL'}
-                    </button>
-                  </div>
+                      <div className="flex items-center gap-1 bg-surface-container p-1 rounded-lg text-[11px] font-bold">
+                        <button
+                          type="button"
+                          onClick={() => setDeviceGuideTab('essl')}
+                          className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                            deviceGuideTab === 'essl'
+                              ? 'bg-surface-container-lowest text-secondary shadow-xs'
+                              : 'text-outline hover:text-on-surface'
+                          }`}
+                        >
+                          ZKTeco / eSSL
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeviceGuideTab('lan')}
+                          className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                            deviceGuideTab === 'lan'
+                              ? 'bg-surface-container-lowest text-secondary shadow-xs'
+                              : 'text-outline hover:text-on-surface'
+                          }`}
+                        >
+                          LAN Router Bridge
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeviceGuideTab('json')}
+                          className={`px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                            deviceGuideTab === 'json'
+                              ? 'bg-surface-container-lowest text-secondary shadow-xs'
+                              : 'text-outline hover:text-on-surface'
+                          }`}
+                        >
+                          API / Mantra
+                        </button>
+                      </div>
+                    </div>
 
-                  <div className="text-[11px] text-outline space-y-1">
-                    <p className="font-semibold text-on-surface-variant">JSON Payload Format:</p>
-                    <pre className="p-2 bg-surface-container rounded text-[10px] text-secondary font-mono overflow-x-auto">
+                    {/* TAB 1: ZKTeco / eSSL Direct Cloud ADMS */}
+                    {deviceGuideTab === 'essl' && (
+                      <div className="space-y-3 text-xs">
+                        <p className="text-on-surface-variant text-[11px]">
+                          <strong>Direct Cloud Push (Zero PC Required):</strong> Enter these settings on your eSSL / ZKTeco machine screen:
+                        </p>
+                        <div className="p-3 bg-surface-container rounded-xl font-mono text-[11px] space-y-2 border border-surface-container-high">
+                          <div className="flex items-center justify-between">
+                            <span className="text-outline">Server Address:</span>
+                            <span className="text-secondary font-bold select-all">
+                              {typeof window !== 'undefined' ? window.location.host : 'neuraforge.com'}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-outline">Server Port:</span>
+                            <span className="text-secondary font-bold">443 (HTTPS) or 80 (HTTP)</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-outline">ADMS / iClock Path:</span>
+                            <span className="text-tertiary font-bold">/iclock/cdata</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-outline">Domain Name Support:</span>
+                            <span className="text-on-surface font-bold">Enabled (ON)</span>
+                          </div>
+                        </div>
+                        <ol className="list-decimal list-inside text-[11px] text-outline space-y-1">
+                          <li>On machine keypad: Press <strong>M/OK (Menu)</strong> → <strong>Comm.</strong> → <strong>Cloud Server / ADMS</strong>.</li>
+                          <li>Turn <strong>Enable Domain Name</strong> to ON. Enter your server domain and port 443.</li>
+                          <li>Save & restart. Every fingerprint punch is automatically received by NeuraForge!</li>
+                        </ol>
+                      </div>
+                    )}
+
+                    {/* TAB 2: Local LAN Desktop Bridge */}
+                    {deviceGuideTab === 'lan' && (
+                      <div className="space-y-3 text-xs">
+                        <p className="text-on-surface-variant text-[11px]">
+                          <strong>For Offline LAN Devices (192.168.1.xxx:4370):</strong> If your device doesn't have ADMS or runs on local WiFi:
+                        </p>
+                        <div className="p-3 bg-surface-container rounded-xl font-mono text-[11px] space-y-2 border border-surface-container-high">
+                          <p className="text-outline text-[10px]">1-Command Reception PC Sync Bridge:</p>
+                          <code className="text-secondary block p-2 bg-surface-container-low rounded border border-surface-container-high select-all">
+                            node public/scripts/neuraforge-sync.js
+                          </code>
+                        </div>
+                        <div className="flex items-center justify-between pt-1">
+                          <span className="text-[11px] text-outline">Ready-to-run desktop sync script:</span>
+                          <a
+                            href="/scripts/neuraforge-sync.js"
+                            download="neuraforge-sync.js"
+                            className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-secondary text-xs font-bold flex items-center gap-1.5 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-sm">download</span>
+                            Download Sync Script
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* TAB 3: Generic API / Mantra */}
+                    {deviceGuideTab === 'json' && (
+                      <div className="space-y-3 text-xs">
+                        <p className="text-on-surface-variant text-[11px]">
+                          <strong>REST Webhook:</strong> Use this endpoint from any custom turnstile, Mantra software, or cloud webhook:
+                        </p>
+                        <div className="p-3 bg-surface-container rounded-xl font-mono text-[11px] space-y-1.5 border border-surface-container-high">
+                          <div className="flex items-center justify-between">
+                            <span className="text-outline">Endpoint:</span>
+                            <span className="text-secondary font-bold">POST /api/attendance/biometric</span>
+                          </div>
+                          <pre className="p-2 bg-surface-container-low rounded text-[10px] text-tertiary overflow-x-auto">
 {`{
-  "gymSlug": "your-gym-slug",
+  "gymSlug": "${gymSlug || 'your-gym-slug'}",
   "identifier": "MEM-001",
-  "timestamp": "2026-10-08T01:00:00Z"
+  "timestamp": "${new Date().toISOString()}"
 }`}
-                    </pre>
+                          </pre>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick-copy footer bar */}
+                  <div className="pt-2 border-t border-surface-container-high flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-outline">Your Gym Slug:</span>
+                      <span className="px-2 py-0.5 rounded bg-surface-container font-mono text-[11px] font-bold text-on-surface">
+                        {gymSlug || 'Default'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {gymSlug && (
+                        <button
+                          type="button"
+                          onClick={copyGymSlug}
+                          className="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-xs font-bold text-outline hover:text-on-surface cursor-pointer transition-colors"
+                        >
+                          {copiedSlug ? 'Slug Copied!' : 'Copy Slug'}
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        onClick={copyAdmsPath}
+                        className="px-2.5 py-1 rounded bg-surface-container hover:bg-surface-container-high text-xs font-bold text-secondary cursor-pointer transition-colors"
+                      >
+                        {copiedUrl ? 'Copied!' : 'Copy ADMS Path'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
