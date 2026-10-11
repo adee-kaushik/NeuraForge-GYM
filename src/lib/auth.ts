@@ -40,8 +40,21 @@ export async function requireStaff() {
   return staff;
 }
 
+import { getMemberSessionId } from '@/lib/member-session';
+
 // Returns the logged-in member (with their gym), or null. Owners and staff get null here.
 export const getCurrentMember = cache(async () => {
+  // 1. Direct passwordless member session cookie
+  const sessionMemberId = await getMemberSessionId();
+  if (sessionMemberId) {
+    const member = await prisma.member.findUnique({
+      where: { id: sessionMemberId },
+      include: { gym: true },
+    });
+    if (member) return member;
+  }
+
+  // 2. Fallback to Supabase auth user id
   const authUserId = await getAuthUserId();
   if (!authUserId) return null;
 

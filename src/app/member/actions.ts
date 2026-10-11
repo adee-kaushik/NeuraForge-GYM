@@ -6,15 +6,10 @@ import { prisma } from '@/lib/prisma';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { generatePassword, memberEmail } from '@/lib/member-auth';
 import { startOfDayIST } from '@/lib/format';
-
-import { createHmac } from 'crypto';
+import { setMemberSession, clearMemberSession } from '@/lib/member-session';
+import { getCurrentMember } from '@/lib/auth';
 
 export type MemberLoginState = { error?: string; success?: boolean };
-
-function getInternalMemberPassword(memberId: string, gymId: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'nf-member-salt-2026';
-  return createHmac('sha256', secret).update(`member-auth:${memberId}:${gymId}`).digest('hex').slice(0, 24) + 'Aa1!';
-}
 
 export async function loginMember(_prev: MemberLoginState, formData: FormData): Promise<MemberLoginState> {
   const gymCode = String(formData.get('gymCode') ?? '').trim().toLowerCase();
@@ -52,72 +47,8 @@ export async function loginMember(_prev: MemberLoginState, formData: FormData): 
     return { error: 'Access denied. You can only access your own gym with your gym code.' };
   }
 
-  // 4. Authenticate seamlessly using internal server-managed pass credentials (no password required from member)
-  const admin = createAdminClient();
-  const supabase = await createClient();
-  const internalPassword = getInternalMemberPassword(member.id, gym.id);
-  const loginIdentifier = cleanDigits || member.phone.replace(/\D/g, '').slice(-10) || member.memberCode;
-  const email = memberEmail(gym.slug, loginIdentifier);
-
-  let authUserId = member.authUserId;
-
-  if (authUserId) {
-    const { error: updateErr } = await admin.auth.admin.updateUserById(authUserId, {
-      password: internalPassword,
-      email,
-    });
-    if (updateErr) {
-      authUserId = null;
-    }
-  }
-
-  if (!authUserId) {
-    const { data: createData, error: createErr } = await admin.auth.admin.createUser({
-      email,
-      password: internalPassword,
-      email_confirm: true,
-      app_metadata: { role: 'MEMBER', gym_id: gym.id, member_id: member.id },
-    });
-
-    if (createData?.user) {
-      authUserId = createData.user.id;
-    } else if (createErr?.message?.toLowerCase().includes('already')) {
-      const { data: listData } = await admin.auth.admin.listUsers();
-      const usersList = (listData?.users ?? []) as Array<{ id: string; email?: string }>;
-      const found = usersList.find((u) => u.email === email);
-      if (found) {
-        authUserId = found.id;
-        await admin.auth.admin.updateUserById(found.id, { password: internalPassword });
-      }
-    }
-
-    if (!authUserId) {
-      return { error: 'Could not activate digital pass session. Please check with your gym front desk.' };
-    }
-
-    await prisma.member.update({
-      where: { id: member.id },
-      data: { authUserId },
-    });
-  }
-
-  // Sign in on SSR client to issue auth cookies to the browser
-  const signInRes = await supabase.auth.signInWithPassword({
-    email,
-    password: internalPassword,
-  });
-
-  if (signInRes.error || !signInRes.data.user) {
-    // Retry once in case of desynchronization
-    await admin.auth.admin.updateUserById(authUserId, { password: internalPassword });
-    const retryRes = await supabase.auth.signInWithPassword({
-      email,
-      password: internalPassword,
-    });
-    if (retryRes.error || !retryRes.data.user) {
-      return { error: 'Could not open digital pass. Please contact your gym front desk.' };
-    }
-  }
+  // 4. Activate member session (direct signed HTTP-only cookie, 30 days)
+  await setMemberSession(member.id);
 
   return { success: true };
 }
@@ -210,20 +141,15 @@ export async function resetMemberPasswordByPhone(gymCodeRaw: string, phoneOrIdRa
 }
 
 export async function logoutMember() {
+  await clearMemberSession();
   const supabase = await createClient();
   await supabase.auth.signOut();
   redirect('/member/login');
 }
 
 export async function memberSelfCheckIn(): Promise<{ ok: boolean; error?: string }> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { ok: false, error: 'Please log in first.' };
-
-  const member = await prisma.member.findUnique({
-    where: { authUserId: user.id },
-  });
-  if (!member) return { ok: false, error: 'Member not found.' };
+  const member = await getCurrentMember();
+  if (!member) return { ok: false, error: 'Please log in first.' };
 
   const now = new Date();
   const latestMembership = await prisma.membership.findFirst({
