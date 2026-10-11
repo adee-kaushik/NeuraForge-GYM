@@ -59,8 +59,8 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
     }
   };
 
-  const sendLoginOnWhatsApp = (r: { gymCode: string; memberCode: string; password: string }) => {
-    const text = `Hi ${member.name}, your ${gymName} member login:\nGym Code: ${r.gymCode}\nMember ID (Phone): ${r.memberCode}\nPassword: ${r.password}\nLogin: ${window.location.origin}/member/login`;
+  const sendLoginOnWhatsApp = (r: { gymCode: string; memberCode: string; password?: string }) => {
+    const text = `Hi ${member.name}, your ${gymName} digital pass access:\nGym Code: ${r.gymCode}\nMember ID (Phone): ${r.memberCode}\nPass Link: ${window.location.origin}/member/login\n(No password required - simply enter your Gym Code and Phone Number!)`;
     const digits = member.phone.replace(/[^0-9]/g, '');
     const waPhone = digits.length === 10 ? `91${digits}` : digits;
     window.open(
@@ -314,31 +314,31 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                   {busy && (
                     <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span>
                   )}
-                  {busy ? 'Please wait...' : hasLogin ? 'Reset password' : 'Create login'}
+                  {busy ? 'Please wait...' : hasLogin ? 'Resend Pass Details' : 'Share Pass Access'}
                 </button>
               </div>
             </div>
             {created ? (
-              <div className="rounded-lg border border-secondary/30 bg-secondary/10 p-3 text-xs space-y-1">
+              <div className="rounded-lg border border-secondary/30 bg-secondary/10 p-3 text-xs space-y-1.5">
                 <p className="text-on-surface">
                   Gym code: <b>{created.gymCode}</b> · Member ID (Phone): <b>{created.memberCode}</b>
                 </p>
-                <p className="text-on-surface">
-                  Password: <b className="font-mono">{created.password}</b>
+                <p className="text-tertiary font-medium">
+                  ✓ Passwordless login enabled. Member can access their pass directly using Gym Code &amp; Phone Number.
                 </p>
-                <p className="text-outline">Shown only once. Send it to the member now.</p>
                 <button
                   onClick={() => sendLoginOnWhatsApp(created)}
-                  className="font-bold text-tertiary hover:underline cursor-pointer"
+                  className="font-bold text-tertiary hover:underline cursor-pointer flex items-center gap-1 pt-1"
                 >
-                  Send on WhatsApp
+                  <span className="material-symbols-outlined text-sm">chat</span>
+                  <span>Share Pass Link on WhatsApp</span>
                 </button>
               </div>
             ) : failure ? (
               <p className="text-xs text-error">{failure}</p>
             ) : (
               <p className="text-xs text-outline">
-                {hasLogin ? 'Member has active login access. You can revoke it if they leave the gym.' : 'No login created yet.'}
+                {hasLogin ? 'Member has active digital pass access (No password required).' : 'Pass access not shared yet.'}
               </p>
             )}
           </div>
