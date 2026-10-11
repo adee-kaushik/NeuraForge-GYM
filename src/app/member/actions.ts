@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma';
 import { memberEmail } from '@/lib/member-auth';
 import { startOfDayIST } from '@/lib/format';
 
-export type MemberLoginState = { error?: string };
+export type MemberLoginState = { error?: string; success?: boolean };
 
 export async function loginMember(_prev: MemberLoginState, formData: FormData): Promise<MemberLoginState> {
   const gymCode = String(formData.get('gymCode') ?? '').trim().toLowerCase();
@@ -29,7 +29,7 @@ export async function loginMember(_prev: MemberLoginState, formData: FormData): 
     return { error: 'This is not a member account.' };
   }
 
-  redirect('/member');
+  return { success: true };
 }
 
 export async function logoutMember() {

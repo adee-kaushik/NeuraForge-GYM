@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useEffect, useActionState } from 'react';
 import { loginMember, type MemberLoginState } from '../actions';
 
 const initialState: MemberLoginState = {};
@@ -12,6 +12,14 @@ const inputClass =
 
 export default function MemberLoginPage() {
   const [state, formAction, pending] = useActionState(loginMember, initialState);
+
+  useEffect(() => {
+    if (state.success) {
+      window.location.href = '/member';
+    }
+  }, [state.success]);
+
+  const isBusy = pending || Boolean(state.success);
 
   return (
     <main className="min-h-screen bg-background text-on-surface flex flex-col justify-center px-4 py-8 sm:py-12">
@@ -107,13 +115,13 @@ export default function MemberLoginPage() {
 
           <button
             type="submit"
-            disabled={pending}
+            disabled={isBusy}
             className="w-full px-5 py-3.5 rounded-xl bg-primary text-on-primary text-sm sm:text-base font-bold disabled:opacity-60 flex items-center justify-center gap-2 shadow-sm hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer"
           >
-            {pending && (
+            {isBusy && (
               <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
             )}
-            {pending ? 'Opening Digital Pass...' : 'Open My Digital Pass'}
+            {state.success ? 'Opening Digital Pass...' : pending ? 'Authenticating...' : 'Open My Digital Pass'}
           </button>
 
           <div className="pt-2 border-t border-surface-container-high text-center space-y-2">

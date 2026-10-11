@@ -41,7 +41,13 @@ export async function recordPayment(input: NewPaymentInput): Promise<RecordPayme
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       const now = new Date();
-      const invoices = await prisma.payment.findMany({ where: { gymId }, select: { invoiceNo: true } });
+      const currentYearPrefix = `INV-${now.getFullYear()}-`;
+      const invoices = await prisma.payment.findMany({
+        where: { gymId, invoiceNo: { startsWith: currentYearPrefix } },
+        select: { invoiceNo: true },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+      });
 
       const payment = await prisma.payment.create({
         data: {

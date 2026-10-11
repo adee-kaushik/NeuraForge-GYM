@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useActionState } from 'react';
+import { useEffect, useActionState } from 'react';
 import { loginOwner, type LoginState } from './actions';
 
 const initialState: LoginState = {};
@@ -12,6 +12,14 @@ const inputClass =
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginOwner, initialState);
+
+  useEffect(() => {
+    if (state.success) {
+      window.location.href = '/';
+    }
+  }, [state.success]);
+
+  const isBusy = pending || Boolean(state.success);
 
   return (
     <main className="min-h-screen bg-background text-on-surface flex flex-col justify-center px-4 py-8 sm:py-12">
@@ -100,13 +108,13 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={pending}
+            disabled={isBusy}
             className="w-full px-5 py-3.5 rounded-xl bg-primary text-on-primary text-sm sm:text-base font-bold disabled:opacity-60 flex items-center justify-center gap-2 shadow-sm hover:opacity-90 active:scale-[0.99] transition-all cursor-pointer"
           >
-            {pending && (
+            {isBusy && (
               <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
             )}
-            {pending ? 'Signing in...' : 'Sign in to Dashboard'}
+            {state.success ? 'Opening Dashboard...' : pending ? 'Signing in...' : 'Sign in to Dashboard'}
           </button>
 
           <div className="pt-2 border-t border-surface-container-high text-center space-y-2">

@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
 
-export type LoginState = { error?: string };
+export type LoginState = { error?: string; success?: boolean };
 
 export async function loginOwner(_prev: LoginState, formData: FormData): Promise<LoginState> {
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
@@ -23,7 +23,7 @@ export async function loginOwner(_prev: LoginState, formData: FormData): Promise
     return { error: 'This account is not an owner or staff account.' };
   }
 
-  redirect('/');
+  return { success: true };
 }
 
 export async function logout() {

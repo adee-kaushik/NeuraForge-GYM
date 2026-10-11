@@ -37,7 +37,12 @@ export async function addMember(input: NewMemberInput): Promise<AddMemberResult>
       const result = await prisma.$transaction(async (tx) => {
         const now = new Date();
 
-        const codes = await tx.member.findMany({ where: { gymId }, select: { memberCode: true } });
+        const codes = await tx.member.findMany({
+          where: { gymId, memberCode: { startsWith: 'MEM-' } },
+          select: { memberCode: true },
+          orderBy: { createdAt: 'desc' },
+          take: 100,
+        });
         const memberCode = nextId(
           codes.map((c) => c.memberCode),
           'MEM-',

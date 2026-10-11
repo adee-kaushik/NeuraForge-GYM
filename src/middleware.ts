@@ -23,10 +23,16 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Skip all of this for visitors who are not logged in
+  // Skip non-GET requests (Server Actions are POST and handle their own auth).
+  // This avoids double-authenticating and eliminates 300-500ms delay on every button click.
+  if (request.method !== 'GET') {
+    return response;
+  }
+
+  // Skip for visitors who have no auth cookies
   const hasAuthCookie = request.cookies.getAll().some((c) => c.name.includes('-auth-token'));
   if (hasAuthCookie) {
-    await supabase.auth.getClaims();
+    await supabase.auth.getUser();
   }
 
   return response;

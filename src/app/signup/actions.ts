@@ -7,7 +7,7 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { prisma } from '@/lib/prisma';
 import { DEFAULT_PLANS } from '@/lib/default-plans';
 
-export type SignupState = { error?: string };
+export type SignupState = { error?: string; success?: boolean };
 
 // 3-30 chars: lowercase letters, numbers, hyphens (not at the start or end)
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
@@ -73,7 +73,7 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
   // Log the new owner in
   const supabase = await createClient();
   const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-  if (signInError) redirect('/login');
+  if (signInError) return { error: 'Gym registered, but could not sign in automatically. Please visit the login page.' };
 
-  redirect('/');
+  return { success: true };
 }
