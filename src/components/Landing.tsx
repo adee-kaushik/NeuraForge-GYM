@@ -636,7 +636,7 @@ export default function Landing() {
             <span className="font-sora font-bold text-on-surface">NeuraFitness</span>
             <span>· All rights reserved © 2026</span>
           </div>
-          <div className="flex items-center gap-6 font-semibold">
+          <div className="flex items-center gap-4 sm:gap-6 font-semibold flex-wrap justify-center">
             <a href="#pricing" className="hover:text-on-surface">
               Pricing Plans
             </a>
@@ -645,6 +645,10 @@ export default function Landing() {
             </Link>
             <Link href="/login" className="hover:text-on-surface">
               Gym Staff Login
+            </Link>
+            <Link href="/admin/login" className="text-secondary hover:text-on-surface flex items-center gap-1">
+              <span className="material-symbols-outlined text-xs">shield</span>
+              Admin Login
             </Link>
           </div>
         </div>

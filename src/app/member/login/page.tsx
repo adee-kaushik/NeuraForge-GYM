@@ -37,16 +37,23 @@ export default function MemberLoginPage() {
         </div>
 
         {/* Role Switcher Tabs */}
-        <div className="grid grid-cols-2 p-1 rounded-xl bg-surface-container border border-surface-container-high text-xs font-bold">
+        <div className="grid grid-cols-3 p-1 rounded-xl bg-surface-container border border-surface-container-high text-xs font-bold">
           <Link
             href="/login"
             className="py-2 text-center rounded-lg text-outline hover:text-on-surface transition-colors"
           >
-            🏢 Staff & Owner
+            🏢 Staff
           </Link>
-          <div className="py-2 text-center rounded-lg bg-surface-container-lowest text-on-surface shadow-xs">
-            📱 Gym Member
+          <div className="py-2 text-center rounded-lg bg-surface-container-lowest text-tertiary shadow-xs font-extrabold">
+            📱 Member
           </div>
+          <Link
+            href="/admin/login"
+            className="py-2 text-center rounded-lg text-outline hover:text-secondary transition-colors flex items-center justify-center gap-1"
+          >
+            <span className="material-symbols-outlined text-xs">shield</span>
+            Admin
+          </Link>
         </div>
 
         {/* Member Login Card (Passwordless: Gym Code + ID/Phone only) */}

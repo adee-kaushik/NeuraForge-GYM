@@ -26,6 +26,37 @@ export async function loginOwner(_prev: LoginState, formData: FormData): Promise
   return { success: true };
 }
 
+export async function loginAdmin(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const password = String(formData.get('password') ?? '');
+
+  if (!email || !password) return { error: 'Enter your admin email and password.' };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error || !data.user) return { error: 'Wrong admin email or password.' };
+
+  const adminEmails = (
+    process.env.ADMIN_EMAILS ||
+    'admin@neurafitness.com,founder@neurafitness.com,aditya@neurafitness.com,adityaamishra6002@gmail.com'
+  )
+    .split(',')
+    .map((e) => e.trim().toLowerCase());
+
+  const isAdmin =
+    data.user?.app_metadata?.neurafitness_admin === true ||
+    data.user?.app_metadata?.neuraforge_admin === true ||
+    data.user?.user_metadata?.is_admin === true ||
+    (data.user.email && adminEmails.includes(data.user.email.toLowerCase()));
+
+  if (!isAdmin) {
+    await supabase.auth.signOut();
+    return { error: 'Access denied: This account does not have superadmin clearance.' };
+  }
+
+  return { success: true };
+}
+
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();
