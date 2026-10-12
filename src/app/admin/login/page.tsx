@@ -40,25 +40,6 @@ export default function AdminLoginPage() {
           </span>
         </div>
 
-        {/* 3-Way Role Switcher Tabs */}
-        <div className="grid grid-cols-3 p-1 rounded-xl bg-surface-container border border-surface-container-high text-xs font-bold">
-          <Link
-            href="/login"
-            className="py-2 text-center rounded-lg text-outline hover:text-on-surface transition-colors"
-          >
-            🏢 Staff
-          </Link>
-          <Link
-            href="/member/login"
-            className="py-2 text-center rounded-lg text-outline hover:text-on-surface transition-colors"
-          >
-            📱 Member
-          </Link>
-          <div className="py-2 text-center rounded-lg bg-surface-container-lowest text-secondary shadow-xs font-extrabold flex items-center justify-center gap-1">
-            <span className="material-symbols-outlined text-xs">shield</span>
-            Admin
-          </div>
-        </div>
 
         {/* Admin Login Card */}
         <form
