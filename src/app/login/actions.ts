@@ -38,7 +38,7 @@ export async function loginAdmin(_prev: LoginState, formData: FormData): Promise
 
   const adminEmails = (
     process.env.ADMIN_EMAILS ||
-    'admin@neurafitness.com,founder@neurafitness.com,aditya@neurafitness.com,adityaamishra6002@gmail.com'
+    'neura.fitness.crm@gmail.com,admin@neurafitness.com,founder@neurafitness.com,aditya@neurafitness.com,adityaamishra6002@gmail.com'
   )
     .split(',')
     .map((e) => e.trim().toLowerCase());

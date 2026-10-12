@@ -192,3 +192,51 @@ export async function fetchGymMembersForAdmin(gymId: string) {
 
   return { ok: true, members: formatted };
 }
+
+export async function deleteGymMemberByAdmin(gymId: string, memberId: string) {
+  if (!(await isNeuraFitnessAdmin())) {
+    return { ok: false, error: 'Unauthorized: Admin cockpit clearance required.' };
+  }
+
+  const member = await prisma.member.findFirst({
+    where: { id: memberId, gymId },
+    select: { id: true, authUserId: true, name: true, memberCode: true },
+  });
+
+  if (!member) {
+    return { ok: false, error: 'Member not found in this gym.' };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 1. Delete associated attendances
+      await tx.attendance.deleteMany({ where: { memberId } });
+      // 2. Delete member queries
+      await tx.memberQuery.deleteMany({ where: { memberId } });
+      // 3. Delete gym reminders targeted to this member
+      await tx.gymReminder.deleteMany({ where: { memberId } });
+      // 4. Delete payments recorded for this member
+      await tx.payment.deleteMany({ where: { memberId } });
+      // 5. Delete memberships
+      await tx.membership.deleteMany({ where: { memberId } });
+      // 6. Delete member record
+      await tx.member.delete({ where: { id: memberId } });
+    });
+
+    if (member.authUserId) {
+      try {
+        const { createAdminClient } = await import('@/utils/supabase/admin');
+        const admin = createAdminClient();
+        await admin.auth.admin.deleteUser(member.authUserId);
+      } catch {
+        // Safe to ignore if supabase secret role is not available
+      }
+    }
+
+    revalidatePath('/admin');
+    revalidatePath('/');
+    return { ok: true, message: `Member ${member.name} (${member.memberCode}) was deleted.` };
+  } catch (error: any) {
+    return { ok: false, error: error?.message || 'Failed to delete member data.' };
+  }
+}

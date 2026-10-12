@@ -8,6 +8,7 @@ import {
   sendAdminMessage,
   replyToOwnerFeedback,
   fetchGymMembersForAdmin,
+  deleteGymMemberByAdmin,
 } from '@/actions/admin';
 
 export interface AdminGymRow {
@@ -90,6 +91,7 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
   const [inspectGym, setInspectGym] = useState<AdminGymRow | null>(null);
   const [inspectMembers, setInspectMembers] = useState<any[]>([]);
   const [loadingMembers, setLoadingMembers] = useState(false);
+  const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
 
   // Message modal
   const [messageTargetGym, setMessageTargetGym] = useState<AdminGymRow | null>(null);
@@ -161,6 +163,33 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
     setLoadingMembers(false);
     if (res.ok) {
       setInspectMembers(res.members);
+    }
+  };
+
+  // Delete Member Data in a Particular Gym
+  const handleDeleteMember = async (memberId: string, memberName: string) => {
+    if (!inspectGym) return;
+    const confirmed = window.confirm(
+      `⚠️ Permanently delete member "${memberName}" from "${inspectGym.name}"?\n\nThis will completely purge all attendance, payments, passes, and records for this member.`
+    );
+    if (!confirmed) return;
+
+    setDeletingMemberId(memberId);
+    const res = await deleteGymMemberByAdmin(inspectGym.id, memberId);
+    setDeletingMemberId(null);
+
+    if (res.ok) {
+      showToast(res.message || `Member "${memberName}" deleted successfully.`);
+      setInspectMembers((prev) => prev.filter((m) => m.id !== memberId));
+      setGyms((prev) =>
+        prev.map((g) =>
+          g.id === inspectGym.id
+            ? { ...g, membersCount: Math.max(0, g.membersCount - 1) }
+            : g
+        )
+      );
+    } else {
+      showToast(res.error || 'Failed to delete member.');
     }
   };
 
@@ -841,11 +870,25 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
                           {m.phone} · Plan: {m.planName} · Check-ins: {m.totalCheckIns}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[10px] text-outline block">Expires</span>
-                        <span className="font-semibold text-on-surface">
-                          {m.expiresAt ? new Date(m.expiresAt).toLocaleDateString('en-IN') : 'No expiry'}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <span className="text-[10px] text-outline block">Expires</span>
+                          <span className="font-semibold text-on-surface">
+                            {m.expiresAt ? new Date(m.expiresAt).toLocaleDateString('en-IN') : 'No expiry'}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteMember(m.id, m.name)}
+                          disabled={deletingMemberId === m.id}
+                          title={`Delete member ${m.name}`}
+                          className="px-2.5 py-1.5 rounded-lg border border-error/30 text-error hover:bg-error/15 disabled:opacity-50 transition-colors flex items-center gap-1 font-bold text-[11px] cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-sm">
+                            {deletingMemberId === m.id ? 'progress_activity' : 'delete'}
+                          </span>
+                          <span>Delete</span>
+                        </button>
                       </div>
                     </div>
                   ))}

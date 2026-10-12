@@ -19,7 +19,7 @@ export async function isNeuraFitnessAdmin(): Promise<boolean> {
   // 2. Co-founders / admin emails whitelist
   const adminEmails = (
     process.env.ADMIN_EMAILS ||
-    'admin@neurafitness.com,founder@neurafitness.com,aditya@neurafitness.com,adityaamishra6002@gmail.com'
+    'neura.fitness.crm@gmail.com,admin@neurafitness.com,founder@neurafitness.com,aditya@neurafitness.com,adityaamishra6002@gmail.com'
   )
     .split(',')
     .map((e) => e.trim().toLowerCase());
