@@ -225,7 +225,7 @@ export default function Landing() {
             </span>
           </Link>
 
-          {/* Navigation items: Pricing link + ONLY Member Login button (free for members) */}
+          {/* Navigation items: Pricing link + ONLY Login button */}
           <nav className="flex items-center gap-3 sm:gap-4">
             <a
               href="#pricing"
@@ -244,9 +244,9 @@ export default function Landing() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-surface-container-highest bg-surface-container-lowest text-xs sm:text-sm font-bold text-on-surface hover:border-secondary hover:text-secondary transition-all shadow-xs cursor-pointer"
             >
               <span className="material-symbols-outlined text-sm sm:text-base text-secondary">
-                phone_android
+                login
               </span>
-              <span>Member Login</span>
+              <span>Login</span>
             </Link>
           </nav>
         </div>
