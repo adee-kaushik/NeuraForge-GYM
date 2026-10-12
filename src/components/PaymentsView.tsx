@@ -143,6 +143,232 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
     window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${text}`, '_blank');
   };
 
+  const handlePrintAndDownloadReceipt = (r: Transaction) => {
+    const rawDate = r.createdAt ? new Date(r.createdAt) : new Date();
+    const dateStr = !isNaN(rawDate.getTime())
+      ? rawDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+      : r.timestamp.split(',')[0] || r.timestamp;
+    const timeStr = !isNaN(rawDate.getTime())
+      ? rawDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+      : (r.timestamp.includes(',') ? r.timestamp.split(',')[1].trim() : 'N/A');
+
+    const taxableAmount = Math.max(0, r.amount - r.gstAmount);
+
+    const receiptHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Payment Receipt - ${r.invoiceNo}</title>
+  <style>
+    @page { size: 80mm auto; margin: 4mm; }
+    @media print {
+      body { margin: 0; padding: 0; background: #fff !important; }
+      .receipt-container { box-shadow: none !important; border: none !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+      .no-print { display: none !important; }
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f4f4f5;
+      color: #18181b;
+      display: flex;
+      justify-content: center;
+    }
+    .receipt-container {
+      background: #ffffff;
+      width: 100%;
+      max-width: 440px;
+      padding: 28px 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+      border: 1px solid #e4e4e7;
+    }
+    .header {
+      text-align: center;
+      border-bottom: 2px dashed #d4d4d8;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+    }
+    .gym-title {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: #09090b;
+      margin: 0;
+      text-transform: uppercase;
+    }
+    .gstin {
+      font-size: 11px;
+      color: #71717a;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+    .badge-paid {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 3px 14px;
+      font-size: 11px;
+      font-weight: 800;
+      color: #047857;
+      background: #d1fae5;
+      border-radius: 9999px;
+      border: 1px solid #a7f3d0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .section-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #a1a1aa;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      margin-bottom: 7px;
+    }
+    .item-label { color: #71717a; font-weight: 500; }
+    .item-value { font-weight: 600; color: #18181b; text-align: right; }
+    .invoice-tag { font-family: monospace; font-size: 12px; font-weight: 700; color: #0284c7; }
+    .dashed-divider {
+      border-top: 1px dashed #d4d4d8;
+      margin: 14px 0;
+    }
+    .total-box {
+      background: #fafafa;
+      border: 1px solid #f4f4f5;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin: 12px 0 8px 0;
+    }
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 15px;
+      font-weight: 800;
+      color: #09090b;
+    }
+    .footer {
+      text-align: center;
+      font-size: 10px;
+      color: #a1a1aa;
+      margin-top: 18px;
+      padding-top: 12px;
+      border-top: 1px solid #f4f4f5;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="receipt-container">
+    <div class="header">
+      <h1 class="gym-title">${gym.name}</h1>
+      <div class="gstin">${gym.gstNumber ? `GSTIN: ${gym.gstNumber}` : 'Official Gym Membership Receipt'}</div>
+      <div class="badge-paid">✓ PAID · OFFICIAL RECEIPT</div>
+    </div>
+
+    <div class="section-title">Invoice Details</div>
+    <div class="item-row">
+      <span class="item-label">Invoice Number:</span>
+      <span class="invoice-tag">${r.invoiceNo}</span>
+    </div>
+    <div class="item-row">
+      <span class="item-label">Date:</span>
+      <span class="item-value">${dateStr}</span>
+    </div>
+    <div class="item-row">
+      <span class="item-label">Time:</span>
+      <span class="item-value">${timeStr}</span>
+    </div>
+
+    <div class="dashed-divider"></div>
+
+    <div class="section-title">Member &amp; Plan Information</div>
+    <div class="item-row">
+      <span class="item-label">Member Name:</span>
+      <span class="item-value">${r.memberName}</span>
+    </div>
+    <div class="item-row">
+      <span class="item-label">Plan / Package:</span>
+      <span class="item-value">${r.planCategory}</span>
+    </div>
+    <div class="item-row">
+      <span class="item-label">Payment Mode:</span>
+      <span class="item-value">${r.paymentMode}</span>
+    </div>
+    <div class="item-row">
+      <span class="item-label">Status:</span>
+      <span class="item-value" style="color: #047857;">COMPLETED (PAID)</span>
+    </div>
+
+    <div class="dashed-divider"></div>
+
+    <div class="item-row">
+      <span class="item-label">Taxable Amount:</span>
+      <span class="item-value">₹${taxableAmount.toLocaleString('en-IN')}</span>
+    </div>
+    <div class="item-row">
+      <span class="item-label">GST (${gym.gstRatePercent}% Included):</span>
+      <span class="item-value">₹${r.gstAmount.toLocaleString('en-IN')}</span>
+    </div>
+
+    <div class="total-box">
+      <div class="total-row">
+        <span>Grand Total:</span>
+        <span style="color: #047857;">₹${r.amount.toLocaleString('en-IN')}</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      Thank you for training at ${gym.name}!<br>
+      This is a computer-generated tax receipt and requires no physical signature.
+    </div>
+  </div>
+</body>
+</html>`;
+
+    // 1. Automatically download receipt file
+    const blob = new Blob([receiptHtml], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `Receipt_${r.invoiceNo}_${r.memberName.replace(/\s+/g, '_')}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+
+    // 2. Clean receipt print dialog via isolated iframe (not whole dashboard or popup window)
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    document.body.appendChild(iframe);
+    const doc = iframe.contentWindow?.document || iframe.contentDocument;
+    if (doc) {
+      doc.open();
+      doc.write(receiptHtml);
+      doc.close();
+      iframe.contentWindow?.focus();
+      setTimeout(() => {
+        iframe.contentWindow?.print();
+        setTimeout(() => {
+          if (iframe.parentNode) document.body.removeChild(iframe);
+        }, 1500);
+      }, 350);
+    }
+  };
+
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
       {/* Header */}
@@ -795,96 +1021,127 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
       {/* Payment Receipt Modal */}
       {selectedReceipt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="relative w-full max-w-md bg-surface-container-low border border-secondary/40 rounded-xl shadow-[0_0_40px_rgba(123,208,255,0.25)] p-6 space-y-4 text-xs">
-            <div className="flex justify-between items-start pb-3 border-b border-surface-container-high">
-              <div>
-                <h3 className="font-sora text-base font-bold text-on-surface">Payment Receipt</h3>
-                <p className="text-outline text-xs mt-0.5">
-                  {gym.name}{gym.gstNumber ? ` · GSTIN ${gym.gstNumber}` : ''}
-                </p>
-              </div>
-              <button
-                onClick={() => setSelectedReceipt(null)}
-                className="text-outline hover:text-on-surface p-1 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-xl">close</span>
-              </button>
-            </div>
+          <div className="relative w-full max-w-md bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_40px_rgba(123,208,255,0.25)] p-5 sm:p-6 space-y-4 text-xs">
+            {(() => {
+              const rawDate = selectedReceipt.createdAt ? new Date(selectedReceipt.createdAt) : new Date();
+              const dateFormatted = !isNaN(rawDate.getTime())
+                ? rawDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                : selectedReceipt.timestamp.split(',')[0] || selectedReceipt.timestamp;
+              const timeFormatted = !isNaN(rawDate.getTime())
+                ? rawDate.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+                : (selectedReceipt.timestamp.includes(',') ? selectedReceipt.timestamp.split(',')[1].trim() : 'N/A');
 
-            <div className="bg-surface-container-lowest p-4 rounded-lg space-y-2 border border-surface-container-high">
-              <div className="flex justify-between">
-                <span className="text-outline">Invoice Number:</span>
-                <span className="font-mono text-secondary font-bold">{selectedReceipt.invoiceNo}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-outline">Date:</span>
-                <span>{selectedReceipt.timestamp}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-outline">Member:</span>
-                <span className="font-bold">{selectedReceipt.memberName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-outline">Plan Description:</span>
-                <span>{selectedReceipt.planCategory}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-outline">Mode of Payment:</span>
-                <span>{selectedReceipt.paymentMode}</span>
-              </div>
-              <div className="pt-2 border-t border-surface-container-high flex justify-between font-sora text-sm font-bold">
-                <span>Total Amount:</span>
-                <span className="text-tertiary">₹{selectedReceipt.amount.toLocaleString('en-IN')}</span>
-              </div>
-              <div className="text-xs text-outline text-right">
-                Includes {gym.gstRatePercent}% GST ({inr(selectedReceipt.gstAmount)})
-              </div>
-            </div>
+              return (
+                <>
+                  <div className="flex justify-between items-start pb-3 border-b border-surface-container-high">
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-secondary text-lg">receipt_long</span>
+                        <h3 className="font-sora text-base font-bold text-on-surface">Payment Receipt</h3>
+                      </div>
+                      <p className="text-outline text-xs mt-0.5">
+                        {gym.name}{gym.gstNumber ? ` · GSTIN: ${gym.gstNumber}` : ''}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedReceipt(null)}
+                      className="text-outline hover:text-on-surface p-1 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-xl">close</span>
+                    </button>
+                  </div>
 
-            <div className="pt-2 flex flex-col gap-3">
-              <button
-                onClick={() => {
-                  const r = selectedReceipt;
-                  const text =
-                    `*${gym.name} — Payment Receipt*\n` +
-                    `──────────────────\n` +
-                    `Invoice: ${r.invoiceNo}\n` +
-                    `Date: ${r.timestamp}\n` +
-                    `Plan: ${r.planCategory}\n` +
-                    `Amount: ₹${r.amount.toLocaleString('en-IN')}\n` +
-                    `Mode: ${r.paymentMode}\n` +
-                    (gym.gstNumber ? `GSTIN: ${gym.gstNumber}\n` : '') +
-                    `GST (${gym.gstRatePercent}%): ${inr(r.gstAmount)}\n` +
-                    `──────────────────\n` +
-                    `Status: ✅ PAID\n` +
-                    `\nThank you, ${r.memberName}!`;
-                  const phone = members.find((m) => m.id === r.memberId)?.phone?.replace(/\D/g, '') ?? '';
-                  window.open(
-                    `https://api.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}`,
-                    '_blank'
-                  );
-                }}
-                className="w-full px-4 py-2.5 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] font-bold flex items-center justify-center gap-2 cursor-pointer transition-all border border-[#25D366]/40"
-              >
-                <span className="material-symbols-outlined text-base">chat</span>
-                <span>Share Receipt on WhatsApp</span>
-              </button>
-              <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => window.print()}
-                  className="px-4 py-2 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-secondary font-bold flex items-center gap-1 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-sm">print</span>
-                  <span>Print Tax Invoice</span>
-                </button>
-                <button
-                  onClick={() => setSelectedReceipt(null)}
-                  className="px-4 py-2 rounded-lg bg-primary-container text-on-primary-container font-bold cursor-pointer"
-                >
-                  Done
-                </button>
-              </div>
-            </div>
+                  {/* Clean Receipt Slip Design */}
+                  <div className="bg-surface-container-lowest p-4 rounded-xl space-y-2.5 border border-surface-container-high shadow-xs">
+                    <div className="flex justify-between items-center pb-2 border-b border-surface-container-high/60">
+                      <span className="text-outline text-[11px] uppercase font-bold tracking-wider">Invoice No:</span>
+                      <span className="font-mono text-secondary font-bold text-xs">{selectedReceipt.invoiceNo}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-outline">Date:</span>
+                      <span className="font-semibold text-on-surface">{dateFormatted}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-outline">Time:</span>
+                      <span className="font-semibold text-on-surface">{timeFormatted}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-outline">Member:</span>
+                      <span className="font-bold text-on-surface">{selectedReceipt.memberName}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-outline">Plan:</span>
+                      <span className="font-medium text-on-surface">{selectedReceipt.planCategory}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-outline">Payment Mode:</span>
+                      <span className="font-semibold text-on-surface">{selectedReceipt.paymentMode}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-outline">Status:</span>
+                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-tertiary/15 text-tertiary border border-tertiary/30">
+                        ✓ PAID
+                      </span>
+                    </div>
+                    <div className="pt-2 border-t border-surface-container-high flex justify-between font-sora text-sm font-bold">
+                      <span>Total Amount:</span>
+                      <span className="text-tertiary">₹{selectedReceipt.amount.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="text-[11px] text-outline text-right">
+                      Includes {gym.gstRatePercent}% GST ({inr(selectedReceipt.gstAmount)})
+                    </div>
+                  </div>
+
+                  <div className="pt-1 flex flex-col gap-2.5">
+                    <button
+                      onClick={() => {
+                        const r = selectedReceipt;
+                        const text =
+                          `*${gym.name} — Official Payment Receipt*\n` +
+                          `──────────────────\n` +
+                          `Invoice: ${r.invoiceNo}\n` +
+                          `Date: ${dateFormatted}\n` +
+                          `Time: ${timeFormatted}\n` +
+                          `Member: ${r.memberName}\n` +
+                          `Plan: ${r.planCategory}\n` +
+                          `Amount: ₹${r.amount.toLocaleString('en-IN')}\n` +
+                          `Mode: ${r.paymentMode}\n` +
+                          (gym.gstNumber ? `GSTIN: ${gym.gstNumber}\n` : '') +
+                          `GST (${gym.gstRatePercent}%): ${inr(r.gstAmount)}\n` +
+                          `──────────────────\n` +
+                          `Status: ✅ PAID\n` +
+                          `\nThank you for training with us!`;
+                        const phone = members.find((m) => m.id === r.memberId)?.phone?.replace(/\D/g, '') ?? '';
+                        window.open(
+                          `https://api.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(text)}`,
+                          '_blank'
+                        );
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] font-bold flex items-center justify-center gap-2 cursor-pointer transition-all border border-[#25D366]/40 text-xs"
+                    >
+                      <span className="material-symbols-outlined text-base">chat</span>
+                      <span>Share Receipt on WhatsApp</span>
+                    </button>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        onClick={() => handlePrintAndDownloadReceipt(selectedReceipt)}
+                        className="px-4 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer"
+                        title="Automatically downloads receipt file and opens clean print dialog"
+                      >
+                        <span className="material-symbols-outlined text-sm">download</span>
+                        <span>Download &amp; Print Receipt</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedReceipt(null)}
+                        className="px-4 py-2.5 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-semibold text-xs cursor-pointer"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
