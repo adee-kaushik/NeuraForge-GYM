@@ -45,3 +45,29 @@ export async function savePlan(input: PlanInput): Promise<SavePlanResult> {
 
   return plan ? { ok: true, plan: toMembershipPlan(plan) } : { ok: false, error: 'Plan not found.' };
 }
+
+export async function deletePlan(planId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const staff = await requireStaff();
+  if (staff.role !== 'OWNER') return { ok: false, error: 'Only the gym owner can delete plans.' };
+  const gymId = staff.gymId;
+
+  const plan = await prisma.plan.findFirst({
+    where: { id: planId, gymId },
+    include: { memberships: true },
+  });
+
+  if (!plan) return { ok: false, error: 'Plan not found.' };
+
+  if (plan.memberships.length > 0) {
+    await prisma.plan.update({
+      where: { id: planId },
+      data: { isActive: false, popular: false },
+    });
+  } else {
+    await prisma.plan.delete({
+      where: { id: planId },
+    });
+  }
+
+  return { ok: true };
+}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { savePlan } from '@/actions/plans';
+import { savePlan, deletePlan } from '@/actions/plans';
 import type { MembershipPlan } from '../../types';
 
 interface PlanModalProps {
@@ -21,6 +21,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({ plan, onClose, onSaved }) 
   const [popular, setPopular] = useState(plan?.popular ?? false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,6 +38,22 @@ export const PlanModal: React.FC<PlanModalProps> = ({ plan, onClose, onSaved }) 
     });
     setSaving(false);
     if ('error' in res) return setError(res.error);
+    onSaved();
+    onClose();
+  };
+
+  const handleDelete = async () => {
+    if (!plan) return;
+    if (!window.confirm(`Are you sure you want to delete the plan "${plan.name}"?`)) return;
+
+    setDeleting(true);
+    setError('');
+    const res = await deletePlan(plan.id);
+    setDeleting(false);
+
+    if (!res.ok) {
+      return setError('error' in res ? res.error : 'Failed to delete plan.');
+    }
     onSaved();
     onClose();
   };
@@ -82,11 +99,22 @@ export const PlanModal: React.FC<PlanModalProps> = ({ plan, onClose, onSaved }) 
 
         {error && <p className="text-sm text-error font-semibold">{error}</p>}
 
-        <div className="flex gap-3 justify-end pt-1">
+        <div className="flex items-center gap-3 justify-end pt-1">
+          {plan && (
+            <button
+              type="button"
+              disabled={saving || deleting}
+              onClick={handleDelete}
+              className="mr-auto text-xs font-bold text-error hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-50"
+            >
+              <span className="material-symbols-outlined text-sm">delete</span>
+              <span>{deleting ? 'Deleting...' : 'Delete plan'}</span>
+            </button>
+          )}
           <button type="button" onClick={onClose} className="px-4 py-2.5 rounded-lg text-sm font-bold text-on-surface-variant hover:text-on-surface cursor-pointer">
             Cancel
           </button>
-          <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-sm font-bold disabled:opacity-60 cursor-pointer">
+          <button type="submit" disabled={saving || deleting} className="px-5 py-2.5 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-sm font-bold disabled:opacity-60 cursor-pointer">
             {saving ? 'Saving...' : 'Save plan'}
           </button>
         </div>

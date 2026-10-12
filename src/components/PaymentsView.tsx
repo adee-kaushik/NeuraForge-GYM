@@ -64,7 +64,25 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
   const gstThisMonth = sum(paidThisMonth, (t) => t.gstAmount);
   const collectedToday = sum(paidToday, (t) => t.amount);
   const totalPending = sum(pending, (t) => t.amount);
-  const total1YearDues = sum(last1YearPending, (t) => t.amount) || members.reduce((acc, m) => acc + (m.pendingDue || 0), 0);
+
+  const yearDuesMembers = useMemo(() => {
+    return members
+      .map((m) => {
+        const txDues = pending.filter((t) => t.memberId === m.id).reduce((acc, t) => acc + t.amount, 0);
+        const due = (m.pendingDue && m.pendingDue > 0) ? m.pendingDue : txDues;
+        return {
+          member: m,
+          due,
+        };
+      })
+      .filter((item) => item.due > 0);
+  }, [members, pending]);
+
+  const total1YearDues = useMemo(() => {
+    const fromTx = sum(last1YearPending, (t) => t.amount);
+    const fromMembers = yearDuesMembers.reduce((acc, item) => acc + item.due, 0);
+    return fromTx > 0 ? fromTx : fromMembers;
+  }, [last1YearPending, yearDuesMembers]);
 
   // Member lookup map
   const memberMap = useMemo(() => {
@@ -225,27 +243,43 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
           </div>
         </div>
 
-        {/* Box 4: Last 1 Year Dues (Requirement 5) */}
+        {/* Box 4: Last 1 Year Dues */}
         <div
           onClick={() => {
             setActiveKpiModal('year-dues');
             setKpiSearch('');
           }}
-          className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-secondary/60 hover:bg-surface-container transition-all cursor-pointer flex flex-col justify-between group shadow-sm"
+          className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-amber-500/50 hover:bg-surface-container transition-all cursor-pointer flex flex-col justify-between group shadow-sm hover:shadow-md relative overflow-hidden"
           title="Click to view members with pending dues over the last 1 year"
         >
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500/30 via-amber-500 to-amber-500/30 opacity-0 group-hover:opacity-100 transition-opacity" />
           <div className="flex items-center justify-between text-outline">
-            <span className="text-xs font-bold uppercase tracking-wider group-hover:text-secondary transition-colors">
-              Last 1 Year Dues
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold uppercase tracking-wider group-hover:text-amber-500 transition-colors">
+                Last 1 Year Dues
+              </span>
+              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/15 text-amber-600 border border-amber-500/25">
+                365D
+              </span>
+            </div>
+            <span className="material-symbols-outlined text-amber-500 text-xl group-hover:scale-110 transition-transform">
+              history
             </span>
-            <span className="material-symbols-outlined text-secondary text-xl">history_toggle_drop_down</span>
           </div>
-          <div className="mt-2">
-            <span className="font-sora text-2xl font-bold text-secondary">{inr(total1YearDues)}</span>
-            <p className="text-xs text-outline mt-0.5 flex items-center gap-1">
-              <span>Past 365 days</span>
-              <span className="text-secondary font-bold">· Click to view</span>
-            </p>
+          <div className="mt-2.5">
+            <span className="font-sora text-2xl font-bold text-amber-500 block">
+              {inr(total1YearDues)}
+            </span>
+            <div className="text-xs text-outline mt-1 flex items-center justify-between">
+              <span className="flex items-center gap-1 font-medium">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                <span>{yearDuesMembers.length} {yearDuesMembers.length === 1 ? 'member' : 'members'}</span>
+              </span>
+              <span className="text-amber-500 text-[11px] font-bold group-hover:translate-x-0.5 transition-transform flex items-center gap-0.5">
+                <span>View</span>
+                <span className="material-symbols-outlined text-xs">arrow_forward</span>
+              </span>
+            </div>
           </div>
         </div>
 
@@ -385,7 +419,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
                     ? 'pending_actions'
                     : activeKpiModal === 'collected-today'
                     ? 'today'
-                    : 'history_toggle_drop_down'}
+                    : 'history'}
                 </span>
                 <div>
                   <h3 className="font-sora text-base font-bold text-on-surface">
@@ -585,66 +619,88 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
               )}
 
               {/* 4. LAST 1 YEAR DUES (Name & Phone Number & Plan) */}
-              {activeKpiModal === 'year-dues' && (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead>
-                      <tr className="text-outline uppercase text-[11px] border-b border-surface-container-high pb-2">
-                        <th className="py-2 px-3">Member Name</th>
-                        <th className="py-2 px-3">Phone Number</th>
-                        <th className="py-2 px-3">Gym Plan</th>
-                        <th className="py-2 px-3">Overdue Amount</th>
-                        <th className="py-2 px-3 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-surface-container-high/60">
-                      {members
-                        .filter((m) => (m.pendingDue && m.pendingDue > 0) || pending.some((t) => t.memberId === m.id))
-                        .filter(
-                          (m) =>
-                            !kpiSearch ||
-                            m.name.toLowerCase().includes(kpiSearch.toLowerCase()) ||
-                            m.phone.includes(kpiSearch) ||
-                            m.planName.toLowerCase().includes(kpiSearch.toLowerCase())
-                        )
-                        .map((m) => {
-                          const due = m.pendingDue || 0;
-                          return (
-                            <tr key={m.id} className="hover:bg-surface-container/50">
-                              <td className="py-2.5 px-3 font-semibold text-on-surface">{m.name}</td>
-                              <td className="py-2.5 px-3 font-mono text-secondary font-bold text-[11px]">
-                                {m.phone}
-                              </td>
-                              <td className="py-2.5 px-3">
-                                <span className="px-2 py-0.5 rounded bg-primary/15 text-primary font-semibold text-[11px]">
-                                  {m.planName}
-                                </span>
-                              </td>
-                              <td className="py-2.5 px-3 font-sora font-bold text-error">{inr(due)}</td>
-                              <td className="py-2.5 px-3 text-right">
-                                <button
-                                  onClick={() => handleSendWhatsAppReminder(m.name, m.phone, due, m.planName)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] font-bold text-[11px] transition-all cursor-pointer"
-                                  title="Send WhatsApp overdue reminder"
-                                >
-                                  <span className="material-symbols-outlined text-xs">chat</span>
-                                  <span>Remind</span>
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      {members.filter((m) => m.pendingDue && m.pendingDue > 0).length === 0 && (
-                        <tr>
-                          <td colSpan={5} className="py-8 text-center text-outline">
-                            No overdue members found for the past 1 year!
-                          </td>
+              {activeKpiModal === 'year-dues' && (() => {
+                const filteredYearDues = yearDuesMembers.filter(
+                  ({ member }) =>
+                    !kpiSearch ||
+                    member.name.toLowerCase().includes(kpiSearch.toLowerCase()) ||
+                    member.phone.includes(kpiSearch) ||
+                    member.planName.toLowerCase().includes(kpiSearch.toLowerCase())
+                );
+
+                return (
+                  <div className="overflow-x-auto">
+                    <div className="px-4 py-2.5 bg-amber-500/10 border-b border-amber-500/20 flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-amber-500 text-base">history</span>
+                        <span className="text-on-surface font-semibold">
+                          Total Overdue Across Past 1 Year:
+                        </span>
+                        <span className="font-sora font-bold text-amber-500 text-sm">
+                          {inr(total1YearDues)}
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-full bg-surface-container font-mono text-[11px] font-bold text-outline">
+                        {yearDuesMembers.length} {yearDuesMembers.length === 1 ? 'member' : 'members'} with dues
+                      </span>
+                    </div>
+
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="text-outline uppercase text-[11px] border-b border-surface-container-high pb-2 bg-surface-container-low/50">
+                          <th className="py-2.5 px-3">Member Name</th>
+                          <th className="py-2.5 px-3">Phone Number</th>
+                          <th className="py-2.5 px-3">Gym Plan</th>
+                          <th className="py-2.5 px-3">Overdue Amount</th>
+                          <th className="py-2.5 px-3 text-right">Action</th>
                         </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      </thead>
+                      <tbody className="divide-y divide-surface-container-high/60">
+                        {filteredYearDues.map(({ member: m, due }) => (
+                          <tr key={m.id} className="hover:bg-surface-container/50 transition-colors">
+                            <td className="py-2.5 px-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-7 h-7 rounded-full bg-amber-500/15 text-amber-600 font-bold flex items-center justify-center text-xs shrink-0">
+                                  {m.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="font-semibold text-on-surface">{m.name}</span>
+                              </div>
+                            </td>
+                            <td className="py-2.5 px-3 font-mono text-on-surface font-semibold text-[11px]">
+                              {m.phone}
+                            </td>
+                            <td className="py-2.5 px-3">
+                              <span className="px-2 py-0.5 rounded bg-primary/10 text-on-surface font-semibold text-[11px]">
+                                {m.planName}
+                              </span>
+                            </td>
+                            <td className="py-2.5 px-3 font-sora font-bold text-error">{inr(due)}</td>
+                            <td className="py-2.5 px-3 text-right">
+                              <button
+                                onClick={() => handleSendWhatsAppReminder(m.name, m.phone, due, m.planName)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] font-bold text-[11px] transition-all cursor-pointer shadow-xs"
+                                title="Send WhatsApp overdue reminder"
+                              >
+                                <span className="material-symbols-outlined text-xs">chat</span>
+                                <span>Remind</span>
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                        {filteredYearDues.length === 0 && (
+                          <tr>
+                            <td colSpan={5} className="py-8 text-center text-outline">
+                              {kpiSearch
+                                ? `No overdue members match "${kpiSearch}".`
+                                : 'No overdue members found for the past 1 year! All caught up!'}
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Modal Footer */}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Member, MembershipPlan } from '../types';
 import { PlanModal } from './modals/PlanModal';
+import { deletePlan } from '@/actions/plans';
 
 interface MembershipsViewProps {
   plans: MembershipPlan[];
@@ -12,8 +13,29 @@ interface MembershipsViewProps {
 export const MembershipsView: React.FC<MembershipsViewProps> = ({ plans, members, canEdit }) => {
   const router = useRouter();
   const [editing, setEditing] = useState<MembershipPlan | 'new' | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const activeMembers = members.filter((m) => m.status !== 'expired');
   const activeOn = (planId: string) => activeMembers.filter((m) => m.planId === planId).length;
+
+  const handleDeletePlan = async (plan: MembershipPlan) => {
+    const memberCount = activeOn(plan.id);
+    const msg =
+      memberCount > 0
+        ? `Are you sure you want to delete "${plan.name}"? ${memberCount} active members are currently on this plan. Their past membership records will remain safe.`
+        : `Are you sure you want to delete the plan "${plan.name}"?`;
+
+    if (!window.confirm(msg)) return;
+
+    setDeletingId(plan.id);
+    const res = await deletePlan(plan.id);
+    setDeletingId(null);
+
+    if (res.ok) {
+      router.refresh();
+    } else {
+      alert('error' in res ? res.error : 'Failed to delete plan.');
+    }
+  };
 
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
@@ -101,9 +123,22 @@ export const MembershipsView: React.FC<MembershipsViewProps> = ({ plans, members
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-secondary">{activeOn(plan.id)}</span>
                 {canEdit && (
-                  <button onClick={() => setEditing(plan)} className="text-xs font-bold text-secondary hover:underline cursor-pointer">
-                    Edit
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setEditing(plan)}
+                      className="text-xs font-bold text-secondary hover:underline cursor-pointer"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDeletePlan(plan)}
+                      disabled={deletingId === plan.id}
+                      className="text-xs font-bold text-error/80 hover:text-error hover:underline cursor-pointer disabled:opacity-50 flex items-center gap-0.5"
+                      title="Delete this membership plan"
+                    >
+                      {deletingId === plan.id ? 'Deleting...' : 'Delete'}
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
