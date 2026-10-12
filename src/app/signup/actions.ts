@@ -7,7 +7,14 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { prisma } from '@/lib/prisma';
 import { DEFAULT_PLANS } from '@/lib/default-plans';
 
-export type SignupState = { error?: string; success?: boolean };
+export type SignupState = {
+  error?: string;
+  success?: boolean;
+  whatsappUrl?: string;
+  gymName?: string;
+  slug?: string;
+  requiresPayment?: boolean;
+};
 
 // 3-30 chars: lowercase letters, numbers, hyphens (not at the start or end)
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
@@ -22,8 +29,6 @@ const safeEqual = (a: string, b: string): boolean => {
 
 export async function checkIsFirstCustomer(): Promise<boolean> {
   try {
-    // If gym count is <= 1 (only the developer's test gym exists), this signup is the very first real customer.
-    // Once this first customer registers, gym count becomes >= 2 and it automatically sticks to regular plans.
     const count = await prisma.gym.count();
     return count <= 1;
   } catch {
@@ -36,31 +41,16 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
   const slug = String(formData.get('slug') ?? '').trim().toLowerCase();
   const name = String(formData.get('name') ?? '').trim();
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
+  const phone = String(formData.get('phone') ?? '').trim();
   const password = String(formData.get('password') ?? '');
-  const inviteCode = String(formData.get('inviteCode') ?? '').trim();
-
-  const plan = String(formData.get('plan') ?? '').trim();
-  const mandateId = String(formData.get('mandateId') ?? '').trim();
   const couponCode = String(formData.get('couponCode') ?? '').trim();
-  const validPlans = ['trial', '6months', '1year'];
+
+  let plan = String(formData.get('plan') ?? 'trial').trim();
+  if (!['trial', '6months', '1year', 'pilot'].includes(plan)) {
+    plan = 'trial';
+  }
 
   const isFirstCustomer = await checkIsFirstCustomer();
-
-  // If this is the very first customer, payment details / mandates are waived for real customer testing.
-  // Once registered, subsequent gyms must follow the plans.
-  if (!isFirstCustomer) {
-    const hasValidPlan = validPlans.includes(plan);
-    const expectedCode = process.env.SIGNUP_CODE;
-    const hasValidInvite = expectedCode && inviteCode ? safeEqual(inviteCode, expectedCode) : false;
-
-    if (!hasValidPlan && !hasValidInvite) {
-      return { error: 'Please select a subscription plan or activate your 1-month free trial first.' };
-    }
-
-    if (plan === 'trial' && !mandateId && !hasValidInvite) {
-      return { error: 'UPI or Card Autopay mandate is required for the 1-month free trial.' };
-    }
-  }
 
   if (!gymName || !name || !email) return { error: 'Please fill in all fields.' };
   if (!SLUG_RE.test(slug) || RESERVED_SLUGS.has(slug)) {
@@ -93,17 +83,35 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
     authUserId = publicCreated.user.id;
   }
 
+  // Pricing & Status calculation
+  const isPaid = plan === '6months' || plan === '1year';
+  const basePrice = plan === '6months' ? 3000 : plan === '1year' ? 5000 : 0;
+  let setupFee = isPaid ? 1999 : 0;
+  if (couponCode) {
+    if (couponCode.toUpperCase() === 'SETUP50') setupFee = Math.round(setupFee * 0.5);
+    else if (couponCode.toUpperCase() === 'SETUP30') setupFee = Math.round(setupFee * 0.7);
+    else if (couponCode.toUpperCase() === 'SETUP10') setupFee = Math.round(setupFee * 0.9);
+  }
+  const totalAmount = isPaid ? basePrice + setupFee : 0;
+
+  // Free trial and pilot partner are active immediately; paid plans await WhatsApp UPI approval
+  const saasStatus = isFirstCustomer || !isPaid ? 'ACTIVE' : 'PENDING_APPROVAL';
+  const saasPlan = isFirstCustomer ? 'PILOT_PARTNER' : plan === 'trial' ? 'TRIAL_14_DAYS' : plan.toUpperCase();
+  const durationDays = plan === '1year' ? 365 : plan === '6months' ? 180 : 30;
+  const expiresAt = new Date(Date.now() + durationDays * 86400000);
+
   try {
-    const oneYearFromNow = new Date(Date.now() + 365 * 86400000);
     await prisma.gym.create({
       data: {
         name: gymName,
         slug,
-        saasPlan: isFirstCustomer ? 'PILOT_PARTNER' : (plan === 'trial' ? 'TRIAL_14_DAYS' : plan.toUpperCase()),
-        saasStatus: 'ACTIVE',
-        saasApprovedAt: new Date(),
-        saasExpiresAt: isFirstCustomer ? oneYearFromNow : undefined,
-        users: { create: { authUserId, name, email, role: 'OWNER' } },
+        saasPlan,
+        saasStatus,
+        subscriptionAmount: totalAmount,
+        saasApprovedAt: saasStatus === 'ACTIVE' ? new Date() : null,
+        saasExpiresAt: saasStatus === 'ACTIVE' ? expiresAt : null,
+        isSuspended: saasStatus === 'PENDING_APPROVAL',
+        users: { create: { authUserId, name, email, phone: phone || null, role: 'OWNER' } },
         plans: { create: DEFAULT_PLANS },
       },
     });
@@ -113,20 +121,44 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
       await recordCouponUsage(couponCode, slug);
     }
   } catch {
-    // Don't leave a login that belongs to no gym
     try {
       await admin.auth.admin.deleteUser(authUserId);
-    } catch {
-      // ignore
-    }
+    } catch {}
     return { error: 'Could not set up your gym. Please try again.' };
   }
 
-  // Log the new owner in
+  // Auto-login the owner session
   const supabase = await createClient();
-  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-  if (signInError) return { error: 'Gym registered, but could not sign in automatically. Please visit the login page.' };
+  await supabase.auth.signInWithPassword({ email, password });
 
-  return { success: true };
+  const planLabel =
+    plan === '1year'
+      ? '1-Year Annual Pro Plan'
+      : plan === '6months'
+      ? '6-Month Semi-Annual Plan'
+      : isFirstCustomer
+      ? 'Pilot Launch Partner (Free)'
+      : '1-Month Free Trial';
+
+  const whatsappMessage =
+    `Hi NeuraFitness Team! I registered our gym on the portal and want to activate our SaaS via UPI payment.\n\n` +
+    `🏋️ *Gym Name:* ${gymName}\n` +
+    `🔗 *Gym Code:* ${slug}\n` +
+    `👤 *Owner:* ${name}\n` +
+    `📧 *Email:* ${email}\n` +
+    (phone ? `📱 *Phone:* ${phone}\n` : '') +
+    `💳 *Plan:* ${planLabel}\n` +
+    (isPaid ? `💰 *Amount to Pay:* ₹${totalAmount.toLocaleString('en-IN')}\n\n` : `🎉 *Status:* 1-Month Free Trial\n\n`) +
+    `Please share your UPI QR code / VPA to complete payment and approve our Gym OS account.`;
+
+  const whatsappUrl = `https://wa.me/919351219914?text=${encodeURIComponent(whatsappMessage)}`;
+
+  return {
+    success: true,
+    whatsappUrl,
+    gymName,
+    slug,
+    requiresPayment: isPaid,
+  };
 }
 

@@ -9,6 +9,7 @@ import {
   replyToOwnerFeedback,
   fetchGymMembersForAdmin,
   deleteGymMemberByAdmin,
+  createGymByAdmin,
 } from '@/actions/admin';
 
 export interface AdminGymRow {
@@ -110,6 +111,100 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
   const showToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 3500);
+  };
+
+  // Onboard Gym Modal
+  const [showCreateGymModal, setShowCreateGymModal] = useState(false);
+  const [newGymName, setNewGymName] = useState('');
+  const [newGymSlug, setNewGymSlug] = useState('');
+  const [newOwnerName, setNewOwnerName] = useState('');
+  const [newOwnerEmail, setNewOwnerEmail] = useState('');
+  const [newOwnerPhone, setNewOwnerPhone] = useState('');
+  const [newPassword, setNewPassword] = useState('GymMaster@2026');
+  const [newSaasPlan, setNewSaasPlan] = useState<'SEMI_ANNUAL' | 'ANNUAL' | 'TRIAL'>('SEMI_ANNUAL');
+  const [newDurationMonths, setNewDurationMonths] = useState<number>(6);
+  const [newSubscriptionAmount, setNewSubscriptionAmount] = useState<number>(3000);
+  const [creatingGym, setCreatingGym] = useState(false);
+
+  const handlePlanChange = (p: 'SEMI_ANNUAL' | 'ANNUAL' | 'TRIAL') => {
+    setNewSaasPlan(p);
+    if (p === 'ANNUAL') {
+      setNewDurationMonths(12);
+      setNewSubscriptionAmount(5000);
+    } else if (p === 'SEMI_ANNUAL') {
+      setNewDurationMonths(6);
+      setNewSubscriptionAmount(3000);
+    } else {
+      setNewDurationMonths(1);
+      setNewSubscriptionAmount(0);
+    }
+  };
+
+  const handleNewGymNameChange = (val: string) => {
+    setNewGymName(val);
+    const autoSlug = val
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]/g, '-')
+      .replace(/-+/g, '-')
+      .slice(0, 20);
+    if (!newGymSlug || newGymSlug === autoSlug.slice(0, newGymSlug.length)) {
+      setNewGymSlug(autoSlug);
+    }
+  };
+
+  const handleCreateGym = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGymName.trim() || !newGymSlug.trim() || !newOwnerName.trim() || !newOwnerEmail.trim()) {
+      showToast('Please fill in Gym Name, Slug, Owner Name, and Email.');
+      return;
+    }
+    setCreatingGym(true);
+    const res = await createGymByAdmin({
+      gymName: newGymName,
+      slug: newGymSlug,
+      ownerName: newOwnerName,
+      email: newOwnerEmail,
+      phone: newOwnerPhone,
+      password: newPassword,
+      saasPlan: newSaasPlan,
+      subscriptionAmount: newSubscriptionAmount,
+      durationMonths: newDurationMonths,
+    });
+    setCreatingGym(false);
+    if (res.ok) {
+      showToast(`⚡ Gym "${newGymName}" onboarded & activated successfully!`);
+      setShowCreateGymModal(false);
+      setGyms((prev) => [
+        {
+          id: res.gymId || String(Date.now()),
+          name: newGymName,
+          slug: newGymSlug,
+          ownerName: newOwnerName,
+          ownerEmail: newOwnerEmail,
+          ownerPhone: newOwnerPhone || '',
+          joined: new Date().toISOString(),
+          membersCount: 0,
+          activeMembersCount: 0,
+          checkInsLast7d: 0,
+          lastActiveDaysAgo: 0,
+          saasPlan: newSaasPlan,
+          saasStatus: 'ACTIVE',
+          saasExpiresAt: new Date(Date.now() + newDurationMonths * 30 * 86400000).toISOString(),
+          saasApprovedAt: new Date().toISOString(),
+          isSuspended: false,
+          subscriptionAmount: newSubscriptionAmount,
+        },
+        ...prev,
+      ]);
+      setNewGymName('');
+      setNewGymSlug('');
+      setNewOwnerName('');
+      setNewOwnerEmail('');
+      setNewOwnerPhone('');
+    } else {
+      showToast(res.error || 'Failed to onboard gym.');
+    }
   };
 
   // 1-Click Approve Subscription
@@ -474,20 +569,31 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
               />
             </div>
 
-            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto text-xs">
-              {(['ALL', 'ACTIVE', 'PENDING', 'TRIAL', 'SUSPENDED'] as const).map((st) => (
-                <button
-                  key={st}
-                  onClick={() => setStatusFilter(st)}
-                  className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
-                    statusFilter === st
-                      ? 'bg-surface-container-high text-secondary border border-secondary/40'
-                      : 'text-outline hover:text-on-surface hover:bg-surface-container-low'
-                  }`}
-                >
-                  {st === 'ALL' ? 'All Gyms' : st === 'PENDING' ? 'Pending Approval' : st}
-                </button>
-              ))}
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap justify-between w-full sm:w-auto">
+              <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
+                {(['ALL', 'ACTIVE', 'PENDING', 'TRIAL', 'SUSPENDED'] as const).map((st) => (
+                  <button
+                    key={st}
+                    onClick={() => setStatusFilter(st)}
+                    className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
+                      statusFilter === st
+                        ? 'bg-surface-container-high text-secondary border border-secondary/40'
+                        : 'text-outline hover:text-on-surface hover:bg-surface-container-low'
+                    }`}
+                  >
+                    {st === 'ALL' ? 'All Gyms' : st === 'PENDING' ? 'Pending Approval' : st}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowCreateGymModal(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 shadow-sm hover:opacity-90 transition-all cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <span className="material-symbols-outlined text-sm font-bold">add_circle</span>
+                <span>Onboard New Gym</span>
+              </button>
             </div>
           </div>
 
@@ -1066,6 +1172,216 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
                 >
                   <span className="material-symbols-outlined text-sm">send</span>
                   <span>{sendingReply ? 'Sending...' : 'Reply & Resolve'}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL 4: Onboard New Gym (After WhatsApp UPI Payment) */}
+      {showCreateGymModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-surface-container-high pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-secondary text-2xl">add_business</span>
+                <div>
+                  <h3 className="font-sora font-bold text-on-surface text-base">
+                    Onboard New Gym
+                  </h3>
+                  <p className="text-xs text-outline">
+                    Add customer after WhatsApp UPI payment & activate portal instantly
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateGymModal(false)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-on-surface cursor-pointer"
+              >
+                <span className="material-symbols-outlined text-lg">close</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateGym} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
+                    Gym Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Iron Forge Fitness"
+                    value={newGymName}
+                    onChange={(e) => handleNewGymNameChange(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-surface-container-high text-xs text-on-surface focus:outline-none focus:border-secondary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
+                    Gym Code / Slug *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. ironforge"
+                    value={newGymSlug}
+                    onChange={(e) =>
+                      setNewGymSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))
+                    }
+                    className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-surface-container-high text-xs text-on-surface focus:outline-none focus:border-secondary font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
+                    Owner Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Rahul Sharma"
+                    value={newOwnerName}
+                    onChange={(e) => setNewOwnerName(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-surface-container-high text-xs text-on-surface focus:outline-none focus:border-secondary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
+                    WhatsApp / Phone
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. 9876543210"
+                    value={newOwnerPhone}
+                    onChange={(e) => setNewOwnerPhone(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-surface-container-high text-xs text-on-surface focus:outline-none focus:border-secondary"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
+                    Owner Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="owner@ironforge.com"
+                    value={newOwnerEmail}
+                    onChange={(e) => setNewOwnerEmail(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-surface-container-high text-xs text-on-surface focus:outline-none focus:border-secondary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
+                    Initial Password
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="GymMaster@2026"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-surface-container-high text-xs text-on-surface focus:outline-none focus:border-secondary font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
+                  SaaS Subscription Plan
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handlePlanChange('SEMI_ANNUAL')}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                      newSaasPlan === 'SEMI_ANNUAL'
+                        ? 'border-secondary bg-secondary/10 text-on-surface'
+                        : 'border-surface-container-high bg-surface-container-low text-outline'
+                    }`}
+                  >
+                    <span className="font-bold block text-xs">Semi-Annual</span>
+                    <span className="text-[10px] text-secondary">6 Mo · ₹3,000</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePlanChange('ANNUAL')}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                      newSaasPlan === 'ANNUAL'
+                        ? 'border-secondary bg-secondary/10 text-on-surface'
+                        : 'border-surface-container-high bg-surface-container-low text-outline'
+                    }`}
+                  >
+                    <span className="font-bold block text-xs">Annual (1 Yr)</span>
+                    <span className="text-[10px] text-secondary">12 Mo · ₹5,000</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePlanChange('TRIAL')}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                      newSaasPlan === 'TRIAL'
+                        ? 'border-secondary bg-secondary/10 text-on-surface'
+                        : 'border-surface-container-high bg-surface-container-low text-outline'
+                    }`}
+                  >
+                    <span className="font-bold block text-xs">Trial</span>
+                    <span className="text-[10px] text-secondary">30 Days · ₹0</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
+                    Amount Collected (₹)
+                  </label>
+                  <input
+                    type="number"
+                    value={newSubscriptionAmount}
+                    onChange={(e) => setNewSubscriptionAmount(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-surface-container-high text-xs text-on-surface focus:outline-none focus:border-secondary"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
+                    Duration (Months)
+                  </label>
+                  <input
+                    type="number"
+                    value={newDurationMonths}
+                    onChange={(e) => setNewDurationMonths(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-surface-container-high text-xs text-on-surface focus:outline-none focus:border-secondary"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-surface-container-high">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateGymModal(false)}
+                  className="px-3.5 py-2 rounded-lg text-xs font-bold text-outline hover:text-on-surface cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={creatingGym}
+                  className="px-4 py-2.5 rounded-xl bg-primary text-on-primary font-bold text-xs flex items-center gap-1.5 shadow-md hover:opacity-90 disabled:opacity-50 cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-sm">verified</span>
+                  <span>{creatingGym ? 'Creating & Activating...' : 'Onboard & Activate Gym'}</span>
                 </button>
               </div>
             </form>

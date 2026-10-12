@@ -240,3 +240,105 @@ export async function deleteGymMemberByAdmin(gymId: string, memberId: string) {
     return { ok: false, error: error?.message || 'Failed to delete member data.' };
   }
 }
+
+export async function createGymByAdmin(input: {
+  gymName: string;
+  slug: string;
+  ownerName: string;
+  email: string;
+  phone?: string;
+  password?: string;
+  saasPlan: string;
+  subscriptionAmount?: number;
+  durationMonths?: number;
+}) {
+  if (!(await isNeuraFitnessAdmin())) {
+    return { ok: false, error: 'Unauthorized: Admin cockpit clearance required.' };
+  }
+
+  const gymName = input.gymName.trim();
+  const slug = input.slug.trim().toLowerCase();
+  const ownerName = input.ownerName.trim();
+  const email = input.email.trim().toLowerCase();
+  const phone = input.phone?.trim() || null;
+  const password = input.password?.trim() || 'GymMaster@2026';
+  const saasPlan = input.saasPlan || 'SEMI_ANNUAL';
+  const durationMonths = input.durationMonths || (saasPlan === 'ANNUAL' ? 12 : 6);
+  const subscriptionAmount = input.subscriptionAmount ?? (saasPlan === 'ANNUAL' ? 5000 : 3000);
+
+  if (!gymName || !slug || !ownerName || !email) {
+    return { ok: false, error: 'Please provide Gym Name, Slug, Owner Name, and Email.' };
+  }
+
+  const existingSlug = await prisma.gym.findUnique({ where: { slug } });
+  if (existingSlug) {
+    return { ok: false, error: `Gym code / slug "${slug}" is already taken.` };
+  }
+
+  let authUserId = '';
+  try {
+    const { createAdminClient } = await import('@/utils/supabase/admin');
+    const admin = createAdminClient();
+    const { data: created } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (created?.user) {
+      authUserId = created.user.id;
+    }
+  } catch {}
+
+  if (!authUserId) {
+    try {
+      const { createClient } = await import('@/utils/supabase/server');
+      const supabase = await createClient();
+      const { data: publicCreated } = await supabase.auth.signUp({ email, password });
+      if (publicCreated?.user) {
+        authUserId = publicCreated.user.id;
+      }
+    } catch {}
+  }
+
+  if (!authUserId) {
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return { ok: false, error: `A user with email "${email}" is already registered.` };
+    }
+    return { ok: false, error: 'Could not create auth account. Please verify credentials.' };
+  }
+
+  const now = new Date();
+  const expiresAt = new Date(now.getTime() + durationMonths * 30 * DAY_MS);
+
+  const { DEFAULT_PLANS } = await import('@/lib/default-plans');
+
+  const gym = await prisma.gym.create({
+    data: {
+      name: gymName,
+      slug,
+      saasPlan,
+      saasStatus: 'ACTIVE',
+      saasApprovedAt: now,
+      saasExpiresAt: expiresAt,
+      isSuspended: false,
+      subscriptionAmount,
+      users: {
+        create: {
+          authUserId,
+          name: ownerName,
+          email,
+          phone,
+          role: 'OWNER',
+        },
+      },
+      plans: {
+        create: DEFAULT_PLANS,
+      },
+    },
+  });
+
+  revalidatePath('/admin');
+  revalidatePath('/');
+  return { ok: true, gymId: gym.id, message: `Gym "${gymName}" successfully created and approved!` };
+}

@@ -79,13 +79,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
 
-  // Payment / Mandate Details
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card'>('upi');
-  const [upiId, setUpiId] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
-
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -169,24 +162,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       return;
     }
 
-    // Validate mandate / payment details
-    if (paymentMethod === 'upi' && (!upiId.trim() || !upiId.includes('@'))) {
-      setError('Enter a valid UPI ID (e.g. gymowner@okhdfcbank or @upi) for the mandate.');
-      return;
-    }
-
-    if (paymentMethod === 'card') {
-      const cleanCard = cardNumber.replace(/\D/g, '');
-      if (cleanCard.length < 15) {
-        setError('Enter a valid 16-digit debit or credit card number.');
-        return;
-      }
-      if (!cardExpiry.trim() || !cardCvv.trim()) {
-        setError('Enter your card expiry and CVV.');
-        return;
-      }
-    }
-
     setBusy(true);
 
     const formData = new FormData();
@@ -197,13 +172,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     );
     formData.append('name', name.trim());
     formData.append('email', email.trim().toLowerCase());
+    formData.append('phone', phone.trim());
     formData.append('password', password);
     formData.append('plan', plan);
-    formData.append(
-      'mandateId',
-      `MANDATE-${paymentMethod.toUpperCase()}-${Date.now().toString(36)}`
-    );
-    formData.append('paymentMethod', paymentMethod);
     if (appliedCoupon) {
       formData.append('couponCode', appliedCoupon.code);
     }
@@ -217,8 +188,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         return;
       }
 
-      // Success: instantly navigate to dashboard
-      window.location.href = '/';
+      if (res.whatsappUrl && res.requiresPayment) {
+        window.location.href = res.whatsappUrl;
+      } else {
+        window.location.href = '/';
+      }
     } catch {
       setBusy(false);
       setError('Something went wrong. Please check your details and try again.');
@@ -556,123 +530,34 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             </div>
           </div>
 
-          {/* Section: Autopay / Payment Mandate Setup */}
-          <div className="space-y-3 pt-2 border-t border-surface-container-high">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-outline block">
-                {plan === 'trial' ? '2. Autopay Mandate (₹0 Charged Today)' : '2. Payment / Mandate Details'}
-              </span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary/15 text-secondary border border-secondary/30">
-                RBI & NPCI Compliant
-              </span>
-            </div>
-
-            {/* Payment Method Selector */}
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('upi')}
-                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 cursor-pointer transition-all ${
-                  paymentMethod === 'upi'
-                    ? 'border-secondary bg-secondary/10 text-on-surface'
-                    : 'border-surface-container-high bg-surface-container-low text-outline'
-                }`}
-              >
-                <span className="material-symbols-outlined text-lg text-secondary">account_balance_wallet</span>
-                <div>
-                  <span className="font-bold text-xs block text-on-surface">UPI Autopay</span>
-                  <span className="text-[10px] text-outline">GPay, PhonePe, Paytm</span>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('card')}
-                className={`p-2.5 rounded-xl border text-left flex items-center gap-2 cursor-pointer transition-all ${
-                  paymentMethod === 'card'
-                    ? 'border-secondary bg-secondary/10 text-on-surface'
-                    : 'border-surface-container-high bg-surface-container-low text-outline'
-                }`}
-              >
-                <span className="material-symbols-outlined text-lg text-secondary">credit_card</span>
-                <div>
-                  <span className="font-bold text-xs block text-on-surface">Credit / Debit Card</span>
-                  <span className="text-[10px] text-outline">Visa, Mastercard, RuPay</span>
-                </div>
-              </button>
-            </div>
-
-            {/* UPI Input */}
-            {paymentMethod === 'upi' && (
-              <div className="p-3 bg-surface-container-low rounded-xl border border-surface-container-high space-y-2">
-                <label className={labelClass}>Your UPI ID / VPA *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. gymowner@okhdfcbank or 9876543210@paytm"
-                  value={upiId}
-                  onChange={(e) => setUpiId(e.target.value)}
-                  className={inputClass}
-                />
-                <p className="text-[10px] text-outline flex items-center gap-1">
-                  <span className="material-symbols-outlined text-xs text-tertiary">check_circle</span>
-                  A mandate authorization notification will be sent to your UPI app.
-                </p>
+          {/* Section: Direct WhatsApp UPI Payment Notice */}
+          {plan !== 'trial' ? (
+            <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-xs sm:text-sm text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-secondary text-base">chat</span>
+                  Direct UPI Payment via WhatsApp
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary/15 text-secondary border border-secondary/30">
+                  Zero Gateway Surcharge
+                </span>
               </div>
-            )}
-
-            {/* Card Inputs */}
-            {paymentMethod === 'card' && (
-              <div className="p-3 bg-surface-container-low rounded-xl border border-surface-container-high space-y-2.5">
-                <div>
-                  <label className={labelClass}>Card Number *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="4111 2222 3333 4444"
-                    maxLength={19}
-                    value={cardNumber}
-                    onChange={(e) => setCardNumber(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className={labelClass}>Expiry (MM/YY) *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="12/28"
-                      maxLength={5}
-                      value={cardExpiry}
-                      onChange={(e) => setCardExpiry(e.target.value)}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div>
-                    <label className={labelClass}>CVV *</label>
-                    <input
-                      type="password"
-                      required
-                      placeholder="•••"
-                      maxLength={4}
-                      value={cardCvv}
-                      onChange={(e) => setCardCvv(e.target.value)}
-                      className={inputClass}
-                    />
-                  </div>
-                </div>
+              <p className="text-xs text-outline leading-relaxed">
+                We accept subscription activations directly via UPI on WhatsApp. Once you submit your gym details, you will be redirected to WhatsApp to send payment directly to our co-founders. Your Gym OS portal is approved and activated immediately.
+              </p>
+              <div className="flex items-center gap-2 pt-1 text-[11px] font-semibold text-secondary">
+                <span className="material-symbols-outlined text-sm">security</span>
+                <span>100% Safe · No credit card or auto-debit mandates needed</span>
               </div>
-            )}
-          </div>
-
-          {/* Advance Reminder Notice Guarantee */}
-          <div className="p-3 rounded-xl bg-tertiary/10 border border-tertiary/20 flex items-start gap-2 text-tertiary text-[11px]">
-            <span className="material-symbols-outlined text-base shrink-0 mt-0.5">notifications_active</span>
-            <p className="leading-relaxed">
-              <strong>36-Hour Advance Reminder Guarantee:</strong> We will notify you via SMS & WhatsApp 36 hours prior to any deduction. You can cancel your subscription anytime with 1 click before the date.
-            </p>
-          </div>
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-tertiary/10 border border-tertiary/20 flex items-start gap-2 text-tertiary text-[11px]">
+              <span className="material-symbols-outlined text-base shrink-0 mt-0.5">verified</span>
+              <p className="leading-relaxed">
+                <strong>Instant Free Trial Activation:</strong> No credit card or payment required today. You get full access to all cloud features and WhatsApp automations for 30 days.
+              </p>
+            </div>
+          )}
 
           {/* Submit Button showing Live Amount to Pay */}
           <div className="pt-2">
@@ -688,8 +573,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 {busy
                   ? 'Activating Subscription & Setting Up...'
                   : plan === 'trial'
-                  ? 'Authorize Mandate & Start 1-Month Free Trial (₹0 Today)'
-                  : `Pay ₹${remainingTotalToPay.toLocaleString('en-IN')} & Activate Gym OS`}
+                  ? 'Start 1-Month Free Trial (₹0 Today)'
+                  : `Proceed to Pay ₹${remainingTotalToPay.toLocaleString('en-IN')} via WhatsApp UPI`}
               </span>
             </button>
           </div>

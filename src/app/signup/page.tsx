@@ -24,13 +24,6 @@ export default function SignupPage() {
   const [couponError, setCouponError] = useState('');
   const [couponLoading, setCouponLoading] = useState(false);
 
-  // Payment method
-  const [paymentMethod, setPaymentMethod] = useState<'upi' | 'card'>('upi');
-  const [upiId, setUpiId] = useState('');
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
-
   useEffect(() => {
     checkIsFirstCustomer().then(setIsFirstCustomer);
     // Check if plan or coupon query is in URL
@@ -48,9 +41,13 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (state.success) {
-      window.location.href = '/';
+      if (state.whatsappUrl && state.requiresPayment) {
+        window.location.href = state.whatsappUrl;
+      } else {
+        window.location.href = '/';
+      }
     }
-  }, [state.success]);
+  }, [state.success, state.whatsappUrl, state.requiresPayment]);
 
   const handleApplyCoupon = async (codeToTry?: string) => {
     const code = (codeToTry || couponCodeInput).trim().toUpperCase();
@@ -178,11 +175,6 @@ export default function SignupPage() {
                   </button>
                 </div>
                 <input type="hidden" name="plan" value={plan} />
-                <input
-                  type="hidden"
-                  name="mandateId"
-                  value={`MANDATE-${paymentMethod.toUpperCase()}-${Date.now().toString(36)}`}
-                />
                 {appliedCoupon && (
                   <input type="hidden" name="couponCode" value={appliedCoupon.code} />
                 )}
@@ -405,113 +397,41 @@ export default function SignupPage() {
             </div>
           </div>
 
-          {/* Autopay Mandate Section (Hidden for First Customer) */}
-          {!isFirstCustomer && (
-            <div className="pt-2 border-t border-surface-container-high space-y-3">
+          <div>
+            <label className={labelClass} htmlFor="phone">
+              WhatsApp / Mobile Number *
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              required
+              className={inputClass}
+              placeholder="e.g. 9876543210"
+            />
+            <p className="text-xs text-outline mt-1">
+              Used for WhatsApp UPI payment instructions and onboarding support.
+            </p>
+          </div>
+
+          {/* WhatsApp Direct UPI Notice for Paid Plans */}
+          {!isFirstCustomer && plan !== 'trial' && (
+            <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high space-y-2.5">
               <div className="flex items-center justify-between">
-                <label className={labelClass}>
-                  {plan === 'trial' ? 'Card or UPI Autopay Mandate (₹0 Today)' : 'Payment / Mandate Method'}
-                </label>
+                <span className="font-bold text-xs sm:text-sm text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-secondary text-base">chat</span>
+                  Direct UPI Payment via WhatsApp
+                </span>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary/15 text-secondary border border-secondary/30">
-                  RBI Compliant
+                  Zero Gateway Surcharge
                 </span>
               </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('upi')}
-                  className={`p-2.5 rounded-xl border text-left flex items-center gap-2 cursor-pointer transition-all ${
-                    paymentMethod === 'upi'
-                      ? 'border-secondary bg-secondary/10 text-on-surface'
-                      : 'border-surface-container-high bg-surface-container-low text-outline'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-lg text-secondary">account_balance_wallet</span>
-                  <div>
-                    <span className="font-bold text-xs block text-on-surface">UPI Autopay</span>
-                    <span className="text-[10px] text-outline">GPay, PhonePe, Paytm</span>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`p-2.5 rounded-xl border text-left flex items-center gap-2 cursor-pointer transition-all ${
-                    paymentMethod === 'card'
-                      ? 'border-secondary bg-secondary/10 text-on-surface'
-                      : 'border-surface-container-high bg-surface-container-low text-outline'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-lg text-secondary">credit_card</span>
-                  <div>
-                    <span className="font-bold text-xs block text-on-surface">Card Mandate</span>
-                    <span className="text-[10px] text-outline">Visa, Mastercard</span>
-                  </div>
-                </button>
-              </div>
-
-              {paymentMethod === 'upi' ? (
-                <div>
-                  <label className={labelClass}>UPI ID / VPA *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. gymowner@okaxis"
-                    value={upiId}
-                    onChange={(e) => setUpiId(e.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <div>
-                    <label className={labelClass}>Card Number *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="4111 2222 3333 4444"
-                      maxLength={19}
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      className={inputClass}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className={labelClass}>Expiry (MM/YY) *</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="12/28"
-                        maxLength={5}
-                        value={cardExpiry}
-                        onChange={(e) => setCardExpiry(e.target.value)}
-                        className={inputClass}
-                      />
-                    </div>
-                    <div>
-                      <label className={labelClass}>CVV *</label>
-                      <input
-                        type="password"
-                        required
-                        placeholder="•••"
-                        maxLength={4}
-                        value={cardCvv}
-                        onChange={(e) => setCardCvv(e.target.value)}
-                        className={inputClass}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 36-Hour Reminder Guarantee */}
-              <div className="p-3 rounded-xl bg-tertiary/10 border border-tertiary/20 flex items-start gap-2 text-tertiary text-[11px]">
-                <span className="material-symbols-outlined text-base shrink-0 mt-0.5">notifications_active</span>
-                <p className="leading-relaxed">
-                  <strong>36-Hour Advance Notice Guarantee:</strong> We remind you via SMS & WhatsApp 36 hours before your 1-month free trial concludes. Cancel anytime with 1 click.
-                </p>
+              <p className="text-xs text-outline leading-relaxed">
+                We accept subscription activations directly via UPI on WhatsApp. Once you submit your gym registration, you will be redirected to WhatsApp to send payment directly to our co-founders. Your Gym OS portal is activated immediately.
+              </p>
+              <div className="flex items-center gap-2 pt-1 text-[11px] font-semibold text-secondary">
+                <span className="material-symbols-outlined text-sm">security</span>
+                <span>100% Safe · No credit card or auto-debit mandates needed</span>
               </div>
             </div>
           )}
@@ -532,14 +452,12 @@ export default function SignupPage() {
               <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
             )}
             {state.success
-              ? 'Opening Gym Dashboard...'
+              ? 'Redirecting...'
               : pending
-              ? 'Activating Subscription...'
-              : isFirstCustomer
+              ? 'Submitting Registration...'
+              : isFirstCustomer || plan === 'trial'
               ? 'Register Gym & Start Free Access'
-              : plan === 'trial'
-              ? 'Authorize Mandate & Start 1-Month Free Trial (₹0 Today)'
-              : `Pay ₹${remainingTotalToPay.toLocaleString('en-IN')} & Activate Gym OS`}
+              : `Proceed to Pay ₹${remainingTotalToPay.toLocaleString('en-IN')} via WhatsApp UPI`}
           </button>
 
           <p className="text-xs text-outline text-center pt-2 border-t border-surface-container-high">
