@@ -38,7 +38,7 @@ export default function LoginPage() {
         </div>
 
         {/* Role Switcher Tabs */}
-        <div className="grid grid-cols-3 p-1 rounded-xl bg-surface-container border border-surface-container-high text-xs font-bold">
+        <div className="grid grid-cols-2 p-1 rounded-xl bg-surface-container border border-surface-container-high text-xs font-bold">
           <div className="py-2 text-center rounded-lg bg-surface-container-lowest text-on-surface shadow-xs">
             🏢 Staff
           </div>
@@ -47,13 +47,6 @@ export default function LoginPage() {
             className="py-2 text-center rounded-lg text-outline hover:text-on-surface transition-colors"
           >
             📱 Member
-          </Link>
-          <Link
-            href="/admin/login"
-            className="py-2 text-center rounded-lg text-outline hover:text-secondary transition-colors flex items-center justify-center gap-1"
-          >
-            <span className="material-symbols-outlined text-xs">shield</span>
-            Admin
           </Link>
         </div>
 
