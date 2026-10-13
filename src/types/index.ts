@@ -50,6 +50,7 @@ export interface MemberRecord {
   name: string;
   phone: string;
   email: string;
+  dob?: string | null;
   planId: string;
   joinedAt: string; // ISO
   expiresAt: string; // ISO
@@ -82,6 +83,10 @@ export interface Member extends MemberRecord {
   planDuration: PlanDuration;
   expiryDate: string; // formatted, e.g. '26 Oct 2026'
   joinDate: string; // formatted
+  dobFormatted?: string;
+  isBirthdayToday?: boolean;
+  daysUntilBirthday?: number | null;
+  age?: number | null;
   daysLeft: number; // derived from expiresAt
   status: MemberStatus; // derived from daysLeft
   avatarInitials: string;
@@ -107,6 +112,7 @@ export interface NewMemberInput {
   name: string;
   phone: string;
   email: string;
+  dob?: string;
   planId: string;
   recordPayment: boolean;
   paymentMode: PaymentMode;

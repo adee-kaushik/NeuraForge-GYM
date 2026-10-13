@@ -19,6 +19,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
   const [name, setName] = useState('');
   const [phone, setPhone] = useState(DEFAULT_PHONE);
   const [email, setEmail] = useState('');
+  const [dob, setDob] = useState('');
   const [planId, setPlanId] = useState(defaultPlanId);
   const [biometricId, setBiometricId] = useState('');
   const [paymentMode, setPaymentMode] = useState<PaymentMode>('UPI');
@@ -50,6 +51,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
       name,
       phone,
       email,
+      dob: dob || undefined,
       planId: plan.id,
       recordPayment,
       paymentMode,
@@ -62,6 +64,7 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
     setName('');
     setPhone(DEFAULT_PHONE);
     setEmail('');
+    setDob('');
     setBiometricId('');
     setPlanId(defaultPlanId);
     setPaymentMode('UPI');
@@ -135,6 +138,23 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
                 className={inputClass}
               />
             </div>
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-bold uppercase tracking-wider text-outline flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm text-secondary">cake</span>
+                <span>Date of Birth (DOB)</span>
+              </label>
+              <span className="text-[10px] text-outline font-medium">For wishing birthdays 🎂</span>
+            </div>
+            <input
+              type="date"
+              value={dob}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(e) => setDob(e.target.value)}
+              className={inputClass}
+            />
           </div>
 
           {/* Biometrics & Machine Hardware Punch Registration */}

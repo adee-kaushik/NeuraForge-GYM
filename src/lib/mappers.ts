@@ -8,7 +8,17 @@ import {
   Transaction,
   TransactionRecord,
 } from '../types';
-import { daysUntil, formatDate, formatTime, formatTimestamp, isSameMonth } from './format';
+import {
+  calculateAge,
+  daysUntil,
+  daysUntilNextBirthday,
+  formatDate,
+  formatDob,
+  formatTime,
+  formatTimestamp,
+  isBirthdayToday,
+  isSameMonth,
+} from './format';
 
 export const EXPIRING_WITHIN_DAYS = 7;
 
@@ -52,6 +62,10 @@ export const toMembers = (
       planDuration: plan?.name ?? 'Unknown plan',
       expiryDate: formatDate(r.expiresAt),
       joinDate: formatDate(r.joinedAt),
+      dobFormatted: r.dob ? formatDob(r.dob) : undefined,
+      isBirthdayToday: isBirthdayToday(r.dob, now),
+      daysUntilBirthday: daysUntilNextBirthday(r.dob, now),
+      age: calculateAge(r.dob, now),
       daysLeft,
       status: statusFromDaysLeft(daysLeft),
       avatarInitials: initialsOf(r.name),

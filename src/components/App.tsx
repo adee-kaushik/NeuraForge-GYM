@@ -26,6 +26,7 @@ import { EditMemberModal } from './modals/EditMemberModal';
 import { ImportMembersModal } from './modals/ImportMembersModal';
 import { OwnerFeedbackModal } from './modals/OwnerFeedbackModal';
 import { QuickSearchModal } from './QuickSearchModal';
+import { SendBirthdayWishModal } from './modals/SendBirthdayWishModal';
 
 interface AppProps {
   initialGym: GymConfig;
@@ -74,6 +75,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [wishingMember, setWishingMember] = useState<Member | null>(null);
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -121,7 +123,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
 
   const handleUpdateMember = async (
     memberId: string,
-    input: { name: string; phone: string; email: string }
+    input: { name: string; phone: string; email: string; dob?: string | null }
   ): Promise<boolean> => {
     const res = await updateMember(memberId, input);
     if ('error' in res) {
@@ -330,6 +332,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
               onOpenImport={() => setIsImportOpen(true)}
               onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
               onSendSingleReminder={handleSendSingleReminder}
+              onWishBirthday={(m) => setWishingMember(m)}
               gymSlug={gym.slug}
               onCheckInByCode={handleCheckInByCode}
             />
@@ -398,7 +401,16 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
         onRenewPlan={handleRenewPlan}
         onExtendMembership={handleExtendMembership}
         onEdit={(m) => setEditingMemberId(m.id)}
+        onWishBirthday={(m) => setWishingMember(m)}
         recentLogs={checkIns}
+      />
+
+      <SendBirthdayWishModal
+        isOpen={!!wishingMember}
+        member={wishingMember}
+        gymName={gym.name}
+        onClose={() => setWishingMember(null)}
+        onToast={showToast}
       />
 
       {editingMemberId && members.find((m) => m.id === editingMemberId) && (

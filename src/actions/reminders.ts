@@ -74,3 +74,35 @@ export async function broadcastGymAnnouncement(
 
   return { ok: true };
 }
+
+export async function sendMemberBirthdayWish(
+  memberId: string,
+  customMessage?: string
+): Promise<{ ok: boolean; error?: string }> {
+  const staff = await requireStaff();
+
+  const member = await prisma.member.findFirst({
+    where: { id: memberId, gymId: staff.gymId },
+  });
+
+  if (!member) {
+    return { ok: false, error: 'Member not found.' };
+  }
+
+  const title = `🎂 Happy Birthday, ${member.name}!`;
+  const message =
+    customMessage?.trim() ||
+    `Warmest birthday wishes from the entire team at ${staff.gym.name}! May this year bring you great health, strength, and joy. Keep crushing your fitness goals! 🎉💪`;
+
+  await prisma.gymReminder.create({
+    data: {
+      gymId: staff.gymId,
+      memberId: member.id,
+      title,
+      message,
+      type: 'BIRTHDAY',
+    },
+  });
+
+  return { ok: true };
+}

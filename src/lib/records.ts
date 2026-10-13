@@ -13,6 +13,7 @@ export const toMemberRecord = (m: MemberWithLatestMembership): MemberRecord => {
     name: m.name,
     phone: m.phone,
     email: m.email ?? '',
+    dob: m.dob ? m.dob.toISOString() : null,
     planId: latest?.planId ?? '',
     joinedAt: m.joinedAt.toISOString(),
     expiresAt: (latest?.expiresAt ?? m.joinedAt).toISOString(),

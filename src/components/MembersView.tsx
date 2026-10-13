@@ -15,6 +15,7 @@ interface MembersViewProps {
   onOpenImport: () => void;
   onOpenBulkWhatsApp: () => void;
   onSendSingleReminder: (member: Member) => void;
+  onWishBirthday?: (member: Member) => void;
   initialFilter?: 'all' | 'expiring';
   gymSlug?: string;
   onCheckInByCode?: (code: string) => Promise<ScanCheckInResult>;
@@ -22,6 +23,7 @@ interface MembersViewProps {
 
 type ExpiryFilterType = 'all' | '7days' | '1month' | '3months' | 'expired';
 type PaymentFilterType = 'all' | 'advance' | 'pending' | 'advance1m' | 'advance3m';
+type BirthdayFilterType = 'all' | 'today' | 'upcoming';
 type AttendanceTimeframe = 'today' | 'week' | 'month';
 
 interface ScanFeedback {
@@ -44,6 +46,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
   onOpenImport,
   onOpenBulkWhatsApp,
   onSendSingleReminder,
+  onWishBirthday,
   initialFilter = 'all',
   gymSlug = '',
   onCheckInByCode,
@@ -55,6 +58,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
   );
   const [expiryFilter, setExpiryFilter] = useState<ExpiryFilterType>('all');
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilterType>('all');
+  const [birthdayFilter, setBirthdayFilter] = useState<BirthdayFilterType>('all');
 
   // Attendance section state
   const [attendanceTimeframe, setAttendanceTimeframe] = useState<AttendanceTimeframe>('today');
@@ -145,9 +149,27 @@ export const MembersView: React.FC<MembersViewProps> = ({
         matchesPayment = !hasDues && m.daysLeft >= 90;
       }
 
-      return matchesSearch && matchesPlan && matchesStatus && matchesExpiry && matchesPayment;
+      // 6. Birthday Multi-filters
+      let matchesBirthday = true;
+      if (birthdayFilter === 'today') {
+        matchesBirthday = !!m.isBirthdayToday;
+      } else if (birthdayFilter === 'upcoming') {
+        matchesBirthday = typeof m.daysUntilBirthday === 'number' && m.daysUntilBirthday <= 7;
+      }
+
+      return matchesSearch && matchesPlan && matchesStatus && matchesExpiry && matchesPayment && matchesBirthday;
     });
-  }, [members, searchQuery, selectedPlan, statusFilter, expiryFilter, paymentFilter]);
+  }, [members, searchQuery, selectedPlan, statusFilter, expiryFilter, paymentFilter, birthdayFilter]);
+
+  // Birthday lists for greetings & banner
+  const birthdayMembersToday = useMemo(
+    () => members.filter((m) => m.isBirthdayToday),
+    [members]
+  );
+  const upcomingBirthdays = useMemo(
+    () => members.filter((m) => !m.isBirthdayToday && typeof m.daysUntilBirthday === 'number' && m.daysUntilBirthday <= 7),
+    [members]
+  );
 
   // Filtered check-ins for "Here Today" section
   const now = useMemo(() => new Date(), []);
@@ -514,6 +536,52 @@ export const MembersView: React.FC<MembersViewProps> = ({
         </div>
       )}
 
+      {/* TODAY'S BIRTHDAYS CELEBRATION BANNER */}
+      {birthdayMembersToday.length > 0 && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-primary/15 via-secondary/15 to-[#25D366]/15 border border-secondary/40 shadow-[0_0_35px_rgba(123,208,255,0.18)] flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-secondary text-[#001f28] flex items-center justify-center font-bold text-2xl shadow-sm shrink-0 animate-bounce">
+              🎂
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-sora text-sm sm:text-base font-bold text-on-surface">
+                  {birthdayMembersToday.length === 1
+                    ? `Today is ${birthdayMembersToday[0].name}'s Birthday!`
+                    : `${birthdayMembersToday.length} Members Celebrate Birthdays Today!`}
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#25D366]/20 text-[#25D366] border border-[#25D366]/40 uppercase tracking-wider">
+                  Birthday Alert
+                </span>
+              </div>
+              <p className="text-xs text-outline mt-0.5">
+                Send personalized warm birthday wishes directly via WhatsApp and to their Member Digital Pass!
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {birthdayMembersToday.map((bm) => (
+              <button
+                key={bm.id}
+                onClick={() => (onWishBirthday ? onWishBirthday(bm) : onSelectMember(bm))}
+                className="px-3.5 py-2 rounded-xl bg-surface-container-lowest hover:bg-surface-container border border-secondary/40 hover:border-secondary text-xs font-bold text-on-surface flex items-center gap-2 shadow-xs transition-all cursor-pointer active:scale-95"
+                title={`Send Birthday Wish to ${bm.name}`}
+              >
+                <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-[10px] flex items-center justify-center font-bold">
+                  {bm.avatarInitials}
+                </span>
+                <span>{bm.name}</span>
+                <span className="text-secondary text-xs font-bold flex items-center gap-1 bg-secondary/15 px-1.5 py-0.5 rounded">
+                  <span className="material-symbols-outlined text-xs">cake</span>
+                  <span>Wish</span>
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* SUMMARY CARDS: Total Members, Split Gym Plans, Expiring, Here Today */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {/* Total Members */}
@@ -713,6 +781,31 @@ export const MembersView: React.FC<MembersViewProps> = ({
               </button>
             ))}
           </div>
+
+          {/* Birthday Multi-filters */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs text-outline font-bold uppercase flex items-center gap-1 mr-1">
+              <span className="material-symbols-outlined text-sm text-secondary">cake</span>
+              <span>Birthdays:</span>
+            </span>
+            {[
+              { id: 'all' as BirthdayFilterType, label: 'All' },
+              { id: 'today' as BirthdayFilterType, label: `Today (${birthdayMembersToday.length})` },
+              { id: 'upcoming' as BirthdayFilterType, label: `Next 7 Days (${upcomingBirthdays.length})` },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setBirthdayFilter(f.id)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  birthdayFilter === f.id
+                    ? 'bg-secondary text-[#001f28] font-bold shadow-xs'
+                    : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container border border-surface-container-high'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -744,13 +837,25 @@ export const MembersView: React.FC<MembersViewProps> = ({
                         {member.avatarInitials}
                       </div>
                       <div>
-                        <div className="font-semibold text-on-surface group-hover:text-secondary transition-colors">
-                          {member.name}
+                        <div className="font-semibold text-on-surface group-hover:text-secondary transition-colors flex items-center gap-1.5 flex-wrap">
+                          <span>{member.name}</span>
+                          {member.isBirthdayToday ? (
+                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-secondary/20 text-secondary border border-secondary/40 inline-flex items-center gap-0.5 animate-pulse">
+                              🎂 Birthday Today!
+                            </span>
+                          ) : typeof member.daysUntilBirthday === 'number' && member.daysUntilBirthday <= 7 ? (
+                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-primary/20 text-primary border border-primary/40 inline-flex items-center gap-0.5">
+                              🎂 in {member.daysUntilBirthday}d
+                            </span>
+                          ) : null}
                         </div>
-                        <div className="text-xs text-outline flex items-center gap-1.5">
+                        <div className="text-xs text-outline flex items-center gap-1.5 flex-wrap">
                           <span>{member.phone}</span>
                           {member.memberCode && (
                             <span className="font-mono text-[10px] text-secondary">({member.memberCode})</span>
+                          )}
+                          {member.dobFormatted && (
+                            <span className="text-[10px] text-outline font-medium">· DOB: {member.dobFormatted}</span>
                           )}
                         </div>
                       </div>
@@ -795,6 +900,22 @@ export const MembersView: React.FC<MembersViewProps> = ({
                   </td>
                   <td data-label="" className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-2">
+                      {/* Birthday Wish Button */}
+                      {onWishBirthday && (
+                        <button
+                          onClick={() => onWishBirthday(member)}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer shadow-xs active:scale-95 ${
+                            member.isBirthdayToday
+                              ? 'bg-secondary text-[#001f28] hover:bg-secondary/90 border-secondary animate-pulse'
+                              : 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/30'
+                          }`}
+                          title={member.isBirthdayToday ? "Wish Happy Birthday Today!" : "Send Birthday Greeting"}
+                        >
+                          <span className="material-symbols-outlined text-sm">cake</span>
+                          <span>Wish</span>
+                        </button>
+                      )}
+
                       {/* 1-Click WhatsApp Reminder button (Requirement 4) */}
                       <button
                         onClick={() => onSendSingleReminder(member)}

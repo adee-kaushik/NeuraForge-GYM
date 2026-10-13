@@ -4,7 +4,7 @@ import { Member } from '../../types';
 interface EditMemberModalProps {
   member: Member;
   onClose: () => void;
-  onSave: (memberId: string, input: { name: string; phone: string; email: string }) => Promise<boolean>;
+  onSave: (memberId: string, input: { name: string; phone: string; email: string; dob?: string | null }) => Promise<boolean>;
 }
 
 const labelClass = 'block text-xs font-bold uppercase tracking-wider text-outline mb-1';
@@ -16,12 +16,13 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ member, onClos
   const [name, setName] = useState(member.name);
   const [phone, setPhone] = useState(member.phone);
   const [email, setEmail] = useState(member.email);
+  const [dob, setDob] = useState(member.dob ? member.dob.slice(0, 10) : '');
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    const ok = await onSave(member.id, { name, phone, email });
+    const ok = await onSave(member.id, { name, phone, email, dob: dob || null });
     setSaving(false);
     if (ok) onClose();
   };
@@ -55,6 +56,24 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ member, onClos
         <div>
           <label className={labelClass} htmlFor="edit-email">Email (optional)</label>
           <input id="edit-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputClass} />
+        </div>
+
+        <div>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-xs font-bold uppercase tracking-wider text-outline flex items-center gap-1.5" htmlFor="edit-dob">
+              <span className="material-symbols-outlined text-sm text-secondary">cake</span>
+              <span>Date of Birth (DOB)</span>
+            </label>
+            <span className="text-[10px] text-outline font-medium">For wishing birthdays 🎂</span>
+          </div>
+          <input
+            id="edit-dob"
+            type="date"
+            max={new Date().toISOString().slice(0, 10)}
+            value={dob}
+            onChange={(e) => setDob(e.target.value)}
+            className={inputClass}
+          />
         </div>
 
         <div className="flex justify-end gap-2 pt-1">

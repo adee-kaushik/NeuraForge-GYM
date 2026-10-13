@@ -10,7 +10,7 @@ interface BulkWhatsAppModalProps {
   members: Member[];
 }
 
-type TemplateType = 'renewal' | 'welcome' | 'inactivity' | 'announcement';
+type TemplateType = 'renewal' | 'welcome' | 'inactivity' | 'announcement' | 'birthday';
 
 interface TemplateConfig {
   id: TemplateType;
@@ -28,6 +28,14 @@ const TEMPLATES: TemplateConfig[] = [
     description: 'Remind members whose plans are expiring or already expired',
     defaultText:
       'Hi {name}, your {gym} ({plan}) membership expires on {expiryDate} ({daysLeft} days left). Please renew at the front desk to continue your workout sessions! 🏋️‍♂️💪',
+  },
+  {
+    id: 'birthday',
+    label: 'Birthday Wish',
+    icon: 'cake',
+    description: 'Wish members whose birthday is today or upcoming this week',
+    defaultText:
+      'Happy Birthday, {name}! 🎂 Warmest wishes from the entire team at {gym}! May this year bring you great health, energy, and strength. Keep crushing your fitness goals! 🎉💪',
   },
   {
     id: 'welcome',
@@ -72,9 +80,10 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
   const [activeTab, setActiveTab] = useState<TemplateType>('renewal');
   const [templateTexts, setTemplateTexts] = useState<Record<TemplateType, string>>({
     renewal: TEMPLATES[0].defaultText,
-    welcome: TEMPLATES[1].defaultText,
-    inactivity: TEMPLATES[2].defaultText,
-    announcement: TEMPLATES[3].defaultText,
+    birthday: TEMPLATES[1].defaultText,
+    welcome: TEMPLATES[2].defaultText,
+    inactivity: TEMPLATES[3].defaultText,
+    announcement: TEMPLATES[4].defaultText,
   });
   const [search, setSearch] = useState('');
 
@@ -85,6 +94,8 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
     switch (activeTab) {
       case 'renewal':
         return members.filter((m) => m.status === 'expiring' || m.status === 'expired');
+      case 'birthday':
+        return members.filter((m) => m.isBirthdayToday || (typeof m.daysUntilBirthday === 'number' && m.daysUntilBirthday <= 7));
       case 'welcome':
         return members
           .slice()
@@ -165,6 +176,8 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
             const count =
               t.id === 'renewal'
                 ? members.filter((m) => m.status === 'expiring' || m.status === 'expired').length
+                : t.id === 'birthday'
+                ? members.filter((m) => m.isBirthdayToday || (typeof m.daysUntilBirthday === 'number' && m.daysUntilBirthday <= 7)).length
                 : t.id === 'welcome'
                 ? Math.min(20, members.length)
                 : t.id === 'inactivity'

@@ -10,6 +10,7 @@ interface MemberDetailModalProps {
   onRenewPlan: (memberId: string) => void;
   onEdit: (member: Member) => void;
   onExtendMembership?: (memberId: string, days: number) => Promise<boolean> | void;
+  onWishBirthday?: (member: Member) => void;
   recentLogs?: CheckInLog[];
 }
 
@@ -20,6 +21,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   onRenewPlan,
   onEdit,
   onExtendMembership,
+  onWishBirthday,
   recentLogs = [],
 }) => {
   const [copied, setCopied] = useState(false);
@@ -130,7 +132,12 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                 </h3>
                 <span className="px-2 py-0.5 rounded text-xs font-bold bg-primary/20 text-primary border border-primary/40">{member.planDuration}</span>
               </div>
-              <p className="text-xs text-outline">{member.email} · {member.phone}</p>
+              <p className="text-xs text-outline">
+                {member.email} · {member.phone}
+                {member.dobFormatted && (
+                  <span> · <span className="text-secondary font-medium">🎂 DOB: {member.dobFormatted}{typeof member.age === 'number' ? ` (${member.age} yrs)` : ''}</span></span>
+                )}
+              </p>
             </div>
           </div>
           <button
@@ -144,8 +151,35 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-5 text-xs text-on-surface">
 
+          {/* Birthday celebratory banner if today is member's birthday */}
+          {member.isBirthdayToday && (
+            <div className="p-3.5 rounded-xl bg-gradient-to-r from-primary/20 via-secondary/20 to-tertiary/20 border border-secondary/50 flex items-center justify-between gap-3 animate-in fade-in">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl animate-bounce">🎂</span>
+                <div>
+                  <p className="font-sora text-xs font-bold text-on-surface">
+                    It's {member.name}'s Birthday Today!
+                  </p>
+                  <p className="text-[11px] text-outline">
+                    Send warm birthday wishes directly from your gym.
+                  </p>
+                </div>
+              </div>
+              {onWishBirthday && (
+                <button
+                  type="button"
+                  onClick={() => onWishBirthday(member)}
+                  className="px-3 py-1.5 rounded-lg bg-secondary text-[#001f28] font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-sm hover:opacity-90 active:scale-95"
+                >
+                  <span className="material-symbols-outlined text-sm">cake</span>
+                  <span>Wish Birthday</span>
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Quick Metrics */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3 rounded-lg bg-surface-container-lowest border border-surface-container-high">
               <span className="text-xs text-outline uppercase font-bold">
                 Time Remaining
@@ -168,6 +202,25 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                 {member.attendanceCountThisMonth} Sessions
               </p>
               <span className="text-xs text-outline">This month</span>
+            </div>
+
+            <div className="p-3 rounded-lg bg-surface-container-lowest border border-surface-container-high">
+              <span className="text-xs text-outline uppercase font-bold flex items-center gap-1">
+                <span className="material-symbols-outlined text-xs text-secondary">cake</span>
+                <span>Date of Birth</span>
+              </span>
+              <p className="text-xs font-mono font-bold mt-1.5 text-on-surface truncate">
+                {member.dobFormatted || 'Not recorded'}
+              </p>
+              <span className="text-xs text-outline">
+                {member.isBirthdayToday
+                  ? '🎂 Birthday Today!'
+                  : typeof member.daysUntilBirthday === 'number' && member.daysUntilBirthday <= 7
+                  ? `In ${member.daysUntilBirthday} days`
+                  : typeof member.age === 'number'
+                  ? `${member.age} yrs old`
+                  : 'DOB'}
+              </span>
             </div>
 
             <div className="p-3 rounded-lg bg-surface-container-lowest border border-surface-container-high">
@@ -372,15 +425,28 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-3.5 bg-surface-container-lowest border-t border-surface-container-high flex items-center justify-between">
-          <button
-            onClick={handleCopyWhatsAppLink}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] text-xs font-bold transition-all border border-[#25D366]/30 cursor-pointer shadow-xs active:scale-95"
-            title="1-Click automatic WhatsApp reminder"
-          >
-            <span className="material-symbols-outlined text-base">chat</span>
-            <span>{copied ? 'WhatsApp Opened!' : 'Remind'}</span>
-          </button>
+        <div className="px-6 py-3.5 bg-surface-container-lowest border-t border-surface-container-high flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleCopyWhatsAppLink}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] text-xs font-bold transition-all border border-[#25D366]/30 cursor-pointer shadow-xs active:scale-95"
+              title="1-Click automatic WhatsApp reminder"
+            >
+              <span className="material-symbols-outlined text-base">chat</span>
+              <span>{copied ? 'WhatsApp Opened!' : 'Remind'}</span>
+            </button>
+
+            {onWishBirthday && (
+              <button
+                onClick={() => onWishBirthday(member)}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary/20 hover:bg-primary text-primary hover:text-on-primary text-xs font-bold transition-all border border-primary/40 cursor-pointer shadow-xs active:scale-95"
+                title="Send personalized birthday greeting"
+              >
+                <span className="material-symbols-outlined text-base">cake</span>
+                <span>Wish Birthday</span>
+              </button>
+            )}
+          </div>
 
           <button
             onClick={onClose}

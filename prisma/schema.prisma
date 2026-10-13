@@ -97,6 +97,7 @@ model Member {
   name       String
   phone      String
   email      String?
+  dob        DateTime?
   joinedAt   DateTime @default(now())
   createdAt  DateTime @default(now())
 

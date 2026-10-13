@@ -60,3 +60,45 @@ export const startOfDayIST = (now: Date = new Date()): Date => {
   const utcMidnight = Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate());
   return new Date(utcMidnight - IST_OFFSET_MS);
 };
+
+export const formatDob = (isoOrDate: string | Date | null | undefined): string => {
+  if (!isoOrDate) return 'N/A';
+  const d = new Date(isoOrDate);
+  if (isNaN(d.getTime())) return 'N/A';
+  return `${String(d.getDate()).padStart(2, '0')} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+};
+
+export const calculateAge = (isoOrDate: string | Date | null | undefined, now: Date = new Date()): number | null => {
+  if (!isoOrDate) return null;
+  const birth = new Date(isoOrDate);
+  if (isNaN(birth.getTime())) return null;
+  let age = now.getFullYear() - birth.getFullYear();
+  const m = now.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age >= 0 ? age : null;
+};
+
+export const isBirthdayToday = (isoOrDate: string | Date | null | undefined, now: Date = new Date()): boolean => {
+  if (!isoOrDate) return false;
+  const birth = new Date(isoOrDate);
+  if (isNaN(birth.getTime())) return false;
+  return birth.getDate() === now.getDate() && birth.getMonth() === now.getMonth();
+};
+
+export const daysUntilNextBirthday = (isoOrDate: string | Date | null | undefined, now: Date = new Date()): number | null => {
+  if (!isoOrDate) return null;
+  const birth = new Date(isoOrDate);
+  if (isNaN(birth.getTime())) return null;
+
+  const currentYear = now.getFullYear();
+  let nextBday = new Date(currentYear, birth.getMonth(), birth.getDate());
+  const todayMidnight = startOfDay(now);
+
+  if (nextBday < todayMidnight) {
+    nextBday = new Date(currentYear + 1, birth.getMonth(), birth.getDate());
+  }
+
+  return Math.round((nextBday.getTime() - todayMidnight.getTime()) / MS_DAY);
+};

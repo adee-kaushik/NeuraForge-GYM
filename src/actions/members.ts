@@ -65,6 +65,7 @@ export async function addMember(input: NewMemberInput): Promise<AddMemberResult>
             name,
             phone,
             email: email || null,
+            dob: input.dob && input.dob.trim() ? new Date(input.dob.trim()) : null,
             joinedAt: now,
             memberships: {
               create: {
@@ -173,12 +174,12 @@ export async function extendMembership(memberId: string, days: number): Promise<
   return { ok: true, expiresAt: updated.expiresAt.toISOString() };
 }
 
-export type UpdateMemberInput = { name: string; phone: string; email: string };
+export type UpdateMemberInput = { name: string; phone: string; email: string; dob?: string | null };
 export type UpdateMemberResult = { ok: true; member: MemberRecord } | { ok: false; error: string };
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Fixes a member's name, phone or email. The member code, plan and history stay as they are.
+// Fixes a member's name, phone, email or DOB. The member code, plan and history stay as they are.
 export async function updateMember(memberId: string, input: UpdateMemberInput): Promise<UpdateMemberResult> {
   const staff = await requireStaff();
   const gymId = staff.gymId;
@@ -192,10 +193,20 @@ export async function updateMember(memberId: string, input: UpdateMemberInput): 
   if (phoneDigits.length < 10 || phoneDigits.length > 15) return { ok: false, error: 'Enter a valid phone number.' };
   if (email && (email.length > 120 || !EMAIL_RE.test(email))) return { ok: false, error: 'Enter a valid email or leave it empty.' };
 
+  let parsedDob: Date | null | undefined = undefined;
+  if (input.dob !== undefined) {
+    parsedDob = input.dob && input.dob.trim() ? new Date(input.dob.trim()) : null;
+  }
+
   // gymId in the query means a member of another gym can never be changed here
   const res = await prisma.member.updateMany({
     where: { id: memberId, gymId },
-    data: { name, phone, email: email || null },
+    data: {
+      name,
+      phone,
+      email: email || null,
+      ...(parsedDob !== undefined ? { dob: parsedDob } : {}),
+    },
   });
   if (res.count !== 1) return { ok: false, error: 'Member not found.' };
 

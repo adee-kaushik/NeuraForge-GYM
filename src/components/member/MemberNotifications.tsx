@@ -6,7 +6,7 @@ export interface NotificationItem {
   id: string;
   title: string;
   message: string;
-  type: 'EXPIRY' | 'PAYMENT_DUE' | 'ANNOUNCEMENT' | 'GENERAL';
+  type: 'EXPIRY' | 'PAYMENT_DUE' | 'ANNOUNCEMENT' | 'GENERAL' | 'BIRTHDAY';
   createdAt: string;
 }
 
@@ -97,14 +97,17 @@ export const MemberNotifications: React.FC<MemberNotificationsProps> = ({
       {isOpen && (
         <div className="space-y-2.5 pt-1">
           {activeItems.map((item) => {
+            const isBirthday = item.type === 'BIRTHDAY';
             const isExpiry = item.type === 'EXPIRY';
             const isDue = item.type === 'PAYMENT_DUE';
-            const badgeColor = isDue
+            const badgeColor = isBirthday
+              ? 'bg-secondary/20 text-secondary border-secondary/40'
+              : isDue
               ? 'bg-error/15 text-error border-error/30'
               : isExpiry
               ? 'bg-secondary/15 text-secondary border-secondary/30'
               : 'bg-primary/15 text-primary border-primary/30';
-            const icon = isDue ? 'payments' : isExpiry ? 'event_upcoming' : 'campaign';
+            const icon = isBirthday ? 'cake' : isDue ? 'payments' : isExpiry ? 'event_upcoming' : 'campaign';
 
             return (
               <div
