@@ -436,14 +436,14 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
               <span>{copied ? 'WhatsApp Opened!' : 'Remind'}</span>
             </button>
 
-            {onWishBirthday && (
+            {onWishBirthday && member.isBirthdayToday && (
               <button
                 onClick={() => onWishBirthday(member)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary/20 hover:bg-primary text-primary hover:text-on-primary text-xs font-bold transition-all border border-primary/40 cursor-pointer shadow-xs active:scale-95"
-                title="Send personalized birthday greeting"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary text-[#001f28] hover:bg-secondary/90 text-xs font-bold transition-all border border-secondary cursor-pointer shadow-xs active:scale-95 animate-pulse"
+                title="Wish Happy Birthday Today!"
               >
                 <span className="material-symbols-outlined text-base">cake</span>
-                <span>Wish Birthday</span>
+                <span>Wish Birthday 🎂</span>
               </button>
             )}
           </div>

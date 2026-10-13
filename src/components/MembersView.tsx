@@ -900,19 +900,15 @@ export const MembersView: React.FC<MembersViewProps> = ({
                   </td>
                   <td data-label="" className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-2">
-                      {/* Birthday Wish Button */}
-                      {onWishBirthday && (
+                      {/* Birthday Wish Button - Only for members celebrating today */}
+                      {onWishBirthday && member.isBirthdayToday && (
                         <button
                           onClick={() => onWishBirthday(member)}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer shadow-xs active:scale-95 ${
-                            member.isBirthdayToday
-                              ? 'bg-secondary text-[#001f28] hover:bg-secondary/90 border-secondary animate-pulse'
-                              : 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/30'
-                          }`}
-                          title={member.isBirthdayToday ? "Wish Happy Birthday Today!" : "Send Birthday Greeting"}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer shadow-xs active:scale-95 bg-secondary text-[#001f28] hover:bg-secondary/90 border-secondary animate-pulse"
+                          title="Wish Happy Birthday Today!"
                         >
                           <span className="material-symbols-outlined text-sm">cake</span>
-                          <span>Wish</span>
+                          <span>Wish 🎂</span>
                         </button>
                       )}
 

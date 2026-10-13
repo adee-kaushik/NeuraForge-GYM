@@ -33,7 +33,7 @@ const TEMPLATES: TemplateConfig[] = [
     id: 'birthday',
     label: 'Birthday Wish',
     icon: 'cake',
-    description: 'Wish members whose birthday is today or upcoming this week',
+    description: 'Wish members whose birthday is today',
     defaultText:
       'Happy Birthday, {name}! 🎂 Warmest wishes from the entire team at {gym}! May this year bring you great health, energy, and strength. Keep crushing your fitness goals! 🎉💪',
   },
@@ -95,7 +95,7 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
       case 'renewal':
         return members.filter((m) => m.status === 'expiring' || m.status === 'expired');
       case 'birthday':
-        return members.filter((m) => m.isBirthdayToday || (typeof m.daysUntilBirthday === 'number' && m.daysUntilBirthday <= 7));
+        return members.filter((m) => m.isBirthdayToday);
       case 'welcome':
         return members
           .slice()
