@@ -125,3 +125,28 @@ html, body {
   table.stack td[data-label=""]::before { display: none; }
   table.stack td[data-label=""] { justify-content: flex-end; }
 }
+
+/* Front Desk Standee Print Formatting */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  body * {
+    visibility: hidden;
+  }
+  #printable-front-desk-standee,
+  #printable-front-desk-standee * {
+    visibility: visible;
+  }
+  #printable-front-desk-standee {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 700px;
+    margin: auto;
+    border: 2px solid #000000 !important;
+    box-shadow: none !important;
+  }
+}

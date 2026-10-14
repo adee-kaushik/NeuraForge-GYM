@@ -54,6 +54,7 @@ model Gym {
   reminders      GymReminder[]
   ownerFeedbacks OwnerFeedback[]
   adminMessages  AdminMessage[]
+  enrollments    Enrollment[]
 }
 
 model User {
@@ -245,6 +246,35 @@ model AdminMessage {
 
   @@index([gymId])
   @@index([createdAt])
+}
+
+model Enrollment {
+  id            String    @id @default(cuid())
+  gymId         String
+  name          String
+  phone         String
+  email         String?
+  gender        String?
+  dob           DateTime?
+  planId        String
+  planName      String
+  timingSlot    String?   @default("MORNING")
+  weight        Float?
+  height        Float?
+  bmi           Float?
+  bmiCategory   String?
+  amount        Int       @default(0)
+  utrNumber     String?
+  paymentStatus String    @default("PAID_PENDING_VERIFICATION")
+  status        String    @default("PENDING") // PENDING, APPROVED, REJECTED
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  gym Gym @relation(fields: [gymId], references: [id])
+
+  @@index([gymId])
+  @@index([status])
 }
 
 

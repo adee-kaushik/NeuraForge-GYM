@@ -19,6 +19,9 @@ interface MembersViewProps {
   initialFilter?: 'all' | 'expiring';
   gymSlug?: string;
   onCheckInByCode?: (code: string) => Promise<ScanCheckInResult>;
+  onOpenFrontDeskQr?: () => void;
+  onOpenPendingEnrollments?: () => void;
+  pendingEnrollmentsCount?: number;
 }
 
 type ExpiryFilterType = 'all' | '7days' | '1month' | '3months' | 'expired';
@@ -50,6 +53,9 @@ export const MembersView: React.FC<MembersViewProps> = ({
   initialFilter = 'all',
   gymSlug = '',
   onCheckInByCode,
+  onOpenFrontDeskQr,
+  onOpenPendingEnrollments,
+  pendingEnrollmentsCount = 0,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPlan, setSelectedPlan] = useState<string>('All');
@@ -289,6 +295,33 @@ export const MembersView: React.FC<MembersViewProps> = ({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          {onOpenFrontDeskQr && (
+            <button
+              onClick={onOpenFrontDeskQr}
+              className="min-h-[40px] px-3.5 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-secondary border border-secondary/35 text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs relative"
+              title="Download & Print Front Desk QR Poster"
+            >
+              <span className="material-symbols-outlined text-base sm:text-lg">qr_code_2</span>
+              <span>Desk QR</span>
+              {pendingEnrollmentsCount > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-error text-white text-[10px] font-bold animate-pulse">
+                  {pendingEnrollmentsCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {pendingEnrollmentsCount > 0 && onOpenPendingEnrollments && (
+            <button
+              onClick={onOpenPendingEnrollments}
+              className="min-h-[40px] px-3.5 py-2 rounded-xl bg-gradient-to-r from-secondary to-[#4edea3] text-slate-950 text-xs sm:text-sm font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 animate-pulse"
+              title="Review candidates waiting for approval"
+            >
+              <span className="material-symbols-outlined text-base sm:text-lg">how_to_reg</span>
+              <span>Approve ({pendingEnrollmentsCount})</span>
+            </button>
+          )}
+
           <button
             onClick={() => setShowBiometricsHub(!showBiometricsHub)}
             className={`min-h-[40px] px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${

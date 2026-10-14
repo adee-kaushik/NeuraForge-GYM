@@ -62,6 +62,32 @@ export function ensureDatabaseSchema(): Promise<void> {
             "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
             "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
           );
+
+          CREATE TABLE IF NOT EXISTS "Enrollment" (
+            "id" TEXT PRIMARY KEY,
+            "gymId" TEXT NOT NULL,
+            "name" TEXT NOT NULL,
+            "phone" TEXT NOT NULL,
+            "email" TEXT,
+            "gender" TEXT,
+            "dob" TIMESTAMP(3),
+            "planId" TEXT NOT NULL,
+            "planName" TEXT NOT NULL,
+            "timingSlot" TEXT DEFAULT 'MORNING',
+            "weight" DOUBLE PRECISION,
+            "height" DOUBLE PRECISION,
+            "bmi" DOUBLE PRECISION,
+            "bmiCategory" TEXT,
+            "amount" INTEGER NOT NULL DEFAULT 0,
+            "utrNumber" TEXT,
+            "paymentStatus" TEXT NOT NULL DEFAULT 'PAID_PENDING_VERIFICATION',
+            "status" TEXT NOT NULL DEFAULT 'PENDING',
+            "notes" TEXT,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+          );
+          CREATE INDEX IF NOT EXISTS "Enrollment_gymId_idx" ON "Enrollment"("gymId");
+          CREATE INDEX IF NOT EXISTS "Enrollment_status_idx" ON "Enrollment"("status");
         `);
       } catch (err) {
         console.warn('Auto-migration DDL warning (continuing with graceful fallback):', err);

@@ -30,6 +30,10 @@ import { ImportMembersModal } from './modals/ImportMembersModal';
 import { OwnerFeedbackModal } from './modals/OwnerFeedbackModal';
 import { QuickSearchModal } from './QuickSearchModal';
 import { SendBirthdayWishModal } from './modals/SendBirthdayWishModal';
+import { FrontDeskQrModal } from './modals/FrontDeskQrModal';
+import { PendingEnrollmentsModal } from './modals/PendingEnrollmentsModal';
+import { getPendingEnrollments } from '@/actions/enrollments';
+import type { EnrollmentRecord } from '../types';
 
 interface AppProps {
   initialGym: GymConfig;
@@ -83,6 +87,24 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
   const [isQuickSearchOpen, setIsQuickSearchOpen] = useState(false);
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Front Desk QR & Pending Self-Enrollments state
+  const [isFrontDeskQrOpen, setIsFrontDeskQrOpen] = useState(false);
+  const [isPendingEnrollmentsOpen, setIsPendingEnrollmentsOpen] = useState(false);
+  const [pendingEnrollments, setPendingEnrollments] = useState<EnrollmentRecord[]>([]);
+
+  const fetchPending = async () => {
+    try {
+      const rows = await getPendingEnrollments();
+      setPendingEnrollments(rows);
+    } catch (e) {
+      console.error('Failed to load pending enrollments:', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchPending();
+  }, []);
 
   // Toast notifications
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -351,6 +373,8 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
           onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
           onNavigateScreen={setActiveScreen}
           onOpenFeedback={() => setIsFeedbackModalOpen(true)}
+          onOpenFrontDeskQr={() => setIsFrontDeskQrOpen(true)}
+          pendingEnrollmentsCount={pendingEnrollments.length}
         />
 
         {/* View Routing */}
@@ -371,6 +395,9 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
                 onWishBirthday={(m) => setWishingMember(m)}
                 gymSlug={gym.slug}
                 onCheckInByCode={handleCheckInByCode}
+                onOpenFrontDeskQr={() => setIsFrontDeskQrOpen(true)}
+                onOpenPendingEnrollments={() => setIsPendingEnrollmentsOpen(true)}
+                pendingEnrollmentsCount={pendingEnrollments.length}
               />
             ) : (
               <DashboardView
@@ -385,6 +412,9 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
                 onOpenAddMember={() => setIsAddMemberOpen(true)}
                 onOpenImport={() => setIsImportOpen(true)}
                 onNavigateScreen={setActiveScreen}
+                pendingEnrollments={pendingEnrollments}
+                onOpenPendingEnrollments={() => setIsPendingEnrollmentsOpen(true)}
+                onOpenFrontDeskQr={() => setIsFrontDeskQrOpen(true)}
               />
             )
           )}
@@ -403,6 +433,9 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
               onWishBirthday={(m) => setWishingMember(m)}
               gymSlug={gym.slug}
               onCheckInByCode={handleCheckInByCode}
+              onOpenFrontDeskQr={() => setIsFrontDeskQrOpen(true)}
+              onOpenPendingEnrollments={() => setIsPendingEnrollmentsOpen(true)}
+              pendingEnrollmentsCount={pendingEnrollments.length}
             />
           )}
 
@@ -547,6 +580,28 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
         isOpen={isFeedbackModalOpen}
         onClose={() => setIsFeedbackModalOpen(false)}
         gymName={gym.name}
+      />
+
+      {/* Front Desk Downloadable Standee QR Modal */}
+      <FrontDeskQrModal
+        gym={gym}
+        isOpen={isFrontDeskQrOpen}
+        onClose={() => setIsFrontDeskQrOpen(false)}
+        pendingCount={pendingEnrollments.length}
+        onOpenPendingList={() => setIsPendingEnrollmentsOpen(true)}
+      />
+
+      {/* Pending Self-Enrollments Review & Approval Modal */}
+      <PendingEnrollmentsModal
+        isOpen={isPendingEnrollmentsOpen}
+        onClose={() => setIsPendingEnrollmentsOpen(false)}
+        enrollments={pendingEnrollments}
+        onRefresh={fetchPending}
+        onMemberApproved={() => {
+          fetchPending();
+          window.location.reload();
+        }}
+        showToast={showToast}
       />
     </div>
   );

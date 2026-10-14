@@ -216,4 +216,28 @@ export interface WorkoutPlanItem {
   updatedAt?: string;
 }
 
+// ── Front Desk Self-Enrollment Types ──
+export interface EnrollmentRecord {
+  id: string;
+  gymId: string;
+  name: string;
+  phone: string;
+  email?: string | null;
+  gender?: string | null;
+  dob?: string | null;
+  planId: string;
+  planName: string;
+  timingSlot?: string | null;
+  weight?: number | null;
+  height?: number | null;
+  bmi?: number | null;
+  bmiCategory?: string | null;
+  amount: number;
+  utrNumber?: string | null;
+  paymentStatus: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  notes?: string | null;
+  createdAt: string;
+}
+
 

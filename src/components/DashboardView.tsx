@@ -19,6 +19,9 @@ interface DashboardViewProps {
   onOpenAddMember?: () => void;
   onOpenImport?: () => void;
   onNavigateScreen?: (screen: ActiveScreen) => void;
+  pendingEnrollments?: import('../types').EnrollmentRecord[];
+  onOpenPendingEnrollments?: () => void;
+  onOpenFrontDeskQr?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -33,6 +36,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenAddMember,
   onOpenImport,
   onNavigateScreen,
+  pendingEnrollments = [],
+  onOpenPendingEnrollments,
+  onOpenFrontDeskQr,
 }) => {
   const [noticeDismissed, setNoticeDismissed] = useState(false);
   const [paymentFilter, setPaymentFilter] = useState<'All' | 'UPI' | 'Cash' | 'Card' | 'Pending'>('All');
@@ -63,6 +69,55 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+      {/* PENDING FRONT DESK QR SELF-ENROLLMENTS BANNER */}
+      {pendingEnrollments && pendingEnrollments.length > 0 && (
+        <section className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-secondary/20 via-primary/15 to-[#4edea3]/20 border border-secondary/50 shadow-[0_0_35px_rgba(123,208,255,0.2)] flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-secondary text-[#001f28] flex items-center justify-center font-bold text-2xl shadow-sm shrink-0 animate-bounce">
+              📋
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-sora text-sm sm:text-base font-bold text-on-surface">
+                  {pendingEnrollments.length === 1
+                    ? `1 New Candidate Enrolled via Front Desk QR!`
+                    : `${pendingEnrollments.length} New Candidates Enrolled via Front Desk QR!`}
+                </h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-secondary text-[#001f28] uppercase tracking-wider">
+                  Needs Approval
+                </span>
+              </div>
+              <p className="text-xs text-outline mt-0.5">
+                Prospective members scanned your desk QR &amp; submitted their plan, slot and UPI details. Review &amp; approve to activate biometric pass.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {onOpenPendingEnrollments && (
+              <button
+                type="button"
+                onClick={onOpenPendingEnrollments}
+                className="px-4 py-2 rounded-xl bg-secondary text-[#001f28] font-bold text-xs shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-base">how_to_reg</span>
+                <span>Review &amp; Approve ({pendingEnrollments.length})</span>
+              </button>
+            )}
+            {onOpenFrontDeskQr && (
+              <button
+                type="button"
+                onClick={onOpenFrontDeskQr}
+                className="p-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-secondary border border-secondary/30 transition-colors cursor-pointer"
+                title="View Front Desk QR Poster"
+              >
+                <span className="material-symbols-outlined text-lg">qr_code_2</span>
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+
       {/* 0. ONBOARDING HERO FOR EMPTY GYM */}
       {members.length === 0 && (
         <section className="relative w-full overflow-hidden bg-surface-container-low rounded-2xl shadow-[0_4px_30px_rgba(0,0,0,0.5)] border border-primary/40 p-6 sm:p-8">

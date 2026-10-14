@@ -16,6 +16,8 @@ interface HeaderProps {
   onOpenBulkWhatsApp: () => void;
   onNavigateScreen: (screen: ActiveScreen) => void;
   onOpenFeedback?: () => void;
+  onOpenFrontDeskQr?: () => void;
+  pendingEnrollmentsCount?: number;
 }
 
 interface AdminMessageItem {
@@ -37,6 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenBulkWhatsApp,
   onNavigateScreen,
   onOpenFeedback,
+  onOpenFrontDeskQr,
+  pendingEnrollmentsCount = 0,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -239,6 +243,23 @@ export const Header: React.FC<HeaderProps> = ({
             </>
           )}
         </div>
+
+        {/* Front Desk Join QR Button (Downloadable Standee for Front Desk) */}
+        {onOpenFrontDeskQr && (
+          <button
+            onClick={onOpenFrontDeskQr}
+            className="h-10 px-2.5 sm:px-3 rounded-xl bg-surface-container hover:bg-surface-container-high text-secondary hover:text-white border border-secondary/35 font-bold text-xs sm:text-sm shadow-xs active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer relative"
+            title="Download & Print Front Desk Self-Enrollment QR Poster"
+          >
+            <span className="material-symbols-outlined text-lg text-secondary">qr_code_2</span>
+            <span className="hidden sm:inline whitespace-nowrap">Desk QR</span>
+            {pendingEnrollmentsCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-error text-white text-[10px] font-bold animate-pulse">
+                {pendingEnrollmentsCount}
+              </span>
+            )}
+          </button>
+        )}
 
         {/* Add Member Button: Touch-friendly 40px height */}
         {showAddMember && (
