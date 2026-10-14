@@ -338,15 +338,17 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
                 onClick={() => setTimingSlot('MORNING')}
                 className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
                   timingSlot === 'MORNING'
-                    ? 'bg-amber-500/15 border-amber-400/80 text-amber-300 shadow-[0_0_12px_rgba(251,191,36,0.2)]'
-                    : 'bg-surface-container-lowest border-surface-container-high text-on-surface-variant hover:border-outline'
+                    ? 'bg-amber-500/25 border-amber-400 text-[#fde047] font-bold shadow-[0_0_14px_rgba(251,191,36,0.3)]'
+                    : 'bg-surface-container-lowest border-surface-container-high text-on-surface hover:border-outline'
                 }`}
               >
-                <div className="flex items-center gap-1 text-xs font-bold">
+                <div className={`flex items-center gap-1 text-xs font-bold ${timingSlot === 'MORNING' ? 'text-[#fde047]' : 'text-on-surface'}`}>
                   <span>🌅</span>
                   <span>Morning Slot</span>
                 </div>
-                <span className="text-[10px] opacity-75 mt-0.5">6:00 AM – 11:30 AM</span>
+                <span className={`text-[10px] mt-0.5 font-medium ${timingSlot === 'MORNING' ? 'text-amber-200' : 'text-slate-300'}`}>
+                  6:00 AM – 11:30 AM
+                </span>
               </button>
 
               <button
@@ -354,15 +356,17 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
                 onClick={() => setTimingSlot('EVENING')}
                 className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
                   timingSlot === 'EVENING'
-                    ? 'bg-indigo-500/20 border-indigo-400/80 text-indigo-300 shadow-[0_0_12px_rgba(129,140,248,0.2)]'
-                    : 'bg-surface-container-lowest border-surface-container-high text-on-surface-variant hover:border-outline'
+                    ? 'bg-indigo-500/25 border-indigo-400 text-indigo-200 font-bold shadow-[0_0_14px_rgba(129,140,248,0.3)]'
+                    : 'bg-surface-container-lowest border-surface-container-high text-on-surface hover:border-outline'
                 }`}
               >
-                <div className="flex items-center gap-1 text-xs font-bold">
+                <div className={`flex items-center gap-1 text-xs font-bold ${timingSlot === 'EVENING' ? 'text-indigo-200' : 'text-on-surface'}`}>
                   <span>🌇</span>
                   <span>Evening Slot</span>
                 </div>
-                <span className="text-[10px] opacity-75 mt-0.5">4:30 PM – 10:30 PM</span>
+                <span className={`text-[10px] mt-0.5 font-medium ${timingSlot === 'EVENING' ? 'text-indigo-200' : 'text-slate-300'}`}>
+                  4:30 PM – 10:30 PM
+                </span>
               </button>
 
               <button
@@ -370,15 +374,17 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
                 onClick={() => setTimingSlot('BOTH')}
                 className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
                   timingSlot === 'BOTH'
-                    ? 'bg-primary/20 border-primary text-primary shadow-[0_0_12px_rgba(148,125,255,0.2)]'
-                    : 'bg-surface-container-lowest border-surface-container-high text-on-surface-variant hover:border-outline'
+                    ? 'bg-primary/25 border-primary text-primary font-bold shadow-[0_0_14px_rgba(148,125,255,0.3)]'
+                    : 'bg-surface-container-lowest border-surface-container-high text-on-surface hover:border-outline'
                 }`}
               >
-                <div className="flex items-center gap-1 text-xs font-bold">
+                <div className={`flex items-center gap-1 text-xs font-bold ${timingSlot === 'BOTH' ? 'text-primary' : 'text-on-surface'}`}>
                   <span>⚡</span>
-                  <span>Flexible / Both</span>
+                  <span>Flexible</span>
                 </div>
-                <span className="text-[10px] opacity-75 mt-0.5">All-Day Access</span>
+                <span className={`text-[10px] mt-0.5 font-medium ${timingSlot === 'BOTH' ? 'text-primary/90' : 'text-slate-300'}`}>
+                  Full Day Access
+                </span>
               </button>
             </div>
           </div>

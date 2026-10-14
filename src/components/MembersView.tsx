@@ -881,8 +881,8 @@ export const MembersView: React.FC<MembersViewProps> = ({
 
           {/* Timing Slot Filter (Morning / Evening slot) */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs text-outline font-bold uppercase flex items-center gap-1 mr-1">
-              <span className="material-symbols-outlined text-sm text-amber-300">schedule</span>
+            <span className="text-xs text-on-surface font-bold uppercase flex items-center gap-1 mr-1">
+              <span className="material-symbols-outlined text-sm text-[#fde047]">schedule</span>
               <span>Timings:</span>
             </span>
             {[
@@ -895,8 +895,10 @@ export const MembersView: React.FC<MembersViewProps> = ({
                 onClick={() => setTimingFilter(f.id)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   timingFilter === f.id
-                    ? 'bg-amber-400 text-[#001f28] font-bold shadow-xs'
-                    : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container border border-surface-container-high'
+                    ? f.id === 'MORNING'
+                      ? 'bg-[#fde047] text-slate-950 font-bold shadow-xs'
+                      : 'bg-secondary text-[#001f28] font-bold shadow-xs'
+                    : 'bg-surface-container-lowest text-on-surface hover:bg-surface-container border border-surface-container-high'
                 }`}
               >
                 {f.label}
@@ -930,7 +932,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     onClick={() => onSelectMember(member)}
                     className={`transition-all group cursor-pointer border-l-4 ${
                       isExpired
-                        ? 'bg-red-500/[0.07] hover:bg-red-500/[0.13] border-l-rose-500 shadow-[inset_0_1px_0_rgba(244,63,94,0.15)]'
+                        ? 'bg-rose-950/25 hover:bg-rose-950/40 border-l-rose-500 shadow-[inset_0_1px_0_rgba(244,63,94,0.2)]'
                         : 'hover:bg-surface-container/70 border-l-transparent'
                     }`}
                   >
@@ -939,18 +941,18 @@ export const MembersView: React.FC<MembersViewProps> = ({
                         <div
                           className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border shrink-0 ${
                             isExpired
-                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 ring-2 ring-rose-500/25'
+                              ? 'bg-rose-500/25 text-rose-100 border-rose-400/50 ring-2 ring-rose-500/25 font-bold'
                               : 'bg-primary/20 text-primary border-primary/30'
                           }`}
                         >
                           {member.avatarInitials}
                         </div>
                         <div>
-                          <div className="font-semibold text-on-surface group-hover:text-secondary transition-colors flex items-center gap-1.5 flex-wrap">
-                            <span className={isExpired ? 'text-rose-200' : ''}>{member.name}</span>
+                          <div className="font-bold text-on-surface group-hover:text-secondary transition-colors flex items-center gap-1.5 flex-wrap">
+                            <span className="text-on-surface font-bold text-xs sm:text-sm">{member.name}</span>
                             {isExpired && (
-                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 inline-flex items-center gap-0.5">
-                                <span className="material-symbols-outlined text-[10px]">fingerprint_off</span>
+                              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-rose-500/30 text-rose-100 border border-rose-400/60 inline-flex items-center gap-0.5 shadow-xs">
+                                <span className="material-symbols-outlined text-[11px] text-rose-300">fingerprint_off</span>
                                 <span>Bio Locked</span>
                               </span>
                             )}
@@ -969,13 +971,13 @@ export const MembersView: React.FC<MembersViewProps> = ({
                               </span>
                             )}
                           </div>
-                          <div className="text-xs text-outline flex items-center gap-1.5 flex-wrap">
-                            <span>{member.phone}</span>
+                          <div className="text-xs text-on-surface-variant flex items-center gap-1.5 flex-wrap font-medium">
+                            <span className="text-slate-200">{member.phone}</span>
                             {member.memberCode && (
-                              <span className="font-mono text-[10px] text-secondary">({member.memberCode})</span>
+                              <span className="font-mono text-[10px] text-secondary font-bold">({member.memberCode})</span>
                             )}
                             {member.dobFormatted && (
-                              <span className="text-[10px] text-outline font-medium">· DOB: {member.dobFormatted}</span>
+                              <span className="text-[10px] text-slate-300 font-medium">· DOB: {member.dobFormatted}</span>
                             )}
                           </div>
                         </div>
@@ -985,18 +987,18 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       <div className="flex flex-col gap-1 items-start">
                         <span className={`px-2 py-0.5 rounded text-xs font-bold border ${
                           isExpired
-                            ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                            ? 'bg-rose-500/25 text-rose-100 border-rose-400/50'
                             : 'bg-primary/15 text-primary border-primary/30'
                         }`}>
                           {member.planName}
                         </span>
                         {member.timingSlot && (
-                          <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold border ${
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                             member.timingSlot === 'MORNING'
-                              ? 'bg-amber-500/10 text-amber-300 border-amber-400/30'
+                              ? 'bg-amber-400/20 text-[#fde047] border-amber-400/60 shadow-xs'
                               : member.timingSlot === 'EVENING'
-                              ? 'bg-indigo-500/10 text-indigo-300 border-indigo-400/30'
-                              : 'bg-primary/10 text-primary border-primary/30'
+                              ? 'bg-indigo-500/20 text-indigo-200 border-indigo-400/50'
+                              : 'bg-primary/20 text-primary border-primary/40'
                           }`}>
                             {member.timingSlot === 'MORNING' ? '🌅 Morning' : member.timingSlot === 'EVENING' ? '🌇 Evening' : '⚡ Flexible'}
                           </span>
@@ -1005,19 +1007,19 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     </td>
                     <td data-label="Expiry Date" className="py-3.5 px-3 font-mono">
                       {isExpired ? (
-                        <span className="text-rose-400 font-semibold inline-flex items-center gap-1">
+                        <span className="text-rose-300 font-bold inline-flex items-center gap-1">
                           <span className="material-symbols-outlined text-[13px]">event_busy</span>
                           <span>{member.expiryDate}</span>
                         </span>
                       ) : (
-                        <span className="text-on-surface-variant">{member.expiryDate}</span>
+                        <span className="text-on-surface-variant font-medium">{member.expiryDate}</span>
                       )}
                     </td>
                     <td data-label="Status" className="py-3.5 px-3">
                       <span
                         className={`px-2 py-0.5 rounded text-xs font-bold inline-flex items-center gap-1 ${
                           isExpired
-                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-xs'
+                            ? 'bg-rose-500/30 text-rose-100 border border-rose-400/60 shadow-xs font-bold'
                             : member.daysLeft <= 3
                             ? 'bg-error-container/50 text-error border border-error/30'
                             : member.daysLeft <= 7
@@ -1027,7 +1029,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       >
                         {isExpired ? (
                           <>
-                            <span className="material-symbols-outlined text-xs">lock</span>
+                            <span className="material-symbols-outlined text-xs text-rose-300">lock</span>
                             <span>Expired {Math.abs(member.daysLeft)}d ago</span>
                           </>
                         ) : (

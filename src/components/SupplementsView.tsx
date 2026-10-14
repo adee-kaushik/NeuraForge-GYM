@@ -25,12 +25,29 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ gymName, membe
   const [saleQty, setSaleQty] = useState(1);
   const [customerType, setCustomerType] = useState<'member' | 'walkin'>('member');
   const [selectedMemberId, setSelectedMemberId] = useState<string>('');
+  const [memberSearchTerm, setMemberSearchTerm] = useState('');
   const [walkinName, setWalkinName] = useState('');
   const [walkinPhone, setWalkinPhone] = useState('');
   const [paymentMode, setPaymentMode] = useState<'UPI' | 'Cash' | 'Card'>('UPI');
   const [saleNotes, setSaleNotes] = useState('');
   const [sellingBusy, setSellingBusy] = useState(false);
   const [receiptSale, setReceiptSale] = useState<SupplementSale | null>(null);
+
+  // Filter members in POS sell modal
+  const filteredMembersForSale = useMemo(() => {
+    if (!memberSearchTerm.trim()) return members;
+    const term = memberSearchTerm.toLowerCase();
+    return members.filter(
+      (m) =>
+        m.name.toLowerCase().includes(term) ||
+        m.phone.toLowerCase().includes(term) ||
+        (m.memberCode && m.memberCode.toLowerCase().includes(term))
+    );
+  }, [members, memberSearchTerm]);
+
+  const activeSelectedMember = useMemo(() => {
+    return members.find((m) => m.id === selectedMemberId) || null;
+  }, [members, selectedMemberId]);
 
   // Edit / Add Item Modal
   const [editingItem, setEditingItem] = useState<Partial<SupplementItem> | null>(null);
@@ -78,6 +95,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ gymName, membe
     setSaleQty(1);
     setCustomerType('member');
     setSelectedMemberId(members[0]?.id || '');
+    setMemberSearchTerm('');
     setWalkinName('');
     setWalkinPhone('');
     setPaymentMode('UPI');
@@ -533,17 +551,100 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ gymName, membe
                 </div>
 
                 {customerType === 'member' ? (
-                  <select
-                    value={selectedMemberId}
-                    onChange={(e) => setSelectedMemberId(e.target.value)}
-                    className="w-full bg-surface-container-low border border-surface-container-high rounded-xl p-2.5 text-xs text-on-surface focus:outline-none"
-                  >
-                    {members.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name} ({m.phone}) - {m.planName}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="space-y-2">
+                    {/* Live search input */}
+                    <div className="relative">
+                      <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-secondary text-sm">
+                        search
+                      </span>
+                      <input
+                        type="text"
+                        placeholder="Search member by name, phone or code..."
+                        value={memberSearchTerm}
+                        onChange={(e) => setMemberSearchTerm(e.target.value)}
+                        className="w-full bg-surface-container-low border border-surface-container-high rounded-xl pl-8 pr-8 py-2 text-xs text-on-surface placeholder:text-outline focus:outline-none focus:border-secondary transition-colors"
+                      />
+                      {memberSearchTerm && (
+                        <button
+                          type="button"
+                          onClick={() => setMemberSearchTerm('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface text-xs font-bold"
+                          title="Clear search"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Active Selected Member Preview */}
+                    {activeSelectedMember && (
+                      <div className="p-2 rounded-xl bg-secondary/10 border border-secondary/30 flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-6 h-6 rounded-full bg-secondary text-[#001f28] font-bold text-[10px] flex items-center justify-center shrink-0">
+                            {activeSelectedMember.avatarInitials || activeSelectedMember.name.slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="truncate">
+                            <span className="text-xs font-bold text-on-surface truncate block">
+                              {activeSelectedMember.name}{' '}
+                              {activeSelectedMember.memberCode && (
+                                <span className="font-mono text-[10px] text-secondary font-semibold">({activeSelectedMember.memberCode})</span>
+                              )}
+                            </span>
+                            <span className="text-[10px] text-outline block truncate">
+                              📱 {activeSelectedMember.phone} · {activeSelectedMember.planName}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-secondary/20 text-secondary border border-secondary/30 shrink-0">
+                          Selected
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Filtered Search Results List */}
+                    <div className="max-h-36 overflow-y-auto divide-y divide-surface-container-high rounded-xl border border-surface-container-high bg-surface-container-lowest">
+                      {filteredMembersForSale.length === 0 ? (
+                        <div className="p-3 text-center text-outline text-xs">
+                          No members found matching &quot;{memberSearchTerm}&quot;
+                        </div>
+                      ) : (
+                        filteredMembersForSale.map((m) => {
+                          const isChosen = m.id === selectedMemberId;
+                          return (
+                            <button
+                              key={m.id}
+                              type="button"
+                              onClick={() => setSelectedMemberId(m.id)}
+                              className={`w-full p-2 text-left flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                                isChosen
+                                  ? 'bg-secondary/15 font-bold'
+                                  : 'hover:bg-surface-container/60 text-on-surface'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 truncate">
+                                <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0 ${
+                                  isChosen ? 'bg-secondary text-[#001f28]' : 'bg-surface-container text-outline'
+                                }`}>
+                                  {m.avatarInitials || m.name.slice(0, 1).toUpperCase()}
+                                </div>
+                                <div className="truncate">
+                                  <span className={`text-xs block truncate ${isChosen ? 'text-secondary font-bold' : 'text-on-surface'}`}>
+                                    {m.name} {m.memberCode && <span className="font-mono text-[10px] opacity-75">({m.memberCode})</span>}
+                                  </span>
+                                  <span className="text-[10px] text-outline block truncate">
+                                    {m.phone} · {m.planName}
+                                  </span>
+                                </div>
+                              </div>
+                              {isChosen && (
+                                <span className="material-symbols-outlined text-secondary text-sm shrink-0">check_circle</span>
+                              )}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-2">
                     <input

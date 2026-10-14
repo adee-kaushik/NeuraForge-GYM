@@ -134,8 +134,10 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ member, onClos
                 onClick={() => setTimingSlot(slot.key)}
                 className={`py-2 px-2 rounded-lg border text-xs font-semibold cursor-pointer transition-colors ${
                   timingSlot === slot.key
-                    ? 'bg-secondary/20 border-secondary text-secondary font-bold'
-                    : 'bg-surface-container border-surface-container-high text-on-surface-variant hover:text-on-surface'
+                    ? slot.key === 'MORNING'
+                      ? 'bg-amber-500/25 border-amber-400 text-[#fde047] font-bold shadow-xs'
+                      : 'bg-secondary/20 border-secondary text-secondary font-bold'
+                    : 'bg-surface-container border-surface-container-high text-on-surface hover:text-white'
                 }`}
               >
                 {slot.label}

@@ -183,15 +183,15 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                 )}
                 <span className={`px-2 py-0.5 rounded text-xs font-bold border ${
                   isExpired
-                    ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                    ? 'bg-rose-500/25 text-rose-100 border-rose-400/50'
                     : 'bg-primary/20 text-primary border-primary/40'
                 }`}>{member.planDuration}</span>
                 {member.timingSlot && (
                   <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${
                     member.timingSlot === 'MORNING'
-                      ? 'bg-amber-500/15 text-amber-300 border-amber-400/40'
+                      ? 'bg-amber-400/20 text-[#fde047] border-amber-400/60 shadow-xs'
                       : member.timingSlot === 'EVENING'
-                      ? 'bg-indigo-500/15 text-indigo-300 border-indigo-400/40'
+                      ? 'bg-indigo-500/20 text-indigo-200 border-indigo-400/50'
                       : 'bg-primary/20 text-primary border-primary/40'
                   }`}>
                     {member.timingSlot === 'MORNING' ? '🌅 Morning' : member.timingSlot === 'EVENING' ? '🌇 Evening' : '⚡ Flexible'}
@@ -323,14 +323,20 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                 <span className="material-symbols-outlined text-xs text-secondary">schedule</span>
                 <span>Slot</span>
               </span>
-              <p className="text-xs font-bold mt-1.5 text-on-surface truncate">
+              <p className={`text-xs font-bold mt-1.5 truncate ${
+                member.timingSlot === 'MORNING'
+                  ? 'text-[#fde047]'
+                  : member.timingSlot === 'EVENING'
+                  ? 'text-indigo-200'
+                  : 'text-on-surface'
+              }`}>
                 {member.timingSlot === 'MORNING'
                   ? '🌅 Morning'
                   : member.timingSlot === 'EVENING'
                   ? '🌇 Evening'
                   : '⚡ Flexible'}
               </p>
-              <span className="text-xs text-outline">
+              <span className="text-xs text-slate-300">
                 {member.timingSlot === 'MORNING' ? '6 AM - 11 AM' : member.timingSlot === 'EVENING' ? '5 PM - 10 PM' : 'All day'}
               </span>
             </div>

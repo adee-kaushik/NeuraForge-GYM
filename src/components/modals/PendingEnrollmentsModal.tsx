@@ -115,12 +115,12 @@ export const PendingEnrollmentsModal: React.FC<PendingEnrollmentsModalProps> = (
                           {enr.planName}
                         </span>
                         {enr.timingSlot && (
-                          <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold border ${
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
                             enr.timingSlot === 'MORNING'
-                              ? 'bg-amber-500/10 text-amber-300 border-amber-400/30'
+                              ? 'bg-amber-400/20 text-[#fde047] border-amber-400/60 shadow-xs'
                               : enr.timingSlot === 'EVENING'
-                              ? 'bg-indigo-500/10 text-indigo-300 border-indigo-400/30'
-                              : 'bg-primary/10 text-primary border-primary/30'
+                              ? 'bg-indigo-500/20 text-indigo-200 border-indigo-400/50'
+                              : 'bg-primary/20 text-primary border-primary/40'
                           }`}>
                             {enr.timingSlot === 'MORNING' ? '🌅 Morning' : enr.timingSlot === 'EVENING' ? '🌇 Evening' : '⚡ Flexible'}
                           </span>

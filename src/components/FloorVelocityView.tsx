@@ -169,16 +169,16 @@ export const FloorVelocityView: React.FC<FloorVelocityViewProps> = ({
             <span className="text-xs uppercase font-bold text-outline">Slot Allocation</span>
             <span className="material-symbols-outlined text-primary text-xl">schedule</span>
           </div>
-          <div className="flex items-center justify-between text-xs pt-1">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-              <span>Morning: <b>{morningSlotCount}</b></span>
+            <div className="flex items-center justify-between text-xs pt-1">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#fde047] shadow-xs" />
+                <span className="text-on-surface font-medium">Morning: <b className="text-[#fde047] font-bold">{morningSlotCount}</b></span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-indigo-400" />
+                <span className="text-on-surface font-medium">Evening: <b className="text-indigo-300 font-bold">{eveningSlotCount}</b></span>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-400" />
-              <span>Evening: <b>{eveningSlotCount}</b></span>
-            </div>
-          </div>
           <p className="text-[11px] text-outline">Registered members timing preferences</p>
         </div>
       </div>
