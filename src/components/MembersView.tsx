@@ -59,6 +59,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
   const [expiryFilter, setExpiryFilter] = useState<ExpiryFilterType>('all');
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilterType>('all');
   const [birthdayFilter, setBirthdayFilter] = useState<BirthdayFilterType>('all');
+  const [timingFilter, setTimingFilter] = useState<'all' | 'MORNING' | 'EVENING'>('all');
 
   // Attendance section state
   const [attendanceTimeframe, setAttendanceTimeframe] = useState<AttendanceTimeframe>('today');
@@ -157,9 +158,15 @@ export const MembersView: React.FC<MembersViewProps> = ({
         matchesBirthday = typeof m.daysUntilBirthday === 'number' && m.daysUntilBirthday <= 7;
       }
 
-      return matchesSearch && matchesPlan && matchesStatus && matchesExpiry && matchesPayment && matchesBirthday;
+      // 7. Timing Slot Filter (Morning / Evening slot)
+      const matchesTiming =
+        timingFilter === 'all' ||
+        (timingFilter === 'MORNING' && (m.timingSlot === 'MORNING' || m.timingSlot === 'BOTH')) ||
+        (timingFilter === 'EVENING' && (m.timingSlot === 'EVENING' || m.timingSlot === 'BOTH'));
+
+      return matchesSearch && matchesPlan && matchesStatus && matchesExpiry && matchesPayment && matchesBirthday && matchesTiming;
     });
-  }, [members, searchQuery, selectedPlan, statusFilter, expiryFilter, paymentFilter, birthdayFilter]);
+  }, [members, searchQuery, selectedPlan, statusFilter, expiryFilter, paymentFilter, birthdayFilter, timingFilter]);
 
   // Birthday lists for greetings & banner
   const birthdayMembersToday = useMemo(
@@ -806,6 +813,31 @@ export const MembersView: React.FC<MembersViewProps> = ({
               </button>
             ))}
           </div>
+
+          {/* Timing Slot Filter (Morning / Evening slot) */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-xs text-outline font-bold uppercase flex items-center gap-1 mr-1">
+              <span className="material-symbols-outlined text-sm text-amber-300">schedule</span>
+              <span>Timings:</span>
+            </span>
+            {[
+              { id: 'all' as const, label: 'All Slots' },
+              { id: 'MORNING' as const, label: '🌅 Morning Slot' },
+              { id: 'EVENING' as const, label: '🌇 Evening Slot' },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setTimingFilter(f.id)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                  timingFilter === f.id
+                    ? 'bg-amber-400 text-[#001f28] font-bold shadow-xs'
+                    : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container border border-surface-container-high'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -816,7 +848,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
             <thead>
               <tr className="text-outline uppercase text-xs bg-surface-container-lowest border-b border-surface-container-high">
                 <th className="py-3 px-4">Member</th>
-                <th className="py-3 px-3">Plan</th>
+                <th className="py-3 px-3">Plan &amp; Slot</th>
                 <th className="py-3 px-3">Expiry Date</th>
                 <th className="py-3 px-3">Status</th>
                 <th className="py-3 px-3">Payment / Due</th>
@@ -848,6 +880,11 @@ export const MembersView: React.FC<MembersViewProps> = ({
                               🎂 in {member.daysUntilBirthday}d
                             </span>
                           ) : null}
+                          {member.bmi && (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-surface-container-high text-[#4edea3] border border-[#4edea3]/30 inline-flex items-center">
+                              BMI {member.bmi}
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-outline flex items-center gap-1.5 flex-wrap">
                           <span>{member.phone}</span>
@@ -861,10 +898,23 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       </div>
                     </div>
                   </td>
-                  <td data-label="Plan" className="py-3.5 px-3">
-                    <span className="px-2 py-0.5 rounded text-xs font-bold bg-primary/15 text-primary border border-primary/30">
-                      {member.planName}
-                    </span>
+                  <td data-label="Plan &amp; Slot" className="py-3.5 px-3">
+                    <div className="flex flex-col gap-1 items-start">
+                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-primary/15 text-primary border border-primary/30">
+                        {member.planName}
+                      </span>
+                      {member.timingSlot && (
+                        <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold border ${
+                          member.timingSlot === 'MORNING'
+                            ? 'bg-amber-500/10 text-amber-300 border-amber-400/30'
+                            : member.timingSlot === 'EVENING'
+                            ? 'bg-indigo-500/10 text-indigo-300 border-indigo-400/30'
+                            : 'bg-primary/10 text-primary border-primary/30'
+                        }`}>
+                          {member.timingSlot === 'MORNING' ? '🌅 Morning' : member.timingSlot === 'EVENING' ? '🌇 Evening' : '⚡ Flexible'}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td data-label="Expiry Date" className="py-3.5 px-3 text-on-surface-variant font-mono">
                     {member.expiryDate}

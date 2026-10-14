@@ -51,6 +51,11 @@ export interface MemberRecord {
   phone: string;
   email: string;
   dob?: string | null;
+  timingSlot?: 'MORNING' | 'EVENING' | 'BOTH' | string | null;
+  weight?: number | null; // in kg
+  height?: number | null; // in cm
+  bmi?: number | null;
+  bmiCategory?: string | null;
   planId: string;
   joinedAt: string; // ISO
   expiresAt: string; // ISO
@@ -68,6 +73,8 @@ export interface TransactionRecord {
   status: PaymentStatus;
   invoiceNo: string;
   gstAmount: number;
+  discountAmount?: number;
+  notes?: string | null;
   createdAt: string; // ISO
 }
 
@@ -93,6 +100,7 @@ export interface Member extends MemberRecord {
   attendanceCountThisMonth: number; // derived from check-ins
   lastCheckIn?: string; // derived from check-ins
   pendingDue?: number; // derived from PENDING payments
+  timingSlotFormatted?: string;
 }
 
 export interface Transaction extends TransactionRecord {
@@ -117,6 +125,21 @@ export interface NewMemberInput {
   recordPayment: boolean;
   paymentMode: PaymentMode;
   biometricId?: string;
+  // Timings (Morning / Evening slot)
+  timingSlot?: 'MORNING' | 'EVENING' | 'BOTH';
+  // Custom discount
+  discountAmount?: number;
+  discountType?: 'flat' | 'percentage';
+  // Due / Partial payment & renewal days
+  isPartialPayment?: boolean;
+  amountPaidNow?: number;
+  dueAmount?: number;
+  customRenewalDays?: number;
+  // BMI & Fitness details
+  weight?: number; // kg
+  height?: number; // cm
+  bmi?: number;
+  bmiCategory?: string;
 }
 
 export interface NewPaymentInput {
@@ -124,3 +147,4 @@ export interface NewPaymentInput {
   amount: number;
   paymentMode: PaymentMode;
 }
+

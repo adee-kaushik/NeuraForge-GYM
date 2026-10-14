@@ -8,6 +8,13 @@ interface MemberDetailModalProps {
   gymName: string;
   onClose: () => void;
   onRenewPlan: (memberId: string) => void;
+  onRenewWithDue?: (input: {
+    memberId: string;
+    customRenewalDays?: number;
+    discountAmount?: number;
+    isPartialPayment?: boolean;
+    amountPaidNow?: number;
+  }) => Promise<boolean> | void;
   onEdit: (member: Member) => void;
   onExtendMembership?: (memberId: string, days: number) => Promise<boolean> | void;
   onWishBirthday?: (member: Member) => void;
@@ -19,6 +26,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   gymName,
   onClose,
   onRenewPlan,
+  onRenewWithDue,
   onEdit,
   onExtendMembership,
   onWishBirthday,
@@ -34,6 +42,15 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   const [extendDays, setExtendDays] = useState(14);
   const [customDays, setCustomDays] = useState('');
   const [extendBusy, setExtendBusy] = useState(false);
+
+  // Renew with Due / Custom Days
+  const [showRenewDueBox, setShowRenewDueBox] = useState(false);
+  const [renewDueDays, setRenewDueDays] = useState(30);
+  const [renewCustomDays, setRenewCustomDays] = useState('');
+  const [renewDiscount, setRenewDiscount] = useState('');
+  const [renewIsPartial, setRenewIsPartial] = useState(false);
+  const [renewPaidNow, setRenewPaidNow] = useState('');
+  const [renewDueBusy, setRenewDueBusy] = useState(false);
 
   if (!member) return null;
 
@@ -110,6 +127,23 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
     setCustomDays('');
   };
 
+  const handleRenewWithDueSubmit = async () => {
+    if (!onRenewWithDue || !member) return;
+    setRenewDueBusy(true);
+    const resolvedDays = renewCustomDays ? parseInt(renewCustomDays, 10) || 30 : renewDueDays;
+    const discount = parseFloat(renewDiscount) || 0;
+    const paid = renewIsPartial ? parseFloat(renewPaidNow) || 0 : undefined;
+    await onRenewWithDue({
+      memberId: member.id,
+      customRenewalDays: resolvedDays,
+      discountAmount: discount,
+      isPartialPayment: renewIsPartial,
+      amountPaidNow: paid,
+    });
+    setRenewDueBusy(false);
+    setShowRenewDueBox(false);
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
       <div className="relative w-full max-w-xl bg-surface-container-low border border-secondary/40 rounded-xl shadow-[0_0_50px_rgba(123,208,255,0.25)] overflow-hidden flex flex-col max-h-[92vh]">
@@ -126,11 +160,22 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
               {member.avatarInitials}
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <h3 className="font-sora text-base font-semibold text-on-surface">
                   {member.name}
                 </h3>
                 <span className="px-2 py-0.5 rounded text-xs font-bold bg-primary/20 text-primary border border-primary/40">{member.planDuration}</span>
+                {member.timingSlot && (
+                  <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${
+                    member.timingSlot === 'MORNING'
+                      ? 'bg-amber-500/15 text-amber-300 border-amber-400/40'
+                      : member.timingSlot === 'EVENING'
+                      ? 'bg-indigo-500/15 text-indigo-300 border-indigo-400/40'
+                      : 'bg-primary/20 text-primary border-primary/40'
+                  }`}>
+                    {member.timingSlot === 'MORNING' ? '🌅 Morning' : member.timingSlot === 'EVENING' ? '🌇 Evening' : '⚡ Flexible'}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-outline">
                 {member.email} · {member.phone}
@@ -149,7 +194,27 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-5 text-xs text-on-surface">
+        <div className="p-6 overflow-y-auto space-y-4 text-xs text-on-surface">
+
+          {/* Pending Due Alert Banner */}
+          {member.pendingDue && member.pendingDue > 0 ? (
+            <div className="p-3.5 rounded-xl bg-error/15 border border-error/40 flex items-center justify-between text-xs animate-in fade-in">
+              <div className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-xl text-error">pending_actions</span>
+                <div>
+                  <p className="font-sora font-bold text-error">
+                    ₹{member.pendingDue.toLocaleString('en-IN')} Fee Due Pending
+                  </p>
+                  <p className="text-[11px] text-outline">
+                    Member has outstanding admission/renewal dues to be cleared
+                  </p>
+                </div>
+              </div>
+              <span className="px-2.5 py-1 rounded-lg bg-error text-white font-bold text-xs">
+                Pending Due
+              </span>
+            </div>
+          ) : null}
 
           {/* Birthday celebratory banner if today is member's birthday */}
           {member.isBirthdayToday && (
@@ -206,20 +271,18 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
             <div className="p-3 rounded-lg bg-surface-container-lowest border border-surface-container-high">
               <span className="text-xs text-outline uppercase font-bold flex items-center gap-1">
-                <span className="material-symbols-outlined text-xs text-secondary">cake</span>
-                <span>Date of Birth</span>
+                <span className="material-symbols-outlined text-xs text-secondary">schedule</span>
+                <span>Slot</span>
               </span>
-              <p className="text-xs font-mono font-bold mt-1.5 text-on-surface truncate">
-                {member.dobFormatted || 'Not recorded'}
+              <p className="text-xs font-bold mt-1.5 text-on-surface truncate">
+                {member.timingSlot === 'MORNING'
+                  ? '🌅 Morning'
+                  : member.timingSlot === 'EVENING'
+                  ? '🌇 Evening'
+                  : '⚡ Flexible'}
               </p>
               <span className="text-xs text-outline">
-                {member.isBirthdayToday
-                  ? '🎂 Birthday Today!'
-                  : typeof member.daysUntilBirthday === 'number' && member.daysUntilBirthday <= 7
-                  ? `In ${member.daysUntilBirthday} days`
-                  : typeof member.age === 'number'
-                  ? `${member.age} yrs old`
-                  : 'DOB'}
+                {member.timingSlot === 'MORNING' ? '6 AM - 11 AM' : member.timingSlot === 'EVENING' ? '5 PM - 10 PM' : 'All day'}
               </span>
             </div>
 
@@ -234,7 +297,61 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Plan Info */}
+          {/* Fitness & BMI Card */}
+          <div className="p-3.5 rounded-xl bg-surface-container border border-surface-container-high space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-base text-[#4edea3]">monitor_weight</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-outline">
+                  Fitness &amp; BMI Metrics
+                </span>
+              </div>
+              {member.bmi ? (
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                  member.bmi < 18.5
+                    ? 'bg-sky-500/10 text-sky-400 border-sky-400/30'
+                    : member.bmi < 25
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-400/30'
+                    : member.bmi < 30
+                    ? 'bg-amber-500/10 text-amber-400 border-amber-400/30'
+                    : 'bg-rose-500/10 text-rose-400 border-rose-400/30'
+                }`}>
+                  BMI {member.bmi} · {member.bmiCategory || 'Recorded'}
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onEdit(member)}
+                  className="text-[11px] font-bold text-secondary hover:underline cursor-pointer"
+                >
+                  + Add Weight/Height
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+              <div className="p-2 rounded-lg bg-surface-container-lowest border border-surface-container-high">
+                <span className="text-[10px] text-outline uppercase font-semibold">Weight</span>
+                <p className="font-sora font-bold text-on-surface text-xs mt-0.5">
+                  {member.weight ? `${member.weight} kg` : '—'}
+                </p>
+              </div>
+              <div className="p-2 rounded-lg bg-surface-container-lowest border border-surface-container-high">
+                <span className="text-[10px] text-outline uppercase font-semibold">Height</span>
+                <p className="font-sora font-bold text-on-surface text-xs mt-0.5">
+                  {member.height ? `${member.height} cm` : '—'}
+                </p>
+              </div>
+              <div className="p-2 rounded-lg bg-surface-container-lowest border border-surface-container-high">
+                <span className="text-[10px] text-outline uppercase font-semibold">BMI Score</span>
+                <p className="font-sora font-bold text-xs mt-0.5 text-[#4edea3]">
+                  {member.bmi ? member.bmi : '—'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Plan Info & Renewal Section */}
           <div className="p-4 rounded-xl bg-surface-container border border-surface-container-high space-y-3">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
@@ -254,16 +371,33 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                   Edit details
                 </button>
               </div>
-              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+              <div className="flex flex-wrap items-center gap-2 self-end sm:self-auto shrink-0">
                 {onExtendMembership && (
                   <button
-                    onClick={() => setShowExtendBox(!showExtendBox)}
+                    onClick={() => {
+                      setShowExtendBox(!showExtendBox);
+                      setShowRenewDueBox(false);
+                    }}
                     className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-secondary hover:text-on-surface font-bold text-xs transition-all border border-secondary/30 cursor-pointer flex items-center gap-1.5"
                   >
                     <span className="material-symbols-outlined text-sm">pause_circle</span>
-                    <span>{showExtendBox ? 'Close Pause' : 'Freeze / Extend'}</span>
+                    <span>{showExtendBox ? 'Close' : 'Freeze / Extend'}</span>
                   </button>
                 )}
+
+                {onRenewWithDue && (
+                  <button
+                    onClick={() => {
+                      setShowRenewDueBox(!showRenewDueBox);
+                      setShowExtendBox(false);
+                    }}
+                    className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-amber-300 hover:text-white font-bold text-xs transition-all border border-amber-400/40 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <span className="material-symbols-outlined text-sm">pending_actions</span>
+                    <span>{showRenewDueBox ? 'Close' : 'Renew with Due / Custom Days'}</span>
+                  </button>
+                )}
+
                 <button
                   onClick={handleRenew}
                   disabled={renewBusy}
@@ -272,10 +406,113 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                   {renewBusy && (
                     <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
                   )}
-                  {renewBusy ? 'Renewing...' : `Renew ${member.planName}`}
+                  {renewBusy ? 'Renewing...' : `Quick Renew`}
                 </button>
               </div>
             </div>
+
+            {/* Collapsible Renew with Due / Custom Days Panel */}
+            {showRenewDueBox && (
+              <div className="pt-3 border-t border-surface-container-high/60 space-y-3 bg-surface-container-lowest/80 p-3.5 rounded-xl border border-amber-400/30 animate-in fade-in">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-amber-300 flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-sm">price_change</span>
+                    <span>Renew with Custom Days &amp; Partial / Due Fee</span>
+                  </span>
+                  <span className="text-[11px] text-outline">
+                    Current Expiry: <b className="text-on-surface">{member.expiryDate}</b>
+                  </span>
+                </div>
+
+                {/* Renewal Days Presets */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-outline">Renewal Validity Days:</label>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {[7, 15, 30, 60, 90].map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => {
+                          setRenewDueDays(d);
+                          setRenewCustomDays('');
+                        }}
+                        className={`px-2.5 py-1 rounded text-xs font-semibold cursor-pointer transition-colors ${
+                          !renewCustomDays && renewDueDays === d
+                            ? 'bg-amber-400 text-[#001f28] font-bold'
+                            : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                        }`}
+                      >
+                        {d} Days
+                      </button>
+                    ))}
+                    <div className="flex items-center gap-1 ml-auto">
+                      <span className="text-xs text-outline">Custom:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="365"
+                        value={renewCustomDays}
+                        onChange={(e) => setRenewCustomDays(e.target.value)}
+                        placeholder="Days"
+                        className="w-16 bg-surface-container px-2 py-1 rounded text-xs text-on-surface border border-surface-container-high focus:outline-none focus:border-amber-400"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Discount & Partial Payment Inputs */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                  <div>
+                    <label className="text-[11px] font-bold text-outline block mb-1">Custom Discount (₹)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 200"
+                      value={renewDiscount}
+                      onChange={(e) => setRenewDiscount(e.target.value)}
+                      className="w-full bg-surface-container border border-surface-container-high rounded-lg px-3 py-1.5 text-xs text-on-surface focus:outline-none focus:border-secondary"
+                    />
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-outline">Partial Payment</label>
+                      <button
+                        type="button"
+                        onClick={() => setRenewIsPartial(!renewIsPartial)}
+                        className={`text-[10px] font-bold cursor-pointer ${renewIsPartial ? 'text-error underline' : 'text-secondary hover:underline'}`}
+                      >
+                        {renewIsPartial ? 'Enabled' : '+ Enable Partial'}
+                      </button>
+                    </div>
+                    {renewIsPartial ? (
+                      <input
+                        type="number"
+                        placeholder="Amount paid now (₹)"
+                        value={renewPaidNow}
+                        onChange={(e) => setRenewPaidNow(e.target.value)}
+                        className="w-full bg-surface-container border border-error/50 rounded-lg px-3 py-1.5 text-xs text-on-surface focus:outline-none focus:border-error"
+                      />
+                    ) : (
+                      <div className="text-[11px] text-outline py-1.5">Full fee payment on renewal</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end pt-2 border-t border-surface-container-high/60">
+                  <button
+                    type="button"
+                    onClick={handleRenewWithDueSubmit}
+                    disabled={renewDueBusy}
+                    className="px-4 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-[#001f28] font-bold text-xs transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+                  >
+                    {renewDueBusy && (
+                      <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span>
+                    )}
+                    <span>{renewDueBusy ? 'Renewing...' : `Confirm Renewal`}</span>
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Collapsible Freeze / Extend Panel */}
             {showExtendBox && (

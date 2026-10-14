@@ -56,6 +56,16 @@ export const toMembers = (
       .filter((t) => t.memberId === r.id && t.status === 'PENDING')
       .reduce((sum, t) => sum + t.amount, 0);
 
+    const slot = r.timingSlot?.toUpperCase();
+    const timingSlotFormatted =
+      slot === 'MORNING'
+        ? 'Morning Slot'
+        : slot === 'EVENING'
+        ? 'Evening Slot'
+        : slot === 'BOTH'
+        ? 'Flexible (Both)'
+        : r.timingSlot || 'Morning Slot';
+
     return {
       ...r,
       planName: plan?.name ?? 'Unknown plan',
@@ -72,6 +82,7 @@ export const toMembers = (
       attendanceCountThisMonth: visits.filter((v) => isSameMonth(v.checkedInAt, now)).length,
       lastCheckIn: visits[0] ? formatTimestamp(visits[0].checkedInAt, now) : undefined,
       pendingDue: pending > 0 ? pending : undefined,
+      timingSlotFormatted,
     };
   });
 

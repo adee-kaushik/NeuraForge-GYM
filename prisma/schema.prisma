@@ -98,6 +98,11 @@ model Member {
   phone      String
   email      String?
   dob        DateTime?
+  timingSlot String?  @default("MORNING") // MORNING, EVENING, BOTH
+  weight     Float?   // in kg
+  height     Float?   // in cm
+  bmi        Float?   // BMI value
+  bmiCategory String? // Underweight, Normal, Overweight, Obese
   joinedAt   DateTime @default(now())
   createdAt  DateTime @default(now())
 
@@ -140,6 +145,8 @@ model Payment {
   mode         PaymentMode
   status       PaymentStatus
   invoiceNo    String
+  discountAmount Int?        @default(0)
+  notes        String?
   createdAt    DateTime      @default(now())
 
   gym        Gym         @relation(fields: [gymId], references: [id])

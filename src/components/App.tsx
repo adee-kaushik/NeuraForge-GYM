@@ -6,7 +6,7 @@ import { CurrentUser, GymConfig, GymSettingsInput } from '../config/gym';
 import { formatTimestamp, isSameDay } from '../lib/format';
 import { toMembers, toTransactions, toCheckInLogs } from '../lib/mappers';
 import { computeDashboardStats } from '../lib/stats';
-import { addMember, extendMembership, renewMembership, updateMember } from '../actions/members';
+import { addMember, extendMembership, renewMembership, renewMembershipWithDue, updateMember } from '../actions/members';
 import { markPaymentPaid, recordPayment } from '../actions/payments';
 import { checkInMember, checkInByCode, type ScanCheckInResult } from '../actions/attendance';
 import { updateGymSettings } from '../actions/settings';
@@ -113,17 +113,29 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
       return false;
     }
     setMemberRecords((prev) => [res.member, ...prev]);
-    if (res.payment) {
-      const payment = res.payment;
-      setTxnRecords((prev) => [payment, ...prev]);
+    const newTxns: TransactionRecord[] = [];
+    if (res.payment) newTxns.push(res.payment);
+    if (res.duePayment) newTxns.push(res.duePayment);
+    if (newTxns.length > 0) {
+      setTxnRecords((prev) => [...newTxns, ...prev]);
     }
-    showToast(`${res.member.name} added as a new member.`);
+    showToast(`${res.member.name} registered as a member.`);
     return true;
   };
 
   const handleUpdateMember = async (
     memberId: string,
-    input: { name: string; phone: string; email: string; dob?: string | null }
+    input: {
+      name: string;
+      phone: string;
+      email: string;
+      dob?: string | null;
+      timingSlot?: 'MORNING' | 'EVENING' | 'BOTH' | string | null;
+      weight?: number | null;
+      height?: number | null;
+      bmi?: number | null;
+      bmiCategory?: string | null;
+    }
   ): Promise<boolean> => {
     const res = await updateMember(memberId, input);
     if ('error' in res) {
@@ -134,6 +146,39 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
     setMemberRecords((prev) => prev.map((m) => (m.id === memberId ? updated : m)));
     showToast(`${updated.name}'s details updated.`);
     return true;
+  };
+
+  const handleRenewWithDue = async (input: {
+    memberId: string;
+    customRenewalDays?: number;
+    discountAmount?: number;
+    isPartialPayment?: boolean;
+    amountPaidNow?: number;
+  }): Promise<boolean> => {
+    const key = `renew-due:${input.memberId}`;
+    if (inFlight.current.has(key)) return false;
+    inFlight.current.add(key);
+    try {
+      const res = await renewMembershipWithDue(input);
+      if ('error' in res) {
+        showToast(res.error);
+        return false;
+      }
+      setMemberRecords((prev) =>
+        prev.map((m) => (m.id === input.memberId ? { ...m, expiresAt: res.expiresAt } : m))
+      );
+      const newTxns: TransactionRecord[] = [];
+      if (res.paidPayment) newTxns.push(res.paidPayment);
+      if (res.duePayment) newTxns.push(res.duePayment);
+      if (newTxns.length > 0) {
+        setTxnRecords((prev) => [...newTxns, ...prev]);
+      }
+      const name = memberRecords.find((m) => m.id === input.memberId)?.name ?? 'Member';
+      showToast(`${name}'s membership renewed successfully.`);
+      return true;
+    } finally {
+      inFlight.current.delete(key);
+    }
   };
 
   const handleCheckIn = async (m: Member) => {
@@ -399,6 +444,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
         gymName={gym.name}
         onClose={() => setSelectedMember(null)}
         onRenewPlan={handleRenewPlan}
+        onRenewWithDue={handleRenewWithDue}
         onExtendMembership={handleExtendMembership}
         onEdit={(m) => setEditingMemberId(m.id)}
         onWishBirthday={(m) => setWishingMember(m)}

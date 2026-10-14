@@ -7,6 +7,7 @@ type MemberWithLatestMembership = Member & { memberships: Membership[] };
 
 export const toMemberRecord = (m: MemberWithLatestMembership): MemberRecord => {
   const latest = m.memberships[0];
+  const mAny = m as unknown as Record<string, unknown>;
   return {
     id: m.id,
     memberCode: m.memberCode,
@@ -14,6 +15,11 @@ export const toMemberRecord = (m: MemberWithLatestMembership): MemberRecord => {
     phone: m.phone,
     email: m.email ?? '',
     dob: m.dob ? m.dob.toISOString() : null,
+    timingSlot: (mAny.timingSlot as string) || 'MORNING',
+    weight: typeof mAny.weight === 'number' ? mAny.weight : null,
+    height: typeof mAny.height === 'number' ? mAny.height : null,
+    bmi: typeof mAny.bmi === 'number' ? mAny.bmi : null,
+    bmiCategory: (mAny.bmiCategory as string) || null,
     planId: latest?.planId ?? '',
     joinedAt: m.joinedAt.toISOString(),
     expiresAt: (latest?.expiresAt ?? m.joinedAt).toISOString(),
@@ -26,19 +32,24 @@ type PaymentWithRefs = Payment & {
   membership: (Membership & { plan: Plan }) | null;
 };
 
-export const toTransactionRecord = (p: PaymentWithRefs): TransactionRecord => ({
-  id: p.id,
-  memberId: p.memberId,
-  memberName: p.member.name,
-  memberEmail: p.member.email ?? '',
-  planCategory: p.membership?.plan.name ?? 'Payment',
-  amount: p.amount,
-  paymentMode: p.mode,
-  status: p.status,
-  invoiceNo: p.invoiceNo,
-  gstAmount: p.gstAmount,
-  createdAt: p.createdAt.toISOString(),
-});
+export const toTransactionRecord = (p: PaymentWithRefs): TransactionRecord => {
+  const pAny = p as unknown as Record<string, unknown>;
+  return {
+    id: p.id,
+    memberId: p.memberId,
+    memberName: p.member.name,
+    memberEmail: p.member.email ?? '',
+    planCategory: p.membership?.plan.name ?? 'Payment',
+    amount: p.amount,
+    paymentMode: p.mode,
+    status: p.status,
+    invoiceNo: p.invoiceNo,
+    gstAmount: p.gstAmount,
+    discountAmount: typeof pAny.discountAmount === 'number' ? pAny.discountAmount : 0,
+    notes: (pAny.notes as string) || null,
+    createdAt: p.createdAt.toISOString(),
+  };
+};
 
 export const toCheckInRecord = (a: Attendance): CheckInRecord => ({
   id: a.id,
