@@ -26,6 +26,8 @@ const STATUS = {
 
 const sectionTitle = 'text-xs font-bold uppercase tracking-wider text-outline mb-3';
 
+export const dynamic = 'force-dynamic';
+
 export default async function MemberPage() {
   await ensureDatabaseSchema();
   const member = await getCurrentMember();

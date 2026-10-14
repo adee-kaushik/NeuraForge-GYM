@@ -90,6 +90,7 @@ export function ensureDatabaseSchema(): Promise<void> {
           CREATE INDEX IF NOT EXISTS "Enrollment_status_idx" ON "Enrollment"("status");
         `);
       } catch (err) {
+        initPromise = null;
         console.warn('Auto-migration DDL warning (continuing with graceful fallback):', err);
       }
     })();

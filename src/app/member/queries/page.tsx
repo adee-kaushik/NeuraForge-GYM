@@ -5,6 +5,8 @@ import { MemberNav } from '@/components/member/MemberNav';
 import { MemberHeaderActions } from '@/components/member/MemberHeaderActions';
 import { MemberQueriesView, type MemberQueryItem } from '@/components/member/MemberQueriesView';
 
+export const dynamic = 'force-dynamic';
+
 export default async function MemberQueriesPage() {
   const member = await getCurrentMember();
   if (!member) redirect('/member/login');

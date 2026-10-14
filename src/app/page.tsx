@@ -5,6 +5,8 @@ import { toCurrentUser, toGymConfig } from '@/lib/session';
 import { getPlansForGym } from '@/lib/plans';
 import { loadCheckInRecords, loadMemberRecords, loadTransactionRecords } from '@/lib/data';
 
+export const dynamic = 'force-dynamic';
+
 export default async function Page() {
   // Logged-in owner/staff get the dashboard. Everyone else sees the public landing page.
   const staff = await getCurrentStaff();

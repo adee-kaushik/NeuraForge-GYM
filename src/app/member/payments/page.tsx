@@ -10,6 +10,8 @@ import {
 
 import { ensureDatabaseSchema } from '@/lib/db-init';
 
+export const dynamic = 'force-dynamic';
+
 export default async function MemberPaymentsPage() {
   await ensureDatabaseSchema().catch(() => {});
   const member = await getCurrentMember();

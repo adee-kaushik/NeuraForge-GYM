@@ -21,6 +21,7 @@ export interface MembershipPlan {
   durationMonths: number;
   price: number; // GST-inclusive
   originalPrice?: number;
+  description?: string;
   features: string[];
   popular?: boolean;
 }

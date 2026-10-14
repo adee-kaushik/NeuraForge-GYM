@@ -6,6 +6,8 @@ import { AdminCockpitView, AdminGymRow, AdminFeedbackRow, AdminBroadcastRow } fr
 
 const DAY_MS = 86400000;
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminPage() {
   // Anyone else gets a normal 404 not found page
   if (!(await isNeuraFitnessAdmin())) {
