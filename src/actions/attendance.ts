@@ -22,7 +22,13 @@ export async function checkInMember(memberId: string): Promise<CheckInResult> {
   const now = new Date();
   const latest = member.memberships[0];
   if (!latest || latest.expiresAt < now) {
-    return { ok: false, error: `${member.name}'s membership has expired. Renew first.` };
+    const daysOverdue = latest
+      ? Math.max(1, Math.round((startOfDayIST(now).getTime() - startOfDayIST(latest.expiresAt).getTime()) / 86400000))
+      : 0;
+    return {
+      ok: false,
+      error: `🚫 ACCESS DENIED: ${member.name}'s membership has EXPIRED${daysOverdue ? ` (${daysOverdue}d ago)` : ''}. Biometric turnstile access is locked. Please renew first.`,
+    };
   }
 
   const alreadyIn = await prisma.attendance.findFirst({
@@ -93,9 +99,12 @@ export async function checkInByCode(rawInput: string): Promise<ScanCheckInResult
   const now = new Date();
   const latest = member.memberships[0];
   if (!latest || latest.expiresAt < now) {
+    const daysOverdue = latest
+      ? Math.max(1, Math.round((startOfDayIST(now).getTime() - startOfDayIST(latest.expiresAt).getTime()) / 86400000))
+      : 0;
     return {
       ok: false,
-      error: `Membership for ${member.name} has expired. Please renew first.`,
+      error: `🚫 ACCESS DENIED: Membership for ${member.name} has EXPIRED${daysOverdue ? ` (${daysOverdue}d ago)` : ''}. Biometric & turnstiles are locked. Please renew first.`,
       memberName: member.name,
     };
   }

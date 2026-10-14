@@ -54,6 +54,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
   if (!member) return null;
 
+  const isExpired = member.daysLeft < 0 || member.status === 'expired';
   const shown = login?.memberId === member.id ? login.result : null;
   const created = shown && 'password' in shown ? shown : null;
   const failure = shown && 'error' in shown ? shown.error : null;
@@ -146,25 +147,45 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-xl bg-surface-container-low border border-secondary/40 rounded-xl shadow-[0_0_50px_rgba(123,208,255,0.25)] overflow-hidden flex flex-col max-h-[92vh]">
+      <div className={`relative w-full max-w-xl bg-surface-container-low border rounded-xl overflow-hidden flex flex-col max-h-[92vh] ${
+        isExpired
+          ? 'border-rose-500/50 shadow-[0_0_50px_rgba(244,63,94,0.22)]'
+          : 'border-secondary/40 shadow-[0_0_50px_rgba(123,208,255,0.25)]'
+      }`}>
         {/* Corner accents */}
-        <div className="absolute top-1.5 left-1.5 w-3 h-3 border-t-2 border-l-2 border-secondary"></div>
-        <div className="absolute top-1.5 right-1.5 w-3 h-3 border-t-2 border-r-2 border-secondary"></div>
+        <div className={`absolute top-1.5 left-1.5 w-3 h-3 border-t-2 border-l-2 ${isExpired ? 'border-rose-500' : 'border-secondary'}`}></div>
+        <div className={`absolute top-1.5 right-1.5 w-3 h-3 border-t-2 border-r-2 ${isExpired ? 'border-rose-500' : 'border-secondary'}`}></div>
         <div className="absolute bottom-1.5 left-1.5 w-3 h-3 border-b-2 border-l-2 border-primary"></div>
         <div className="absolute bottom-1.5 right-1.5 w-3 h-3 border-b-2 border-r-2 border-primary"></div>
 
         {/* Modal Header */}
         <div className="px-6 py-4 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-sm border border-primary/40">
+            <div
+              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border shrink-0 ${
+                isExpired
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 ring-2 ring-rose-500/30'
+                  : 'bg-primary/20 text-primary border-primary/40'
+              }`}
+            >
               {member.avatarInitials}
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h3 className="font-sora text-base font-semibold text-on-surface">
+                <h3 className={`font-sora text-base font-semibold ${isExpired ? 'text-rose-200' : 'text-on-surface'}`}>
                   {member.name}
                 </h3>
-                <span className="px-2 py-0.5 rounded text-xs font-bold bg-primary/20 text-primary border border-primary/40">{member.planDuration}</span>
+                {isExpired && (
+                  <span className="px-2 py-0.5 rounded text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/50 inline-flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[13px]">fingerprint_off</span>
+                    <span>Expired · Bio Locked</span>
+                  </span>
+                )}
+                <span className={`px-2 py-0.5 rounded text-xs font-bold border ${
+                  isExpired
+                    ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                    : 'bg-primary/20 text-primary border-primary/40'
+                }`}>{member.planDuration}</span>
                 {member.timingSlot && (
                   <span className={`px-2 py-0.5 rounded text-[11px] font-bold border ${
                     member.timingSlot === 'MORNING'
@@ -195,6 +216,30 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
         {/* Modal Body */}
         <div className="p-6 overflow-y-auto space-y-4 text-xs text-on-surface">
+
+          {/* Expired Membership Biometric Rejection Alert Banner */}
+          {isExpired && (
+            <div className="p-3.5 rounded-xl bg-rose-950/30 border border-rose-500/50 flex items-center justify-between gap-3 text-xs animate-in fade-in">
+              <div className="flex items-center gap-2.5">
+                <span className="material-symbols-outlined text-xl text-rose-400">fingerprint_off</span>
+                <div>
+                  <p className="font-sora font-bold text-rose-300">
+                    Membership Expired ({Math.abs(member.daysLeft)} days overdue) · Biometric Turnstile Locked
+                  </p>
+                  <p className="text-[11px] text-rose-200/80">
+                    Biometric fingerprint/face recognition &amp; turnstile gates will automatically reject this member until renewed.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowRenewDueBox(true)}
+                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shrink-0 cursor-pointer transition-colors shadow-sm"
+              >
+                Renew Now
+              </button>
+            </div>
+          )}
 
           {/* Pending Due Alert Banner */}
           {member.pendingDue && member.pendingDue > 0 ? (
@@ -245,16 +290,20 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
           {/* Quick Metrics */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 rounded-lg bg-surface-container-lowest border border-surface-container-high">
+            <div className={`p-3 rounded-lg border ${
+              isExpired
+                ? 'bg-rose-950/20 border-rose-500/40'
+                : 'bg-surface-container-lowest border-surface-container-high'
+            }`}>
               <span className="text-xs text-outline uppercase font-bold">
                 Time Remaining
               </span>
               <p
                 className={`text-base font-sora font-bold mt-1 ${
-                  member.daysLeft <= 3 ? 'text-error' : 'text-secondary'
+                  isExpired ? 'text-rose-400' : member.daysLeft <= 3 ? 'text-error' : 'text-secondary'
                 }`}
               >
-                {member.daysLeft < 0 ? 'Expired' : `${member.daysLeft} Days`}
+                {isExpired ? `Expired (${Math.abs(member.daysLeft)}d ago)` : `${member.daysLeft} Days`}
               </p>
               <span className="text-xs text-outline">Expires {member.expiryDate}</span>
             </div>

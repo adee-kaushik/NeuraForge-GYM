@@ -158,7 +158,7 @@ export async function memberSelfCheckIn(): Promise<{ ok: boolean; error?: string
   });
 
   if (!latestMembership || latestMembership.expiresAt < now) {
-    return { ok: false, error: 'Your membership has expired. Please renew with the front desk.' };
+    return { ok: false, error: '🚫 ACCESS DENIED: Your membership has expired. Biometric & turnstile access is locked. Please renew with the front desk.' };
   }
 
   const alreadyIn = await prisma.attendance.findFirst({

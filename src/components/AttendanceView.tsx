@@ -237,34 +237,64 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 
               {results.map((m) => {
                 const alreadyIn = checkIns.some((c) => c.memberId === m.id);
-                const expired = m.status === 'expired';
+                const expired = m.status === 'expired' || m.daysLeft < 0;
                 const isBusy = busyId === m.id;
                 return (
                   <div
                     key={m.id}
-                    className="flex items-center justify-between gap-3 p-3 rounded-lg bg-surface-container-lowest border border-surface-container-high"
+                    className={`flex items-center justify-between gap-3 p-3 rounded-lg border transition-all ${
+                      expired
+                        ? 'bg-red-500/[0.07] border-rose-500/50 shadow-[inset_0_1px_0_rgba(244,63,94,0.15)]'
+                        : 'bg-surface-container-lowest border-surface-container-high'
+                    }`}
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs border border-primary/30 shrink-0">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border shrink-0 ${
+                          expired
+                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 ring-2 ring-rose-500/25'
+                            : 'bg-primary/20 text-primary border-primary/30'
+                        }`}
+                      >
                         {m.avatarInitials}
                       </div>
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold text-on-surface truncate">{m.name}</div>
+                        <div className="text-xs font-semibold text-on-surface truncate flex items-center gap-1.5">
+                          <span className={expired ? 'text-rose-200' : ''}>{m.name}</span>
+                          {expired && (
+                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 inline-flex items-center gap-0.5">
+                              <span className="material-symbols-outlined text-[10px]">fingerprint_off</span>
+                              <span>Bio Blocked</span>
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-outline">
-                          {m.memberCode} · {m.planDuration} · {expired ? 'Expired' : `${m.daysLeft} days left`}
+                          {m.memberCode} · {m.planDuration} ·{' '}
+                          {expired ? (
+                            <span className="text-rose-400 font-semibold">Expired ({Math.abs(m.daysLeft)}d ago)</span>
+                          ) : (
+                            `${m.daysLeft} days left`
+                          )}
                         </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => handleMarkPresent(m)}
-                      disabled={alreadyIn || expired || isBusy}
-                      className="px-4 py-1.5 rounded-lg bg-[#4edea3] hover:bg-[#34c78b] text-[#002113] text-xs font-bold transition-all cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
-                    >
-                      {isBusy && (
-                        <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
-                      )}
-                      {expired ? 'Renew first' : alreadyIn ? 'Already present' : isBusy ? 'Marking...' : 'Mark Present'}
-                    </button>
+                    {expired ? (
+                      <span className="px-3 py-1.5 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-bold shrink-0 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-xs">lock</span>
+                        <span>Biometric Locked</span>
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleMarkPresent(m)}
+                        disabled={alreadyIn || isBusy}
+                        className="px-4 py-1.5 rounded-lg bg-[#4edea3] hover:bg-[#34c78b] text-[#002113] text-xs font-bold transition-all cursor-pointer shrink-0 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
+                      >
+                        {isBusy && (
+                          <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                        )}
+                        {alreadyIn ? 'Already present' : isBusy ? 'Marking...' : 'Mark Present'}
+                      </button>
+                    )}
                   </div>
                 );
               })}

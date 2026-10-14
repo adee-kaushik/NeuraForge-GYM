@@ -103,6 +103,11 @@ export const MembersView: React.FC<MembersViewProps> = ({
     return counts;
   }, [members]);
 
+  // Count expired members
+  const expiredCount = useMemo(() => {
+    return members.filter((m) => m.daysLeft < 0 || m.status === 'expired').length;
+  }, [members]);
+
   // Filtering members table
   const filteredMembers = useMemo(() => {
     return members.filter((m) => {
@@ -134,7 +139,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
       } else if (expiryFilter === '3months') {
         matchesExpiry = m.daysLeft >= 0 && m.daysLeft <= 90;
       } else if (expiryFilter === 'expired') {
-        matchesExpiry = m.daysLeft < 0;
+        matchesExpiry = m.daysLeft < 0 || m.status === 'expired';
       }
 
       // 5. Advance Payments Multi-filters
@@ -589,8 +594,8 @@ export const MembersView: React.FC<MembersViewProps> = ({
         </div>
       )}
 
-      {/* SUMMARY CARDS: Total Members, Split Gym Plans, Expiring, Here Today */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      {/* SUMMARY CARDS: Total Members, Split Gym Plans, Expiring, Expired, Here Today */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {/* Total Members */}
         <div
           onClick={() => {
@@ -665,6 +670,26 @@ export const MembersView: React.FC<MembersViewProps> = ({
             {members.filter((m) => m.daysLeft >= 0 && m.daysLeft <= 7).length}
           </p>
           <span className="text-[10px] text-outline mt-0.5 block">Next 7 days</span>
+        </div>
+
+        {/* Expired Members (Biometric Locked) */}
+        <div
+          onClick={() => {
+            setExpiryFilter('expired');
+            setStatusFilter('Expired');
+          }}
+          className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
+            expiryFilter === 'expired' || statusFilter === 'Expired'
+              ? 'bg-rose-950/40 border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.35)]'
+              : 'bg-surface-container-low border-surface-container-high hover:bg-rose-950/20 hover:border-rose-500/40'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-300">Expired</span>
+            <span className="material-symbols-outlined text-rose-400 text-xl">fingerprint_off</span>
+          </div>
+          <p className="font-sora text-2xl font-bold text-rose-300 mt-1">{expiredCount}</p>
+          <span className="text-[10px] text-rose-400/80 mt-0.5 block">Bio Access Locked</span>
         </div>
 
         {/* Here Today (Requirement 7: Clicks to jump to Check-in activity) */}
@@ -746,14 +771,21 @@ export const MembersView: React.FC<MembersViewProps> = ({
               { id: '7days' as ExpiryFilterType, label: '7 Days' },
               { id: '1month' as ExpiryFilterType, label: '1 Month' },
               { id: '3months' as ExpiryFilterType, label: '3 Months' },
-              { id: 'expired' as ExpiryFilterType, label: 'Expired' },
+              {
+                id: 'expired' as ExpiryFilterType,
+                label: expiredCount > 0 ? `🚫 Expired (${expiredCount})` : 'Expired',
+              },
             ].map((f) => (
               <button
                 key={f.id}
                 onClick={() => setExpiryFilter(f.id)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   expiryFilter === f.id
-                    ? 'bg-error text-[#410002] font-bold shadow-xs'
+                    ? f.id === 'expired'
+                      ? 'bg-rose-600 text-white font-bold shadow-xs'
+                      : 'bg-error text-[#410002] font-bold shadow-xs'
+                    : f.id === 'expired' && expiredCount > 0
+                    ? 'bg-rose-950/30 text-rose-300 hover:bg-rose-950/50 border border-rose-500/40 font-semibold'
                     : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container border border-surface-container-high'
                 }`}
               >
@@ -857,132 +889,181 @@ export const MembersView: React.FC<MembersViewProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-container-high">
-              {filteredMembers.map((member) => (
-                <tr
-                  key={member.id}
-                  onClick={() => onSelectMember(member)}
-                  className="hover:bg-surface-container/70 transition-colors group cursor-pointer"
-                >
-                  <td data-label="Member" className="py-3.5 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs border border-primary/30">
-                        {member.avatarInitials}
-                      </div>
-                      <div>
-                        <div className="font-semibold text-on-surface group-hover:text-secondary transition-colors flex items-center gap-1.5 flex-wrap">
-                          <span>{member.name}</span>
-                          {member.isBirthdayToday ? (
-                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-secondary/20 text-secondary border border-secondary/40 inline-flex items-center gap-0.5 animate-pulse">
-                              🎂 Birthday Today!
-                            </span>
-                          ) : typeof member.daysUntilBirthday === 'number' && member.daysUntilBirthday <= 7 ? (
-                            <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-primary/20 text-primary border border-primary/40 inline-flex items-center gap-0.5">
-                              🎂 in {member.daysUntilBirthday}d
-                            </span>
-                          ) : null}
-                          {member.bmi && (
-                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-surface-container-high text-[#4edea3] border border-[#4edea3]/30 inline-flex items-center">
-                              BMI {member.bmi}
-                            </span>
-                          )}
+              {filteredMembers.map((member) => {
+                const isExpired = member.daysLeft < 0 || member.status === 'expired';
+                return (
+                  <tr
+                    key={member.id}
+                    onClick={() => onSelectMember(member)}
+                    className={`transition-all group cursor-pointer border-l-4 ${
+                      isExpired
+                        ? 'bg-red-500/[0.07] hover:bg-red-500/[0.13] border-l-rose-500 shadow-[inset_0_1px_0_rgba(244,63,94,0.15)]'
+                        : 'hover:bg-surface-container/70 border-l-transparent'
+                    }`}
+                  >
+                    <td data-label="Member" className="py-3.5 px-4">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border shrink-0 ${
+                            isExpired
+                              ? 'bg-rose-500/20 text-rose-300 border-rose-500/50 ring-2 ring-rose-500/25'
+                              : 'bg-primary/20 text-primary border-primary/30'
+                          }`}
+                        >
+                          {member.avatarInitials}
                         </div>
-                        <div className="text-xs text-outline flex items-center gap-1.5 flex-wrap">
-                          <span>{member.phone}</span>
-                          {member.memberCode && (
-                            <span className="font-mono text-[10px] text-secondary">({member.memberCode})</span>
-                          )}
-                          {member.dobFormatted && (
-                            <span className="text-[10px] text-outline font-medium">· DOB: {member.dobFormatted}</span>
-                          )}
+                        <div>
+                          <div className="font-semibold text-on-surface group-hover:text-secondary transition-colors flex items-center gap-1.5 flex-wrap">
+                            <span className={isExpired ? 'text-rose-200' : ''}>{member.name}</span>
+                            {isExpired && (
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 inline-flex items-center gap-0.5">
+                                <span className="material-symbols-outlined text-[10px]">fingerprint_off</span>
+                                <span>Bio Locked</span>
+                              </span>
+                            )}
+                            {member.isBirthdayToday ? (
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-secondary/20 text-secondary border border-secondary/40 inline-flex items-center gap-0.5 animate-pulse">
+                                🎂 Birthday Today!
+                              </span>
+                            ) : typeof member.daysUntilBirthday === 'number' && member.daysUntilBirthday <= 7 ? (
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-primary/20 text-primary border border-primary/40 inline-flex items-center gap-0.5">
+                                🎂 in {member.daysUntilBirthday}d
+                              </span>
+                            ) : null}
+                            {member.bmi && (
+                              <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-surface-container-high text-[#4edea3] border border-[#4edea3]/30 inline-flex items-center">
+                                BMI {member.bmi}
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-xs text-outline flex items-center gap-1.5 flex-wrap">
+                            <span>{member.phone}</span>
+                            {member.memberCode && (
+                              <span className="font-mono text-[10px] text-secondary">({member.memberCode})</span>
+                            )}
+                            {member.dobFormatted && (
+                              <span className="text-[10px] text-outline font-medium">· DOB: {member.dobFormatted}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td data-label="Plan &amp; Slot" className="py-3.5 px-3">
-                    <div className="flex flex-col gap-1 items-start">
-                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-primary/15 text-primary border border-primary/30">
-                        {member.planName}
-                      </span>
-                      {member.timingSlot && (
-                        <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold border ${
-                          member.timingSlot === 'MORNING'
-                            ? 'bg-amber-500/10 text-amber-300 border-amber-400/30'
-                            : member.timingSlot === 'EVENING'
-                            ? 'bg-indigo-500/10 text-indigo-300 border-indigo-400/30'
-                            : 'bg-primary/10 text-primary border-primary/30'
+                    </td>
+                    <td data-label="Plan &amp; Slot" className="py-3.5 px-3">
+                      <div className="flex flex-col gap-1 items-start">
+                        <span className={`px-2 py-0.5 rounded text-xs font-bold border ${
+                          isExpired
+                            ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                            : 'bg-primary/15 text-primary border-primary/30'
                         }`}>
-                          {member.timingSlot === 'MORNING' ? '🌅 Morning' : member.timingSlot === 'EVENING' ? '🌇 Evening' : '⚡ Flexible'}
+                          {member.planName}
+                        </span>
+                        {member.timingSlot && (
+                          <span className={`px-1.5 py-0.2 rounded text-[10px] font-semibold border ${
+                            member.timingSlot === 'MORNING'
+                              ? 'bg-amber-500/10 text-amber-300 border-amber-400/30'
+                              : member.timingSlot === 'EVENING'
+                              ? 'bg-indigo-500/10 text-indigo-300 border-indigo-400/30'
+                              : 'bg-primary/10 text-primary border-primary/30'
+                          }`}>
+                            {member.timingSlot === 'MORNING' ? '🌅 Morning' : member.timingSlot === 'EVENING' ? '🌇 Evening' : '⚡ Flexible'}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td data-label="Expiry Date" className="py-3.5 px-3 font-mono">
+                      {isExpired ? (
+                        <span className="text-rose-400 font-semibold inline-flex items-center gap-1">
+                          <span className="material-symbols-outlined text-[13px]">event_busy</span>
+                          <span>{member.expiryDate}</span>
+                        </span>
+                      ) : (
+                        <span className="text-on-surface-variant">{member.expiryDate}</span>
+                      )}
+                    </td>
+                    <td data-label="Status" className="py-3.5 px-3">
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs font-bold inline-flex items-center gap-1 ${
+                          isExpired
+                            ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40 shadow-xs'
+                            : member.daysLeft <= 3
+                            ? 'bg-error-container/50 text-error border border-error/30'
+                            : member.daysLeft <= 7
+                            ? 'bg-secondary-container/20 text-secondary'
+                            : 'bg-tertiary-container/20 text-tertiary'
+                        }`}
+                      >
+                        {isExpired ? (
+                          <>
+                            <span className="material-symbols-outlined text-xs">lock</span>
+                            <span>Expired {Math.abs(member.daysLeft)}d ago</span>
+                          </>
+                        ) : (
+                          `${member.daysLeft} days left`
+                        )}
+                      </span>
+                    </td>
+                    <td data-label="Payment / Due" className="py-3.5 px-3">
+                      {member.pendingDue && member.pendingDue > 0 ? (
+                        <span className="px-2 py-0.5 rounded text-xs font-bold bg-error/15 text-error border border-error/30">
+                          ₹{member.pendingDue.toLocaleString('en-IN')} Due
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded text-xs font-bold bg-tertiary/15 text-tertiary border border-tertiary/30">
+                          Paid Full
                         </span>
                       )}
-                    </div>
-                  </td>
-                  <td data-label="Expiry Date" className="py-3.5 px-3 text-on-surface-variant font-mono">
-                    {member.expiryDate}
-                  </td>
-                  <td data-label="Status" className="py-3.5 px-3">
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        member.daysLeft < 0
-                          ? 'bg-error/20 text-error border border-error/40'
-                          : member.daysLeft <= 3
-                          ? 'bg-error-container/50 text-error border border-error/30'
-                          : member.daysLeft <= 7
-                          ? 'bg-secondary-container/20 text-secondary'
-                          : 'bg-tertiary-container/20 text-tertiary'
-                      }`}
-                    >
-                      {member.daysLeft < 0 ? `Expired ${Math.abs(member.daysLeft)}d ago` : `${member.daysLeft} days left`}
-                    </span>
-                  </td>
-                  <td data-label="Payment / Due" className="py-3.5 px-3">
-                    {member.pendingDue && member.pendingDue > 0 ? (
-                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-error/15 text-error border border-error/30">
-                        ₹{member.pendingDue.toLocaleString('en-IN')} Due
-                      </span>
-                    ) : (
-                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-tertiary/15 text-tertiary border border-tertiary/30">
-                        Paid Full
-                      </span>
-                    )}
-                  </td>
-                  <td data-label="Visits This Month" className="py-3.5 px-3 text-on-surface">
-                    <span className="font-semibold">{member.attendanceCountThisMonth}</span> visits
-                  </td>
-                  <td data-label="" className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-end gap-2">
-                      {/* Birthday Wish Button - Only for members celebrating today */}
-                      {onWishBirthday && member.isBirthdayToday && (
+                    </td>
+                    <td data-label="Visits This Month" className="py-3.5 px-3 text-on-surface">
+                      <span className="font-semibold">{member.attendanceCountThisMonth}</span> visits
+                    </td>
+                    <td data-label="" className="py-3.5 px-4 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Fast 1-tap Renew Button for Expired Members */}
+                        {isExpired && (
+                          <button
+                            onClick={() => onSelectMember(member)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white text-xs font-bold transition-all border border-rose-500/40 cursor-pointer shadow-xs active:scale-95"
+                            title="Membership expired - Click to renew"
+                          >
+                            <span className="material-symbols-outlined text-sm">autorenew</span>
+                            <span>Renew</span>
+                          </button>
+                        )}
+
+                        {/* Birthday Wish Button - Only for members celebrating today */}
+                        {onWishBirthday && member.isBirthdayToday && (
+                          <button
+                            onClick={() => onWishBirthday(member)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer shadow-xs active:scale-95 bg-secondary text-[#001f28] hover:bg-secondary/90 border-secondary animate-pulse"
+                            title="Wish Happy Birthday Today!"
+                          >
+                            <span className="material-symbols-outlined text-sm">cake</span>
+                            <span>Wish 🎂</span>
+                          </button>
+                        )}
+
+                        {/* 1-Click WhatsApp Reminder button (Requirement 4) */}
                         <button
-                          onClick={() => onWishBirthday(member)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer shadow-xs active:scale-95 bg-secondary text-[#001f28] hover:bg-secondary/90 border-secondary animate-pulse"
-                          title="Wish Happy Birthday Today!"
+                          onClick={() => onSendSingleReminder(member)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] text-xs font-bold transition-all border border-[#25D366]/30 cursor-pointer shadow-xs active:scale-95"
+                          title="1-Click automatic WhatsApp reminder"
                         >
-                          <span className="material-symbols-outlined text-sm">cake</span>
-                          <span>Wish 🎂</span>
+                          <span className="material-symbols-outlined text-sm">chat</span>
+                          <span>Remind</span>
                         </button>
-                      )}
 
-                      {/* 1-Click WhatsApp Reminder button (Requirement 4) */}
-                      <button
-                        onClick={() => onSendSingleReminder(member)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-[#002113] text-xs font-bold transition-all border border-[#25D366]/30 cursor-pointer shadow-xs active:scale-95"
-                        title="1-Click automatic WhatsApp reminder"
-                      >
-                        <span className="material-symbols-outlined text-sm">chat</span>
-                        <span>Remind</span>
-                      </button>
-
-                      <button
-                        onClick={() => onSelectMember(member)}
-                        className="p-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border border-surface-container-high cursor-pointer"
-                        title="View details"
-                      >
-                        <span className="material-symbols-outlined text-base">visibility</span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        <button
+                          onClick={() => onSelectMember(member)}
+                          className="p-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface border border-surface-container-high cursor-pointer"
+                          title="View details"
+                        >
+                          <span className="material-symbols-outlined text-base">visibility</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
               {filteredMembers.length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-12 px-4 text-center">

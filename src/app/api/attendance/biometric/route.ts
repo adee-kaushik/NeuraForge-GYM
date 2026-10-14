@@ -164,10 +164,13 @@ export async function POST(req: NextRequest) {
 
     if (!member) {
       if (sn) {
-        return new NextResponse('OK: 1\n', { status: 200, headers: { 'Content-Type': 'text/plain' } });
+        return new NextResponse('OK: 0\nReturn=-1\nAccess=0\nReason=NOT_FOUND\n', {
+          status: 404,
+          headers: { 'Content-Type': 'text/plain' },
+        });
       }
       return NextResponse.json(
-        { ok: false, status: 'DENIED', relay: false, error: `Member "${cleanIdentifier}" not found in gym` },
+        { ok: false, status: 'DENIED', access: 0, relay: false, error: `Member "${cleanIdentifier}" not found in gym` },
         { status: 404 }
       );
     }
@@ -175,25 +178,33 @@ export async function POST(req: NextRequest) {
     const now = timestamp || new Date();
     const latest = member.memberships[0];
 
-    // Check expiration
+    // Check expiration - strictly deny biometric access and lock turnstiles if expired
     if (!latest || latest.expiresAt < now) {
       const daysOverdue = latest
-        ? Math.round((now.getTime() - latest.expiresAt.getTime()) / 86400000)
+        ? Math.max(1, Math.round((now.getTime() - latest.expiresAt.getTime()) / 86400000))
         : null;
 
       if (sn) {
-        // Return OK so machine doesn't endlessly re-push, but access is blocked
-        return new NextResponse('OK: 1\n', { status: 200, headers: { 'Content-Type': 'text/plain' } });
+        // Explicitly deny ZKTeco / eSSL ADMS hardware terminal
+        // Returning OK: 0, Access=0, Return=-1 triggers terminal rejection beep and keeps relay locked
+        return new NextResponse(`OK: 0\nReturn=-1\nAccess=0\nReason=EXPIRED\n`, {
+          status: 403,
+          headers: { 'Content-Type': 'text/plain' },
+        });
       }
 
       return NextResponse.json(
         {
           ok: false,
           status: 'DENIED',
-          relay: false, // Turnstile relay locked
-          error: `Membership has expired${daysOverdue ? ` (${daysOverdue} days ago)` : ''}`,
+          access: 0,
+          relay: false, // Turnstile relay stays locked
+          rejectionReason: 'EXPIRED',
+          error: `🚫 ACCESS DENIED: Membership for ${member.name} has EXPIRED${daysOverdue ? ` (${daysOverdue} days overdue)` : ''}. Biometric access is locked. Please renew membership at front desk.`,
           memberName: member.name,
           memberCode: member.memberCode,
+          daysOverdue,
+          isExpired: true,
         },
         { status: 403 }
       );
