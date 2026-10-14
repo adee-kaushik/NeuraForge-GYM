@@ -23,6 +23,8 @@ export const StaffSection: React.FC = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [creds, setCreds] = useState<Credentials | null>(null);
 
   useEffect(() => {
@@ -33,11 +35,22 @@ export const StaffSection: React.FC = () => {
     });
   }, []);
 
+  const handleGeneratePassword = () => {
+    const chars = 'abcdefghijkmnpqrstuvwxyz23456789';
+    let rand = '';
+    for (let i = 0; i < 4; i++) {
+      rand += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    const generated = `Staff#${rand}`;
+    setPassword(generated);
+    setShowPassword(true);
+  };
+
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     setError('');
-    const res = await addStaff({ name, email, phone });
+    const res = await addStaff({ name, email, phone, password: password || undefined });
     setBusy(false);
     if ('error' in res) return setError(res.error);
     setStaff((prev) => [...prev, res.staff]);
@@ -45,6 +58,7 @@ export const StaffSection: React.FC = () => {
     setName('');
     setEmail('');
     setPhone('');
+    setPassword('');
     setAdding(false);
   };
 
@@ -126,6 +140,39 @@ export const StaffSection: React.FC = () => {
           <div>
             <label className={labelClass} htmlFor="staff-phone">Phone (optional, to send the login on WhatsApp)</label>
             <input id="staff-phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className={inputClass} />
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className={labelClass} htmlFor="staff-password">Login Password</label>
+              <button
+                type="button"
+                onClick={handleGeneratePassword}
+                className="text-xs font-bold text-secondary hover:underline cursor-pointer flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-sm">key</span>
+                <span>Create / Generate Password</span>
+              </button>
+            </div>
+            <div className="relative">
+              <input
+                id="staff-password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Type custom password or tap 'Create Password'"
+                className={`${inputClass} pr-20`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((p) => !p)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-[11px] text-outline hover:text-on-surface font-semibold"
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            <p className="text-[11px] text-outline mt-1">
+              Leave blank to auto-generate a secure password, or tap <b>Create / Generate Password</b>.
+            </p>
           </div>
           <div className="flex gap-3 justify-end">
             <button type="button" onClick={() => setAdding(false)} className="px-4 py-2 rounded-lg text-xs font-bold text-on-surface-variant hover:text-on-surface cursor-pointer">

@@ -118,6 +118,16 @@ export default function StaffLoginPage() {
                 {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
+            <div className="flex items-center justify-between text-xs pt-1">
+              <span className="text-outline">Forgotten your password?</span>
+              <Link
+                href="/login/forgot-password"
+                className="text-secondary font-bold hover:underline inline-flex items-center gap-1"
+              >
+                <span className="material-symbols-outlined text-sm">lock_reset</span>
+                <span>Reset Password</span>
+              </Link>
+            </div>
           </div>
 
           {state.error && (
@@ -140,10 +150,6 @@ export default function StaffLoginPage() {
               'Sign In to Staff Panel'
             )}
           </button>
-
-          <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container-high text-[11px] text-outline leading-relaxed">
-            💡 <b>Staff Access Note:</b> Your login gives you access to add members, memberships &amp; plans, supplement sales POS, workout routines, and floor velocity. If you need account credentials, please ask your gym owner.
-          </div>
         </form>
 
         <div className="text-center pt-2">
