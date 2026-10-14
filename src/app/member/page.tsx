@@ -10,6 +10,8 @@ import { MemberNav } from '@/components/member/MemberNav';
 import { MemberNotifications, type NotificationItem } from '@/components/member/MemberNotifications';
 import { MemberPaymentQrSection } from '@/components/member/MemberPaymentQrSection';
 
+import { ensureDatabaseSchema } from '@/lib/db-init';
+
 // Dates are shown in IST, because the server runs in UTC
 const dateIST = (d: Date) =>
   d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' });
@@ -25,6 +27,7 @@ const STATUS = {
 const sectionTitle = 'text-xs font-bold uppercase tracking-wider text-outline mb-3';
 
 export default async function MemberPage() {
+  await ensureDatabaseSchema();
   const member = await getCurrentMember();
   if (!member) redirect('/member/login');
 
@@ -35,11 +38,11 @@ export default async function MemberPage() {
 
   // Every query is limited to this member and their gym
   const [membership, visits, visitsThisMonth, payments, pending, rawReminders] = await Promise.all([
-    prisma.membership.findFirst({ where: { memberId, gymId }, orderBy: { expiresAt: 'desc' }, include: { plan: true } }),
-    prisma.attendance.findMany({ where: { memberId, gymId }, orderBy: { checkedInAt: 'desc' }, take: 8 }),
-    prisma.attendance.count({ where: { memberId, gymId, checkedInAt: { gte: monthStart } } }),
-    prisma.payment.findMany({ where: { memberId, gymId }, orderBy: { createdAt: 'desc' }, take: 5 }),
-    prisma.payment.aggregate({ where: { memberId, gymId, status: 'PENDING' }, _sum: { amount: true } }),
+    prisma.membership.findFirst({ where: { memberId, gymId }, orderBy: { expiresAt: 'desc' }, include: { plan: true } }).catch(() => null),
+    prisma.attendance.findMany({ where: { memberId, gymId }, orderBy: { checkedInAt: 'desc' }, take: 8 }).catch(() => []),
+    prisma.attendance.count({ where: { memberId, gymId, checkedInAt: { gte: monthStart } } }).catch(() => 0),
+    prisma.payment.findMany({ where: { memberId, gymId }, orderBy: { createdAt: 'desc' }, take: 5 }).catch(() => []),
+    prisma.payment.aggregate({ where: { memberId, gymId, status: 'PENDING' }, _sum: { amount: true } }).catch(() => ({ _sum: { amount: 0 } })),
     prisma.gymReminder.findMany({
       where: {
         gymId,
@@ -47,7 +50,7 @@ export default async function MemberPage() {
       },
       orderBy: { createdAt: 'desc' },
       take: 5,
-    }),
+    }).catch(() => []),
   ]);
 
   const daysLeft = membership

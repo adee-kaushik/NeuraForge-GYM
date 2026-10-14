@@ -10,21 +10,47 @@ export default async function Page() {
   const staff = await getCurrentStaff();
   if (!staff) return <Landing />;
 
-  const [plans, members, transactions, checkIns] = await Promise.all([
-    getPlansForGym(staff.gymId),
-    loadMemberRecords(staff.gymId),
-    loadTransactionRecords(staff.gymId),
-    loadCheckInRecords(staff.gymId),
-  ]);
+  try {
+    const [plans, members, transactions, checkIns] = await Promise.all([
+      getPlansForGym(staff.gymId).catch((err) => {
+        console.error('getPlansForGym error:', err);
+        return [];
+      }),
+      loadMemberRecords(staff.gymId).catch((err) => {
+        console.error('loadMemberRecords error:', err);
+        return [];
+      }),
+      loadTransactionRecords(staff.gymId).catch((err) => {
+        console.error('loadTransactionRecords error:', err);
+        return [];
+      }),
+      loadCheckInRecords(staff.gymId).catch((err) => {
+        console.error('loadCheckInRecords error:', err);
+        return [];
+      }),
+    ]);
 
-  return (
-    <AppLoader
-      gym={toGymConfig(staff.gym)}
-      user={toCurrentUser(staff)}
-      plans={plans}
-      members={members}
-      transactions={transactions}
-      checkIns={checkIns}
-    />
-  );
+    return (
+      <AppLoader
+        gym={toGymConfig(staff.gym)}
+        user={toCurrentUser(staff)}
+        plans={plans}
+        members={members}
+        transactions={transactions}
+        checkIns={checkIns}
+      />
+    );
+  } catch (error) {
+    console.error('Error loading dashboard page:', error);
+    return (
+      <AppLoader
+        gym={toGymConfig(staff.gym)}
+        user={toCurrentUser(staff)}
+        plans={[]}
+        members={[]}
+        transactions={[]}
+        checkIns={[]}
+      />
+    );
+  }
 }

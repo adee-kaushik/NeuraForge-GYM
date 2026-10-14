@@ -8,26 +8,46 @@ import {
   type MemberPaymentItem,
 } from '@/components/member/MemberPaymentsHistoryView';
 
+import { ensureDatabaseSchema } from '@/lib/db-init';
+
 export default async function MemberPaymentsPage() {
+  await ensureDatabaseSchema().catch(() => {});
   const member = await getCurrentMember();
   if (!member) redirect('/member/login');
 
   const { id: memberId, gymId } = member;
 
   const [rawPayments, paidAgg, pendingAgg] = await Promise.all([
-    prisma.payment.findMany({
-      where: { memberId, gymId },
-      orderBy: { createdAt: 'desc' },
-      include: { membership: { include: { plan: true } } },
-    }),
-    prisma.payment.aggregate({
-      where: { memberId, gymId, status: 'PAID' },
-      _sum: { amount: true },
-    }),
-    prisma.payment.aggregate({
-      where: { memberId, gymId, status: 'PENDING' },
-      _sum: { amount: true },
-    }),
+    prisma.payment
+      .findMany({
+        where: { memberId, gymId },
+        orderBy: { createdAt: 'desc' },
+        include: { membership: { include: { plan: true } } },
+      })
+      .catch(async () => {
+        try {
+          await ensureDatabaseSchema();
+          return await prisma.payment.findMany({
+            where: { memberId, gymId },
+            orderBy: { createdAt: 'desc' },
+            include: { membership: { include: { plan: true } } },
+          });
+        } catch {
+          return [];
+        }
+      }),
+    prisma.payment
+      .aggregate({
+        where: { memberId, gymId, status: 'PAID' },
+        _sum: { amount: true },
+      })
+      .catch(() => ({ _sum: { amount: 0 } })),
+    prisma.payment
+      .aggregate({
+        where: { memberId, gymId, status: 'PENDING' },
+        _sum: { amount: true },
+      })
+      .catch(() => ({ _sum: { amount: 0 } })),
   ]);
 
   const formattedPayments: MemberPaymentItem[] = rawPayments.map((p) => ({

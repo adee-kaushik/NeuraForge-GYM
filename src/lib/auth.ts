@@ -42,24 +42,46 @@ export async function requireStaff() {
 
 import { getMemberSessionId } from '@/lib/member-session';
 
+import { ensureDatabaseSchema } from '@/lib/db-init';
+
 // Returns the logged-in member (with their gym), or null. Owners and staff get null here.
 export const getCurrentMember = cache(async () => {
+  await ensureDatabaseSchema();
   // 1. Direct passwordless member session cookie
   const sessionMemberId = await getMemberSessionId();
   if (sessionMemberId) {
-    const member = await prisma.member.findUnique({
-      where: { id: sessionMemberId },
-      include: { gym: true },
-    });
-    if (member) return member;
+    try {
+      const member = await prisma.member.findUnique({
+        where: { id: sessionMemberId },
+        include: { gym: true },
+      });
+      if (member) return member;
+    } catch {
+      // Fallback if schema is initializing
+      try {
+        const raw = await prisma.$queryRawUnsafe<any[]>(`
+          SELECT m.*, g.name as "gym_name", g.slug as "gym_slug"
+          FROM "Member" m
+          JOIN "Gym" g ON g.id = m."gymId"
+          WHERE m.id = $1 LIMIT 1
+        `, sessionMemberId);
+        if (raw && raw[0]) return raw[0];
+      } catch {
+        return null;
+      }
+    }
   }
 
   // 2. Fallback to Supabase auth user id
   const authUserId = await getAuthUserId();
   if (!authUserId) return null;
 
-  return prisma.member.findUnique({
-    where: { authUserId },
-    include: { gym: true },
-  });
+  try {
+    return await prisma.member.findUnique({
+      where: { authUserId },
+      include: { gym: true },
+    });
+  } catch {
+    return null;
+  }
 });
