@@ -38,10 +38,16 @@ export default function LoginPage() {
         </div>
 
         {/* Role Switcher Tabs */}
-        <div className="grid grid-cols-2 p-1 rounded-xl bg-surface-container border border-surface-container-high text-xs font-bold">
-          <div className="py-2 text-center rounded-lg bg-surface-container-lowest text-on-surface shadow-xs">
-            🏢 Staff
+        <div className="grid grid-cols-3 p-1 rounded-xl bg-surface-container border border-surface-container-high text-xs font-bold">
+          <div className="py-2 text-center rounded-lg bg-surface-container-lowest text-secondary shadow-xs">
+            👑 Owner
           </div>
+          <Link
+            href="/staff/login"
+            className="py-2 text-center rounded-lg text-outline hover:text-on-surface transition-colors"
+          >
+            🛡️ Staff
+          </Link>
           <Link
             href="/member/login"
             className="py-2 text-center rounded-lg text-outline hover:text-on-surface transition-colors"
@@ -56,9 +62,13 @@ export default function LoginPage() {
           className="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-6 sm:p-8 space-y-5 shadow-sm"
         >
           <div>
-            <h1 className="font-sora text-2xl font-bold tracking-tight text-on-surface">Gym Staff Login</h1>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary/15 text-secondary border border-secondary/30 text-[11px] font-bold mb-2">
+              <span className="material-symbols-outlined text-sm">shield_person</span>
+              <span>Gym Owner Portal</span>
+            </div>
+            <h1 className="font-sora text-2xl font-bold tracking-tight text-on-surface">Gym Owner Login</h1>
             <p className="text-xs sm:text-sm text-on-surface-variant mt-1">
-              Sign in with your registered owner or staff email address.
+              Sign in with your registered gym owner email to access full management, financials, and settings.
             </p>
           </div>
 

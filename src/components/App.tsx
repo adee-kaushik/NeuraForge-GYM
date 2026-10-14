@@ -19,6 +19,9 @@ import { MembershipsView } from './MembershipsView';
 import { PaymentsView } from './PaymentsView';
 import { SettingsView } from './SettingsView';
 import { EnquiriesView } from './EnquiriesView';
+import { SupplementsView } from './SupplementsView';
+import { WorkoutPlansView } from './WorkoutPlansView';
+import { FloorVelocityView } from './FloorVelocityView';
 import { AddMemberModal } from './modals/AddMemberModal';
 import { BulkWhatsAppModal } from './modals/BulkWhatsAppModal';
 import { MemberDetailModal } from './modals/MemberDetailModal';
@@ -38,7 +41,8 @@ interface AppProps {
 }
 
 export default function App({ initialGym, currentUser, plans: initialPlans, initialMembers, initialTransactions, initialCheckIns }: AppProps) {
-  const [activeScreen, setActiveScreen] = useState<ActiveScreen>('dashboard');
+  const isStaff = currentUser.role === 'Staff';
+  const [activeScreen, setActiveScreen] = useState<ActiveScreen>(isStaff ? 'members' : 'dashboard');
 
   // Records come from the database (loaded on the server). Everything the UI shows is derived from them.
   const [now, setNow] = useState(() => new Date());
@@ -325,6 +329,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
       {/* Left Sidebar */}
       <Sidebar
         gym={gym}
+        userRole={currentUser.role}
         activeScreen={activeScreen}
         setActiveScreen={setActiveScreen}
         mobileOpen={mobileSidebarOpen}
@@ -350,20 +355,38 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
 
         {/* View Routing */}
         <main className="w-full pt-16 min-h-screen">
+          {/* Staff Panel is restricted: if staff tries to open dashboard/payments/settings, fall back to members */}
           {activeScreen === 'dashboard' && (
-            <DashboardView
-              stats={stats}
-              members={members}
-              transactions={transactions}
-              checkIns={checkIns}
-              onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
-              onViewAllExpiring={() => setActiveScreen('members')}
-              onSelectMember={(m) => setSelectedMember(m)}
-              onSendSingleReminder={handleSendSingleReminder}
-              onOpenAddMember={() => setIsAddMemberOpen(true)}
-              onOpenImport={() => setIsImportOpen(true)}
-              onNavigateScreen={setActiveScreen}
-            />
+            isStaff ? (
+              <MembersView
+                members={members}
+                plans={plans}
+                checkIns={checkIns}
+                todayCheckInsCount={todayCheckIns.length}
+                onSelectMember={(m) => setSelectedMember(m)}
+                onOpenAddMember={() => setIsAddMemberOpen(true)}
+                onOpenImport={() => setIsImportOpen(true)}
+                onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
+                onSendSingleReminder={handleSendSingleReminder}
+                onWishBirthday={(m) => setWishingMember(m)}
+                gymSlug={gym.slug}
+                onCheckInByCode={handleCheckInByCode}
+              />
+            ) : (
+              <DashboardView
+                stats={stats}
+                members={members}
+                transactions={transactions}
+                checkIns={checkIns}
+                onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
+                onViewAllExpiring={() => setActiveScreen('members')}
+                onSelectMember={(m) => setSelectedMember(m)}
+                onSendSingleReminder={handleSendSingleReminder}
+                onOpenAddMember={() => setIsAddMemberOpen(true)}
+                onOpenImport={() => setIsImportOpen(true)}
+                onNavigateScreen={setActiveScreen}
+              />
+            )
           )}
 
           {(activeScreen === 'members' || activeScreen === 'attendance') && (
@@ -383,30 +406,74 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
             />
           )}
 
-          {activeScreen === 'memberships' && <MembershipsView plans={plans} members={members} canEdit={currentUser.role === 'Gym Owner'} />}
-
-          {activeScreen === 'payments' && (
-            <PaymentsView
-              gym={gym}
+          {activeScreen === 'memberships' && (
+            <MembershipsView
               plans={plans}
               members={members}
-              transactions={transactions}
-              onMarkPaid={handleMarkPaid}
-              onNewPayment={handleRecordPayment}
+              canEdit={currentUser.role === 'Gym Owner'}
             />
+          )}
+
+          {activeScreen === 'supplements' && (
+            <SupplementsView
+              gymName={gym.name}
+              members={members}
+              isOwner={currentUser.role === 'Gym Owner'}
+            />
+          )}
+
+          {activeScreen === 'workout-plans' && (
+            <WorkoutPlansView
+              gymName={gym.name}
+              members={members}
+            />
+          )}
+
+          {activeScreen === 'floor-velocity' && (
+            <FloorVelocityView
+              gymName={gym.name}
+              gymSlug={gym.slug}
+              stats={stats}
+              members={members}
+              checkIns={checkIns}
+              onCheckInByCode={handleCheckInByCode}
+            />
+          )}
+
+          {activeScreen === 'payments' && (
+            !isStaff ? (
+              <PaymentsView
+                gym={gym}
+                plans={plans}
+                members={members}
+                transactions={transactions}
+                onMarkPaid={handleMarkPaid}
+                onNewPayment={handleRecordPayment}
+              />
+            ) : null
           )}
 
           {activeScreen === 'enquiries' && (
-            <EnquiriesView
-              gymName={gym.name}
-              plans={plans}
-              onConvertMember={(_data) => {
-                setIsAddMemberOpen(true);
-              }}
-            />
+            !isStaff ? (
+              <EnquiriesView
+                gymName={gym.name}
+                plans={plans}
+                onConvertMember={(_data) => {
+                  setIsAddMemberOpen(true);
+                }}
+              />
+            ) : null
           )}
 
-          {activeScreen === 'settings' && <SettingsView gym={gym} onSave={handleSaveSettings} isOwner={currentUser.role === 'Gym Owner'} />}
+          {activeScreen === 'settings' && (
+            !isStaff ? (
+              <SettingsView
+                gym={gym}
+                onSave={handleSaveSettings}
+                isOwner={currentUser.role === 'Gym Owner'}
+              />
+            ) : null
+          )}
         </main>
       </div>
 

@@ -287,53 +287,95 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 </div>
 
-                {/* Dropdown Navigation: Enquiries Section just above Settings */}
+                {/* Dropdown Navigation */}
                 <div className="py-2 border-b border-surface-container-high space-y-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowProfileMenu(false);
-                      onNavigateScreen('enquiries');
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer text-left"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="material-symbols-outlined text-lg text-secondary">contact_phone</span>
-                      <span>Enquiries & Leads</span>
-                    </div>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-secondary/15 text-secondary border border-secondary/30">
-                      Prospects
-                    </span>
-                  </button>
+                  {user.role !== 'Staff' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          onNavigateScreen('enquiries');
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer text-left"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="material-symbols-outlined text-lg text-secondary">contact_phone</span>
+                          <span>Enquiries & Leads</span>
+                        </div>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-secondary/15 text-secondary border border-secondary/30">
+                          Prospects
+                        </span>
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowProfileMenu(false);
-                      onNavigateScreen('settings');
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer text-left"
-                  >
-                    <span className="material-symbols-outlined text-lg text-outline">settings</span>
-                    <span>Gym Settings</span>
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          onNavigateScreen('settings');
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer text-left"
+                      >
+                        <span className="material-symbols-outlined text-lg text-outline">settings</span>
+                        <span>Gym Settings</span>
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowProfileMenu(false);
-                      onOpenFeedback?.();
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-secondary hover:bg-surface-container transition-colors cursor-pointer text-left"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <span className="material-symbols-outlined text-lg text-secondary">support_agent</span>
-                      <span>Feedback & Help</span>
-                    </div>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-secondary/15 text-secondary border border-secondary/30">
-                      Co-Founders
-                    </span>
-                  </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          onOpenFeedback?.();
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-secondary hover:bg-surface-container transition-colors cursor-pointer text-left"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="material-symbols-outlined text-lg text-secondary">support_agent</span>
+                          <span>Feedback & Help</span>
+                        </div>
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-secondary/15 text-secondary border border-secondary/30">
+                          Co-Founders
+                        </span>
+                      </button>
+                    </>
+                  )}
+
+                  {user.role === 'Staff' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          onNavigateScreen('members');
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer text-left"
+                      >
+                        <span className="material-symbols-outlined text-lg text-secondary">group</span>
+                        <span>Members</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          onNavigateScreen('supplements');
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer text-left"
+                      >
+                        <span className="material-symbols-outlined text-lg text-secondary">medication</span>
+                        <span>Supplements POS</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          onNavigateScreen('floor-velocity');
+                        }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-on-surface hover:bg-surface-container transition-colors cursor-pointer text-left"
+                      >
+                        <span className="material-symbols-outlined text-lg text-secondary">speed</span>
+                        <span>Floor Velocity</span>
+                      </button>
+                    </>
+                  )}
                 </div>
 
                 <form action={logout} className="pt-2">

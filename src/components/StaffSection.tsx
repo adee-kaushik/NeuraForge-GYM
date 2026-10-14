@@ -64,9 +64,19 @@ export const StaffSection: React.FC = () => {
     if (creds?.email === s.email) setCreds(null);
   };
 
+  const [copiedUrl, setCopiedUrl] = useState(false);
+
   const sendOnWhatsApp = (c: Credentials) => {
-    const text = `Hi ${c.name}, your gym dashboard login:\nEmail: ${c.email}\nPassword: ${c.password}\nLogin: ${window.location.origin}/login`;
+    const staffLoginUrl = `${window.location.origin}/staff/login`;
+    const text = `Hi ${c.name}, here are your credentials for the Gym Staff Panel:\n\nEmail: ${c.email}\nPassword: ${c.password}\nStaff Login Portal: ${staffLoginUrl}\n\nYou can access member registrations, plans, supplement POS, workout routines, and floor velocity.`;
     window.open(`https://api.whatsapp.com/send?phone=${encodeURIComponent((c.phone ?? '').replace(/\D/g, ''))}&text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handleCopyStaffUrl = () => {
+    const url = `${window.location.origin}/staff/login`;
+    navigator.clipboard.writeText(url);
+    setCopiedUrl(true);
+    setTimeout(() => setCopiedUrl(false), 2500);
   };
 
   return (
@@ -74,7 +84,7 @@ export const StaffSection: React.FC = () => {
       <div className="flex items-center justify-between gap-3 pb-3 border-b border-surface-container-high">
         <div className="flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-xl">badge</span>
-          <h3 className="font-sora text-sm font-semibold text-on-surface">Staff</h3>
+          <h3 className="font-sora text-sm font-semibold text-on-surface">Staff &amp; Trainers Management</h3>
         </div>
         {!adding && (
           <button onClick={() => setAdding(true)} className="px-3.5 py-1.5 rounded-lg bg-primary-container hover:bg-[#cabeff] text-on-primary-container text-xs font-bold cursor-pointer">
@@ -83,9 +93,25 @@ export const StaffSection: React.FC = () => {
         )}
       </div>
 
-      <p className="text-outline">
-        Staff can add members, record payments and mark attendance. Only you can change settings, plans and imports.
-      </p>
+      <div className="space-y-2">
+        <p className="text-outline">
+          Register gym staff and trainers here. Staff members log in via the dedicated <b>Staff Panel</b> with access strictly limited to: <b>Add Members</b>, <b>Memberships &amp; Plans</b>, <b>Supplements for selling (POS)</b>, <b>Workout Plans (editable)</b>, and <b>Floor Velocity</b>.
+        </p>
+        <div className="flex items-center justify-between p-2.5 rounded-lg bg-surface-container-lowest border border-surface-container-high text-[11px]">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-sm text-secondary">link</span>
+            <span className="text-outline font-mono">Staff Login Portal:</span>
+            <span className="font-bold text-secondary font-mono">/staff/login</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleCopyStaffUrl}
+            className="text-xs font-bold text-secondary hover:underline cursor-pointer"
+          >
+            {copiedUrl ? 'Copied Link!' : 'Copy Portal URL'}
+          </button>
+        </div>
+      </div>
 
       {adding && (
         <form onSubmit={handleAdd} className="space-y-4 p-4 rounded-lg border border-surface-container-high">
@@ -113,16 +139,22 @@ export const StaffSection: React.FC = () => {
       )}
 
       {creds && (
-        <div className="rounded-lg border border-secondary/30 bg-secondary/10 p-4 space-y-1.5">
-          <p className="text-on-surface font-semibold">Login for {creds.name}</p>
+        <div className="rounded-lg border border-secondary/30 bg-secondary/10 p-4 space-y-2">
+          <p className="text-on-surface font-semibold">Login for {creds.name} (Staff Member)</p>
           <p>Email: <b>{creds.email}</b></p>
           <p>Password: <b className="font-mono">{creds.password}</b></p>
+          <p>Portal URL: <b className="font-mono">{typeof window !== 'undefined' ? `${window.location.origin}/staff/login` : '/staff/login'}</b></p>
           <p className="text-outline">Shown only once. Send it to them now.</p>
-          {creds.phone && (
-            <button onClick={() => sendOnWhatsApp(creds)} className="font-bold text-tertiary hover:underline cursor-pointer">
-              Send on WhatsApp
+          <div className="flex gap-4 pt-1">
+            {creds.phone && (
+              <button onClick={() => sendOnWhatsApp(creds)} className="font-bold text-tertiary hover:underline cursor-pointer">
+                Send on WhatsApp
+              </button>
+            )}
+            <button onClick={handleCopyStaffUrl} className="font-bold text-secondary hover:underline cursor-pointer">
+              {copiedUrl ? 'Copied Staff URL!' : 'Copy Staff Login URL'}
             </button>
-          )}
+          </div>
         </div>
       )}
 

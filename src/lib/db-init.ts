@@ -18,6 +18,50 @@ export function ensureDatabaseSchema(): Promise<void> {
           ALTER TABLE "Member" ADD COLUMN IF NOT EXISTS "bmiCategory" TEXT;
           ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "discountAmount" INTEGER DEFAULT 0;
           ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "notes" TEXT;
+
+          CREATE TABLE IF NOT EXISTS "Supplement" (
+            "id" TEXT PRIMARY KEY,
+            "gymId" TEXT NOT NULL,
+            "name" TEXT NOT NULL,
+            "brand" TEXT,
+            "category" TEXT NOT NULL DEFAULT 'Protein',
+            "price" INTEGER NOT NULL DEFAULT 0,
+            "costPrice" INTEGER,
+            "stock" INTEGER NOT NULL DEFAULT 0,
+            "unit" TEXT DEFAULT 'units',
+            "flavor" TEXT,
+            "description" TEXT,
+            "imageUrl" TEXT,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS "SupplementSale" (
+            "id" TEXT PRIMARY KEY,
+            "gymId" TEXT NOT NULL,
+            "supplementId" TEXT,
+            "supplementName" TEXT NOT NULL,
+            "customerName" TEXT NOT NULL,
+            "customerPhone" TEXT,
+            "quantity" INTEGER NOT NULL DEFAULT 1,
+            "unitPrice" INTEGER NOT NULL,
+            "totalAmount" INTEGER NOT NULL,
+            "paymentMode" TEXT NOT NULL DEFAULT 'UPI',
+            "notes" TEXT,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+          );
+
+          CREATE TABLE IF NOT EXISTS "WorkoutPlan" (
+            "id" TEXT PRIMARY KEY,
+            "gymId" TEXT NOT NULL,
+            "title" TEXT NOT NULL,
+            "description" TEXT,
+            "difficulty" TEXT NOT NULL DEFAULT 'Intermediate',
+            "daysPerWeek" INTEGER NOT NULL DEFAULT 4,
+            "goal" TEXT NOT NULL DEFAULT 'Muscle Hypertrophy',
+            "routineJson" TEXT NOT NULL,
+            "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+          );
         `);
       } catch (err) {
         console.warn('Auto-migration DDL warning (continuing with graceful fallback):', err);

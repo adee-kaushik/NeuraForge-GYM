@@ -113,7 +113,17 @@ export interface CheckInLog extends CheckInRecord {
   time: string; // formatted time
 }
 
-export type ActiveScreen = 'dashboard' | 'members' | 'memberships' | 'attendance' | 'payments' | 'enquiries' | 'settings';
+export type ActiveScreen =
+  | 'dashboard'
+  | 'members'
+  | 'memberships'
+  | 'attendance'
+  | 'floor-velocity'
+  | 'supplements'
+  | 'workout-plans'
+  | 'payments'
+  | 'enquiries'
+  | 'settings';
 
 // ── Form inputs (UI -> App handlers; App/backend builds the records) ──
 export interface NewMemberInput {
@@ -147,4 +157,63 @@ export interface NewPaymentInput {
   amount: number;
   paymentMode: PaymentMode;
 }
+
+// ── Supplement Store Types ──
+export interface SupplementItem {
+  id: string;
+  name: string;
+  brand: string;
+  category: 'Protein' | 'Creatine' | 'Pre-Workout' | 'BCAA' | 'Vitamins' | 'Snacks' | 'Accessories';
+  price: number;
+  costPrice?: number;
+  stock: number;
+  unit: string;
+  flavor?: string;
+  description?: string;
+  imageUrl?: string;
+}
+
+export interface SupplementSale {
+  id: string;
+  supplementId?: string;
+  supplementName: string;
+  customerName: string;
+  customerPhone?: string;
+  quantity: number;
+  unitPrice: number;
+  totalAmount: number;
+  paymentMode: 'UPI' | 'Cash' | 'Card';
+  notes?: string;
+  soldAt: string;
+}
+
+// ── Workout Plan Types ──
+export interface WorkoutExercise {
+  id: string;
+  name: string;
+  sets: number;
+  reps: string;
+  restSec: number;
+  notes?: string;
+}
+
+export interface WorkoutDay {
+  id: string;
+  dayName: string; // e.g. "Monday: Chest & Triceps"
+  targetMuscles: string; // e.g. "Chest, Triceps, Anterior Delts"
+  exercises: WorkoutExercise[];
+}
+
+export interface WorkoutPlanItem {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  daysPerWeek: number;
+  goal: 'Muscle Hypertrophy' | 'Fat Loss & Conditioning' | 'Strength & Power' | 'General Fitness';
+  days: WorkoutDay[];
+  assignedMemberCount?: number;
+  updatedAt?: string;
+}
+
 
