@@ -26,7 +26,8 @@ export default function ForgotPasswordPage() {
     if (!email.trim()) return;
     setPending(true);
     setError('');
-    const res = await requestPasswordReset(email.trim().toLowerCase());
+    const origin = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const res = await requestPasswordReset(email.trim().toLowerCase(), origin);
     setPending(false);
     if (res.error) {
       setError(res.error);

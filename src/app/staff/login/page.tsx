@@ -118,16 +118,6 @@ export default function StaffLoginPage() {
                 {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
-            <div className="flex items-center justify-between text-xs pt-1">
-              <span className="text-outline">Forgotten your password?</span>
-              <Link
-                href="/login/forgot-password"
-                className="text-secondary font-bold hover:underline inline-flex items-center gap-1"
-              >
-                <span className="material-symbols-outlined text-sm">lock_reset</span>
-                <span>Reset Password</span>
-              </Link>
-            </div>
           </div>
 
           {state.error && (

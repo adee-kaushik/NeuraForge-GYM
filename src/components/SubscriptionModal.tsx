@@ -220,7 +220,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <img
-                src="/icon.jpeg"
+                src="/icon.png"
                 alt="NeuraFitness"
                 className="w-7 h-7 rounded-lg object-contain border border-surface-container-high shrink-0 shadow-xs"
               />

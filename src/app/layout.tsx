@@ -73,9 +73,9 @@ export const metadata: Metadata = {
     description,
   },
   icons: {
-    icon: '/icon.jpeg',
-    shortcut: '/icon.jpeg',
-    apple: '/icon.jpeg',
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/icon.png',
   },
   alternates: {
     canonical: 'https://neura-forge-gym.vercel.app',
@@ -87,9 +87,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${inter.variable} ${sora.variable}`}>
       <head>
         {/* Favicon & App Icon */}
-        <link rel="icon" type="image/jpeg" href="/icon.jpeg" />
-        <link rel="shortcut icon" type="image/jpeg" href="/icon.jpeg" />
-        <link rel="apple-touch-icon" href="/icon.jpeg" />
+        <link rel="icon" type="image/png" href="/icon.png" />
+        <link rel="shortcut icon" type="image/png" href="/icon.png" />
+        <link rel="apple-touch-icon" href="/icon.png" />
 
         {/* Preload and non-blocking load of Material Symbols */}
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

@@ -218,7 +218,7 @@ export default function Landing() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
           <Link href="/" className="flex items-center gap-2.5 group">
             <img
-              src="/icon.jpeg"
+              src="/icon.png"
               alt="NeuraFitness Icon"
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain border border-surface-container-high shadow-xs"
             />
@@ -262,7 +262,7 @@ export default function Landing() {
             {/* Brand Logo Banner */}
             <div className="flex justify-center items-center pt-2">
               <img
-                src="/Logo.jpeg"
+                src="/logo.png"
                 alt="NeuraFitness Platform Logo"
                 className="h-16 sm:h-20 w-auto object-contain rounded-2xl shadow-sm border border-surface-container-high bg-surface-container-lowest p-2"
               />
@@ -644,7 +644,7 @@ export default function Landing() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <img
-              src="/icon.jpeg"
+              src="/icon.png"
               alt="NeuraFitness"
               className="w-6 h-6 rounded-md object-contain border border-surface-container-high"
             />
