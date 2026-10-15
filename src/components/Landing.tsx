@@ -91,48 +91,48 @@ const unifiedPlanFeatures = [
 
 const pricingPlans = [
   {
-    id: 'trial' as PlanType,
-    name: '1-Month Free Trial',
-    badge: '100% Risk Free · 30 Days',
-    price: '₹0',
-    period: 'For 1 Full Month',
-    effective: '₹0 charged today',
-    setupFee: 'Setup fee deferred for 30 days',
-    description: 'Experience the complete power of NeuraFitness in your gym for 30 days. Full features unlocked, cancel anytime.',
+    id: 'monthly' as PlanType,
+    name: 'Monthly Plan',
+    badge: 'Flexible · Monthly',
+    price: '₹599',
+    period: '/ month',
+    effective: 'Billed monthly',
+    setupFee: '+ ₹10,000 One-Time Customization Fee',
+    description: 'Flexible monthly cloud license with all features unlocked, turnstile & WhatsApp automation.',
     features: unifiedPlanFeatures,
     mandateNote:
-      'Card or UPI Autopay details required at checkout. Renews at ₹5,000/yr (+ setup fee) after 30 days. We notify you 36 hours before deducting.',
-    btnText: 'Start 1-Month Free Trial',
+      'Base total: ₹10,599 (₹599 Plan + ₹10,000 Customization). Apply coupon below for up to 50% OFF customization fee!',
+    btnText: 'Choose Monthly (₹599/mo)',
     popular: false,
   },
   {
     id: '6months' as PlanType,
     name: 'Semi-Annual Plan',
-    badge: 'Flexible 6 Months',
-    price: '₹3,000',
-    period: 'For 6 Months',
-    effective: 'Effective ₹500 / month',
-    setupFee: '+ ₹10,000 One-Time Setup',
+    badge: '6 Months License',
+    price: '₹3,499',
+    period: 'for 6 months',
+    effective: 'Effective ₹583 / month',
+    setupFee: '+ ₹10,000 One-Time Customization Fee',
     description: 'Semi-annual cloud license for growing gyms with full biometric and WhatsApp automation.',
     features: unifiedPlanFeatures,
     mandateNote:
-      'Base total: ₹13,000 (₹3,000 Plan + ₹10,000 One-time Setup). Apply coupon below for up to 50% OFF setup fee!',
-    btnText: 'Choose 6 Months',
+      'Base total: ₹13,499 (₹3,499 Plan + ₹10,000 Customization). Apply coupon below for up to 50% OFF customization fee!',
+    btnText: 'Choose 6 Months (₹3,499)',
     popular: false,
   },
   {
     id: '1year' as PlanType,
     name: 'Annual License',
-    badge: 'Most Popular · Best Value',
-    price: '₹5,000',
-    period: 'For 1 Full Year',
-    effective: 'Effective ₹416 / month (Save ₹1,000)',
-    setupFee: '+ ₹10,000 One-Time Setup',
+    badge: 'Best Value · 15% OFF',
+    price: '₹6,109',
+    period: 'for 1 yr (15% off)',
+    effective: 'Effective ₹509 / month (Save ₹1,079)',
+    setupFee: '+ ₹10,000 One-Time Customization Fee',
     description: 'Our flagship plan for gym owners who want maximum savings, custom branding, and priority support.',
     features: unifiedPlanFeatures,
     mandateNote:
-      'Base total: ₹15,000 (₹5,000 Plan + ₹10,000 One-time Setup). Apply coupon below for up to 50% OFF setup fee!',
-    btnText: 'Choose 1 Year (Best Value)',
+      'Base total: ₹16,109 (₹6,109 Plan + ₹10,000 Customization). Apply coupon below for up to 50% OFF customization fee!',
+    btnText: 'Choose 1 Year (15% OFF)',
     popular: true,
   },
 ];
@@ -216,10 +216,12 @@ export default function Landing() {
       {/* Responsive Top Navigation */}
       <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-surface-container-high transition-all">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 group">
-            <span className="w-8 h-8 rounded-lg bg-primary text-on-primary font-sora font-extrabold flex items-center justify-center text-sm shadow-sm">
-              NF
-            </span>
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <img
+              src="/icon.jpeg"
+              alt="NeuraFitness Icon"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain border border-surface-container-high shadow-xs"
+            />
             <span className="font-sora text-base sm:text-lg font-bold tracking-tight text-on-surface">
               NeuraFitness
             </span>
@@ -257,6 +259,15 @@ export default function Landing() {
         {/* Hero Section */}
         <section className="mx-auto max-w-6xl px-4 pt-12 sm:pt-20 sm:px-6">
           <div className="text-center max-w-3xl mx-auto space-y-6">
+            {/* Brand Logo Banner */}
+            <div className="flex justify-center items-center pt-2">
+              <img
+                src="/Logo.jpeg"
+                alt="NeuraFitness Platform Logo"
+                className="h-16 sm:h-20 w-auto object-contain rounded-2xl shadow-sm border border-surface-container-high bg-surface-container-lowest p-2"
+              />
+            </div>
+
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-secondary/30 bg-secondary/10 text-secondary text-xs font-semibold">
               <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
               Built for Modern Indian Gyms · Biometrics, Turnstiles & QR
@@ -275,14 +286,13 @@ export default function Landing() {
 
             {/* Direct CTA Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
-              <button
-                type="button"
-                onClick={() => handleOpenPlan('trial')}
+              <a
+                href="#pricing"
                 className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-primary text-on-primary text-sm sm:text-base font-bold shadow-md hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>Start 1-Month Free Trial</span>
-                <span className="material-symbols-outlined text-lg">arrow_forward</span>
-              </button>
+                <span>View Plans (From ₹599/mo)</span>
+                <span className="material-symbols-outlined text-lg">arrow_downward</span>
+              </a>
 
               <a
                 href={DEMO_LINK}
@@ -327,7 +337,7 @@ export default function Landing() {
             </p>
           </div>
 
-          {/* Setup Fee Banner */}
+          {/* Customization Fee Banner */}
           <div className="rounded-2xl border border-secondary/30 bg-surface-container-low p-5 sm:p-6 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center shrink-0">
@@ -336,19 +346,19 @@ export default function Landing() {
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="font-sora text-sm sm:text-base font-bold text-on-surface">
-                    One-Time Onboarding & Hardware Setup: ₹10,000
+                    One-Time Customization Fee: ₹10,000
                   </h3>
                   <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary/20 text-secondary uppercase">
                     One-Time Only
                   </span>
                 </div>
                 <p className="text-xs text-on-surface-variant mt-1 leading-relaxed max-w-2xl">
-                  Includes remote cloud ADMS setup of your eSSL / ZKTeco biometric terminals, historical member data migration from your old software or Excel, WhatsApp template approvals, and dedicated onboarding manager assistance.
+                  Dedicated white-glove setup: software customization for your gym brand, remote cloud ADMS sync of your eSSL / ZKTeco / Mantra biometric turnstiles, full member data migration from old software/Excel, and priority onboarding manager support.
                 </p>
               </div>
             </div>
             <div className="text-xs font-semibold text-outline shrink-0 bg-surface-container px-3 py-1.5 rounded-lg border border-surface-container-high">
-              Deferred during 1-month free trial
+              Coupons apply to customization fee
             </div>
           </div>
 
@@ -361,11 +371,11 @@ export default function Landing() {
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-tertiary text-2xl">confirmation_number</span>
                   <h3 className="font-sora text-base sm:text-xl font-bold text-on-surface">
-                    Promotional Setup Coupons — Valid till December 31, 2026
+                    Promotional Customization Coupons — Valid till December 31, 2026
                   </h3>
                 </div>
                 <p className="text-xs sm:text-sm text-on-surface-variant mt-1">
-                  Enjoy massive savings on the additional ₹10,000 one-time onboarding fee. Each coupon can be redeemed a maximum of <strong className="text-on-surface">5 times</strong> before expiring.
+                  Enjoy massive savings on the ₹10,000 one-time customization fee. Coupons apply strictly to the customization fee only. Each coupon can be redeemed a maximum of <strong className="text-on-surface">5 times</strong> before expiring.
                 </p>
               </div>
               <div className="flex items-center gap-2 self-start md:self-auto">
@@ -385,7 +395,7 @@ export default function Landing() {
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-extrabold border ${c.color}`}>
-                        {c.discount} Setup Fee
+                        {c.discount} Customization
                       </span>
                       <span className="text-[10px] text-outline font-semibold uppercase">{c.tag}</span>
                     </div>
@@ -406,10 +416,10 @@ export default function Landing() {
                     <div className="space-y-1 text-xs">
                       <p className="font-bold text-tertiary flex items-center gap-1">
                         <span className="material-symbols-outlined text-sm">savings</span>
-                        {c.saveText} on setup fee
+                        {c.saveText} on customization fee
                       </p>
                       <p className="text-outline text-[11px]">
-                        Pay setup fee: <span className="font-semibold text-on-surface">{c.remainingFee}</span> (was ₹10,000)
+                        Pay customization: <span className="font-semibold text-on-surface">{c.remainingFee}</span> (was ₹10,000)
                       </p>
                     </div>
                   </div>
@@ -632,7 +642,12 @@ export default function Landing() {
       {/* Footer */}
       <footer className="border-t border-surface-container-high bg-surface-container-lowest/50 py-8 text-xs text-outline">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/icon.jpeg"
+              alt="NeuraFitness"
+              className="w-6 h-6 rounded-md object-contain border border-surface-container-high"
+            />
             <span className="font-sora font-bold text-on-surface">NeuraFitness</span>
             <span>· All rights reserved © 2026</span>
           </div>

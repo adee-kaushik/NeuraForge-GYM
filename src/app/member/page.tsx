@@ -13,10 +13,18 @@ import { MemberPaymentQrSection } from '@/components/member/MemberPaymentQrSecti
 import { ensureDatabaseSchema } from '@/lib/db-init';
 
 // Dates are shown in IST, because the server runs in UTC
-const dateIST = (d: Date) =>
-  d.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' });
-const timeIST = (d: Date) =>
-  d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
+const dateIST = (d: any) => {
+  if (!d) return 'N/A';
+  const dt = d instanceof Date ? d : new Date(d);
+  if (isNaN(dt.getTime())) return 'N/A';
+  return dt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' });
+};
+const timeIST = (d: any) => {
+  if (!d) return '';
+  const dt = d instanceof Date ? d : new Date(d);
+  if (isNaN(dt.getTime())) return '';
+  return dt.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' });
+};
 
 const STATUS = {
   active: { label: 'Active', style: 'bg-tertiary/15 text-tertiary border-tertiary/30' },
@@ -110,8 +118,8 @@ export default async function MemberPage() {
           gymName={gymName}
           memberCode={member.phone || member.memberCode}
           memberName={member.name || 'Member'}
-          planName={membership ? membership.plan.name : 'No active plan'}
-          expiryDateStr={membership ? dateIST(membership.expiresAt) : 'N/A'}
+          planName={membership?.plan?.name || 'No active plan'}
+          expiryDateStr={membership && membership.expiresAt ? dateIST(membership.expiresAt) : 'N/A'}
           daysLeft={daysLeft}
           statusLabel={status.label}
           statusStyle={status.style}
@@ -122,7 +130,7 @@ export default async function MemberPage() {
         {/* Active Plan Card */}
         <section className="rounded-2xl border border-secondary/30 bg-surface-container-low p-6 space-y-5 shadow-[0_0_24px_rgba(123,208,255,0.08)]">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-sora text-lg font-semibold">{membership ? membership.plan.name : 'No plan yet'}</h2>
+            <h2 className="font-sora text-lg font-semibold">{membership?.plan?.name || 'No plan yet'}</h2>
             <span className={`px-2.5 py-1 rounded-full border text-xs font-bold ${status.style}`}>{status.label}</span>
           </div>
           {membership && daysLeft !== null ? (
@@ -154,9 +162,9 @@ export default async function MemberPage() {
 
         {/* Owner's Official UPI QR & Payment Section (Requirement 2: Always Visible) */}
         <MemberPaymentQrSection
-          gymName={member.gym.name}
-          upiId={member.gym.upiId}
-          paymentQrUrl={member.gym.paymentQrUrl}
+          gymName={gymName}
+          upiId={member.gym?.upiId || null}
+          paymentQrUrl={member.gym?.paymentQrUrl || null}
           pendingDue={pendingDue}
         />
 

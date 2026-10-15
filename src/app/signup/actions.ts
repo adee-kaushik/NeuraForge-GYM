@@ -45,9 +45,9 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
   const password = String(formData.get('password') ?? '');
   const couponCode = String(formData.get('couponCode') ?? '').trim();
 
-  let plan = String(formData.get('plan') ?? 'trial').trim();
-  if (!['trial', '6months', '1year', 'pilot'].includes(plan)) {
-    plan = 'trial';
+  let plan = String(formData.get('plan') ?? 'monthly').trim();
+  if (!['trial', 'monthly', '6months', '1year', 'pilot'].includes(plan)) {
+    plan = 'monthly';
   }
 
   const isFirstCustomer = await checkIsFirstCustomer();
@@ -83,14 +83,14 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
     authUserId = publicCreated.user.id;
   }
 
-  // Pricing & Status calculation
-  const isPaid = plan === '6months' || plan === '1year';
-  const basePrice = plan === '6months' ? 3000 : plan === '1year' ? 5000 : 0;
-  let setupFee = isPaid ? 1999 : 0;
-  if (couponCode) {
-    if (couponCode.toUpperCase() === 'SETUP50') setupFee = Math.round(setupFee * 0.5);
-    else if (couponCode.toUpperCase() === 'SETUP30') setupFee = Math.round(setupFee * 0.7);
-    else if (couponCode.toUpperCase() === 'SETUP10') setupFee = Math.round(setupFee * 0.9);
+  // Pricing & Status calculation: 599/m, 3499 (6mo), 6109 (1yr, 15% off) + 10,000 one-time customization fee
+  const isPaid = plan === 'monthly' || plan === '6months' || plan === '1year';
+  const basePrice = plan === 'monthly' ? 599 : plan === '6months' ? 3499 : plan === '1year' ? 6109 : 0;
+  let setupFee = isPaid ? 10000 : 0;
+  if (couponCode && isPaid) {
+    if (couponCode.toUpperCase() === 'SETUP50') setupFee = Math.max(0, setupFee - 5000);
+    else if (couponCode.toUpperCase() === 'SETUP30') setupFee = Math.max(0, setupFee - 3000);
+    else if (couponCode.toUpperCase() === 'SETUP10') setupFee = Math.max(0, setupFee - 1000);
   }
   const totalAmount = isPaid ? basePrice + setupFee : 0;
 
@@ -133,9 +133,11 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
 
   const planLabel =
     plan === '1year'
-      ? '1-Year Annual Pro Plan'
+      ? '1-Year Annual Pro Plan (15% OFF - ₹6,109)'
       : plan === '6months'
-      ? '6-Month Semi-Annual Plan'
+      ? '6-Month Semi-Annual Plan (₹3,499)'
+      : plan === 'monthly'
+      ? 'Monthly Plan (₹599/month)'
       : isFirstCustomer
       ? 'Pilot Launch Partner (Free)'
       : '1-Month Free Trial';

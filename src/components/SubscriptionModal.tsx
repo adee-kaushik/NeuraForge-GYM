@@ -5,7 +5,7 @@ import { signupOwner } from '@/app/signup/actions';
 import { checkCoupon } from '@/app/actions/coupon';
 import { type CouponDefinition, BASE_SETUP_FEE } from '@/lib/coupons';
 
-export type PlanType = 'trial' | '6months' | '1year';
+export type PlanType = 'monthly' | '6months' | '1year' | 'trial';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -25,6 +25,33 @@ const PLAN_DETAILS: Record<
     billingNotice: string;
   }
 > = {
+  monthly: {
+    name: 'Monthly Plan',
+    priceLabel: '₹599 / month',
+    basePrice: 599,
+    periodLabel: 'Per Month License',
+    setupFee: BASE_SETUP_FEE,
+    billingNotice:
+      'Monthly cloud license fee (₹599) + one-time customization fee (₹10,000). Coupon discounts apply strictly to the one-time customization fee.',
+  },
+  '6months': {
+    name: 'Semi-Annual Plan (6 Months)',
+    priceLabel: '₹3,499',
+    basePrice: 3499,
+    periodLabel: '6 Months License',
+    setupFee: BASE_SETUP_FEE,
+    billingNotice:
+      '6 Months full cloud license (₹3,499) + one-time customization fee (₹10,000). Coupon discounts apply strictly to the one-time customization fee.',
+  },
+  '1year': {
+    name: 'Annual Plan (1 Year) — 15% OFF',
+    priceLabel: '₹6,109',
+    basePrice: 6109,
+    periodLabel: '1 Year License (15% OFF)',
+    setupFee: BASE_SETUP_FEE,
+    billingNotice:
+      '1 Full Year cloud license (₹6,109 with 15% discount) + one-time customization fee (₹10,000). Coupon discounts apply strictly to the one-time customization fee.',
+  },
   trial: {
     name: '1-Month Full Free Trial',
     priceLabel: '₹0 Today',
@@ -32,25 +59,7 @@ const PLAN_DETAILS: Record<
     periodLabel: '30 Days Full Access',
     setupFee: 0,
     billingNotice:
-      'Auto-debit begins after 1 month (30 days) at ₹5,000/yr (+ one-time setup fee). We will notify you via WhatsApp & SMS 36 hours before deducting. Cancel anytime in 1 click.',
-  },
-  '6months': {
-    name: 'Semi-Annual Plan (6 Months)',
-    priceLabel: '₹3,000',
-    basePrice: 3000,
-    periodLabel: '6 Months License',
-    setupFee: BASE_SETUP_FEE,
-    billingNotice:
-      '6 Months full cloud license + one-time onboarding, turnstile and biometric cloud setup fee.',
-  },
-  '1year': {
-    name: 'Annual Plan (1 Year) — Best Value',
-    priceLabel: '₹5,000',
-    basePrice: 5000,
-    periodLabel: '1 Year License',
-    setupFee: BASE_SETUP_FEE,
-    billingNotice:
-      '1 Full Year cloud license + one-time onboarding, turnstile and biometric cloud setup fee. Save ₹1,000.',
+      'Auto-debit begins after 1 month (30 days) at ₹599/m or choose annual (15% off). Cancel anytime.',
   },
 };
 
@@ -210,9 +219,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         <div className="p-4 sm:p-5 border-b border-surface-container-high flex items-center justify-between bg-surface-container-low/30">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-md bg-primary text-on-primary font-sora font-extrabold flex items-center justify-center text-xs">
-                NF
-              </span>
+              <img
+                src="/icon.jpeg"
+                alt="NeuraFitness"
+                className="w-7 h-7 rounded-lg object-contain border border-surface-container-high shrink-0 shadow-xs"
+              />
               <h2 className="font-sora text-sm sm:text-base font-bold text-on-surface">
                 {plan === 'trial' ? 'Start 1-Month Free Trial' : 'Activate Gym Subscription'}
               </h2>
@@ -243,14 +254,14 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           <div className="grid grid-cols-3 p-1 rounded-xl bg-surface-container border border-surface-container-high text-center font-bold text-[11px]">
             <button
               type="button"
-              onClick={() => setPlan('trial')}
+              onClick={() => setPlan('monthly')}
               className={`py-2 px-1 rounded-lg transition-all cursor-pointer ${
-                plan === 'trial'
+                plan === 'monthly'
                   ? 'bg-surface-container-lowest text-secondary shadow-xs'
                   : 'text-outline hover:text-on-surface'
               }`}
             >
-              1-Month Trial (₹0)
+              Monthly (₹599)
             </button>
             <button
               type="button"
@@ -261,7 +272,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   : 'text-outline hover:text-on-surface'
               }`}
             >
-              6 Months (₹3k)
+              6 Months (₹3,499)
             </button>
             <button
               type="button"
@@ -272,9 +283,25 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   : 'text-outline hover:text-on-surface'
               }`}
             >
-              1 Year (₹5k) ★
+              1 Year (₹6,109) ★
             </button>
           </div>
+
+          {plan === 'trial' && (
+            <div className="p-2.5 rounded-xl bg-surface-container-low border border-secondary/30 flex items-center justify-between text-xs">
+              <span className="font-semibold text-secondary flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-sm">hourglass_top</span>
+                Selected: 1-Month Free Trial (₹0 Today)
+              </span>
+              <button
+                type="button"
+                onClick={() => setPlan('1year')}
+                className="text-xs text-outline hover:text-on-surface font-semibold underline cursor-pointer"
+              >
+                Switch to Annual (Save 15%)
+              </button>
+            </div>
+          )}
 
           {/* Pricing & Billing Summary Card with Live Breakdown */}
           <div className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high space-y-2.5">
@@ -288,7 +315,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   {isPaidPlan ? `₹${remainingTotalToPay.toLocaleString('en-IN')}` : '₹0 Today'}
                 </span>
                 <span className="text-[10px] text-outline block">
-                  {isPaidPlan ? 'Remaining amount to pay' : 'Setup fee deferred for 30 days'}
+                  {isPaidPlan ? 'Remaining amount to pay' : 'Customization fee deferred for 30 days'}
                 </span>
               </div>
             </div>
@@ -302,7 +329,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </div>
 
                 <div className="flex items-center justify-between text-outline">
-                  <span>One-Time Hardware & Onboarding Setup:</span>
+                  <span>One-Time Customization Fee:</span>
                   <span className={appliedCoupon ? 'line-through text-outline' : 'text-on-surface font-semibold'}>
                     ₹{BASE_SETUP_FEE.toLocaleString('en-IN')}
                   </span>
@@ -312,7 +339,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                   <div className="flex items-center justify-between text-tertiary font-bold">
                     <span className="flex items-center gap-1">
                       <span className="material-symbols-outlined text-sm">local_activity</span>
-                      Coupon Discount ({appliedCoupon.code} - {appliedCoupon.discountPercent}% Off Setup):
+                      Coupon Discount ({appliedCoupon.code} - {appliedCoupon.discountPercent}% Off Customization):
                     </span>
                     <span>-₹{appliedCoupon.discountAmount.toLocaleString('en-IN')}</span>
                   </div>
@@ -329,7 +356,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               <div className="p-2 rounded-lg bg-tertiary/10 border border-tertiary/20 text-[11px] text-tertiary flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-sm shrink-0">check_circle</span>
                 <span>
-                  <strong>{appliedCoupon.code} Locked:</strong> You will get {appliedCoupon.discountPercent}% (₹{appliedCoupon.discountAmount}) off your setup fee when your 1-month trial converts.
+                  <strong>{appliedCoupon.code} Locked:</strong> You will get {appliedCoupon.discountPercent}% (₹{appliedCoupon.discountAmount}) off your customization fee when your 1-month trial converts.
                 </span>
               </div>
             )}

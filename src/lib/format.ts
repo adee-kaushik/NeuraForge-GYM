@@ -55,8 +55,10 @@ export const gstIncluded = (total: number, ratePercent: number): number =>
 // not the server's own timezone (Vercel runs in UTC).
 const IST_OFFSET_MS = 330 * 60000;
 
-export const startOfDayIST = (now: Date = new Date()): Date => {
-  const shifted = new Date(now.getTime() + IST_OFFSET_MS);
+export const startOfDayIST = (now: Date | string | number = new Date()): Date => {
+  const dt = now instanceof Date ? now : new Date(now || Date.now());
+  const validTime = isNaN(dt.getTime()) ? Date.now() : dt.getTime();
+  const shifted = new Date(validTime + IST_OFFSET_MS);
   const utcMidnight = Date.UTC(shifted.getUTCFullYear(), shifted.getUTCMonth(), shifted.getUTCDate());
   return new Date(utcMidnight - IST_OFFSET_MS);
 };
