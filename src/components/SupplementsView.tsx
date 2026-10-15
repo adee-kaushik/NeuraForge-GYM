@@ -9,14 +9,24 @@ interface SupplementsViewProps {
   gymName: string;
   members: Member[];
   isOwner?: boolean;
+  initialSupplements?: SupplementItem[];
+  initialSales?: SupplementSale[];
+  onDataUpdated?: (sups: SupplementItem[], sls: SupplementSale[]) => void;
 }
 
 const CATEGORIES = ['All', 'Protein', 'Creatine', 'Pre-Workout', 'BCAA', 'Snacks', 'Accessories'] as const;
 
-export const SupplementsView: React.FC<SupplementsViewProps> = ({ gymName, members, isOwner = false }) => {
-  const [supplements, setSupplements] = useState<SupplementItem[]>([]);
-  const [sales, setSales] = useState<SupplementSale[]>([]);
-  const [loading, setLoading] = useState(true);
+export const SupplementsView: React.FC<SupplementsViewProps> = ({
+  gymName,
+  members,
+  isOwner = false,
+  initialSupplements,
+  initialSales,
+  onDataUpdated,
+}) => {
+  const [supplements, setSupplements] = useState<SupplementItem[]>(initialSupplements || []);
+  const [sales, setSales] = useState<SupplementSale[]>(initialSales || []);
+  const [loading, setLoading] = useState(!initialSupplements && !initialSales);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -63,17 +73,20 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({ gymName, membe
   };
 
   useEffect(() => {
-    loadData();
+    if (!initialSupplements || !initialSales) {
+      loadData();
+    }
   }, []);
 
   const loadData = async () => {
-    setLoading(true);
+    if (!initialSupplements || !initialSales) setLoading(true);
     const [sups, sls] = await Promise.all([
       getSupplements().catch(() => []),
       getSupplementSales().catch(() => []),
     ]);
     setSupplements(sups);
     setSales(sls);
+    onDataUpdated?.(sups, sls);
     setLoading(false);
   };
 

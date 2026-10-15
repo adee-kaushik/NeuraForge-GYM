@@ -19,6 +19,7 @@ export function ensureDatabaseSchema(): Promise<void> {
         `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "avatarUrl" TEXT`,
         `ALTER TABLE "Gym" ADD COLUMN IF NOT EXISTS "bannerUrl" TEXT`,
         `ALTER TABLE "Gym" ADD COLUMN IF NOT EXISTS "tagline" TEXT`,
+        `ALTER TABLE "Gym" ADD COLUMN IF NOT EXISTS "clearedPrefilledPlans" BOOLEAN DEFAULT false`,
         `ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "discountAmount" INTEGER DEFAULT 0`,
         `ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "notes" TEXT`,
 
@@ -66,6 +67,24 @@ export function ensureDatabaseSchema(): Promise<void> {
           "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`,
 
+        `CREATE TABLE IF NOT EXISTS "DietPlan" (
+          "id" TEXT PRIMARY KEY,
+          "gymId" TEXT NOT NULL,
+          "title" TEXT NOT NULL,
+          "description" TEXT,
+          "targetGoal" TEXT NOT NULL DEFAULT 'Muscle Gain',
+          "caloriesTarget" INTEGER NOT NULL DEFAULT 2400,
+          "proteinTarget" INTEGER NOT NULL DEFAULT 140,
+          "carbsTarget" INTEGER DEFAULT 220,
+          "fatsTarget" INTEGER DEFAULT 60,
+          "waterLiters" DOUBLE PRECISION DEFAULT 3.5,
+          "dietaryPreference" TEXT NOT NULL DEFAULT 'Non-Vegetarian',
+          "mealsJson" TEXT NOT NULL,
+          "supplementsRecommended" TEXT,
+          "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`,
+
         `CREATE TABLE IF NOT EXISTS "GymReminder" (
           "id" TEXT PRIMARY KEY,
           "gymId" TEXT NOT NULL,
@@ -105,13 +124,21 @@ export function ensureDatabaseSchema(): Promise<void> {
         `CREATE INDEX IF NOT EXISTS "Enrollment_status_idx" ON "Enrollment"("status")`,
         `CREATE INDEX IF NOT EXISTS "GymReminder_gymId_idx" ON "GymReminder"("gymId")`,
         `CREATE INDEX IF NOT EXISTS "GymReminder_memberId_idx" ON "GymReminder"("memberId")`,
+        `CREATE INDEX IF NOT EXISTS "DietPlan_gymId_idx" ON "DietPlan"("gymId")`,
+        `CREATE INDEX IF NOT EXISTS "WorkoutPlan_gymId_idx" ON "WorkoutPlan"("gymId")`,
       ];
 
-      for (const sql of statements) {
-        try {
-          await prisma.$executeRawUnsafe(sql);
-        } catch {
-          // Ignore individual column/table already exists errors or pooler warnings
+      // Execute in a single fast batch to eliminate 20+ sequential round-trips
+      try {
+        await prisma.$executeRawUnsafe(statements.join(';\n'));
+      } catch {
+        // Fallback to individual execution in case database server disallows multi-statement in one call
+        for (const sql of statements) {
+          try {
+            await prisma.$executeRawUnsafe(sql);
+          } catch {
+            // Ignore individual column/table already exists errors
+          }
         }
       }
     })();

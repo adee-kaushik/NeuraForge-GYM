@@ -97,7 +97,6 @@ const DEFAULT_SUPPLEMENTS: Omit<SupplementItem, 'id'>[] = [
 ];
 
 export async function getSupplements(): Promise<SupplementItem[]> {
-  await ensureDatabaseSchema().catch(() => {});
   const user = await requireStaff();
 
   try {
@@ -154,6 +153,17 @@ export async function getSupplements(): Promise<SupplementItem[]> {
       id: `default_${i}`,
     }));
   }
+}
+
+export async function getSupplementsAndSales(): Promise<{
+  supplements: SupplementItem[];
+  sales: SupplementSale[];
+}> {
+  const [supplements, sales] = await Promise.all([
+    getSupplements(),
+    getSupplementSales(),
+  ]);
+  return { supplements, sales };
 }
 
 export async function saveSupplement(
@@ -277,7 +287,6 @@ export async function sellSupplement(
 }
 
 export async function getSupplementSales(): Promise<SupplementSale[]> {
-  await ensureDatabaseSchema().catch(() => {});
   const user = await requireStaff();
 
   try {

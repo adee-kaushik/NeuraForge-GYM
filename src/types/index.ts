@@ -239,6 +239,38 @@ export interface EnrollmentRecord {
   status: 'PENDING' | 'APPROVED' | 'REJECTED';
   notes?: string | null;
   createdAt: string;
+}// ── Diet & Nutrition Plan Types ──
+export interface DietMealItem {
+  id: string;
+  name: string; // e.g. "Oats with Whey & Almonds"
+  portion: string; // e.g. "60g oats + 1 scoop whey + 10 almonds"
+  calories?: number;
+  proteinGrams?: number;
+  carbsGrams?: number;
+  fatsGrams?: number;
 }
 
+export interface DietMeal {
+  id: string;
+  mealName: string; // e.g. "Meal 1: Breakfast"
+  time?: string; // e.g. "8:30 AM"
+  items: DietMealItem[];
+  notes?: string;
+}
 
+export interface DietPlanItem {
+  id: string;
+  title: string;
+  description: string;
+  targetGoal: 'Weight Loss' | 'Muscle Gain' | 'Lean Maintenance' | 'High-Protein Vegetarian' | 'Keto / Low Carb';
+  caloriesTarget: number;
+  proteinTarget: number;
+  carbsTarget?: number;
+  fatsTarget?: number;
+  waterLiters: number;
+  dietaryPreference: 'Non-Vegetarian' | 'Vegetarian' | 'Eggetarian' | 'Vegan';
+  meals: DietMeal[];
+  supplementsRecommended?: string[];
+  assignedMemberCount?: number;
+  updatedAt?: string;
+}

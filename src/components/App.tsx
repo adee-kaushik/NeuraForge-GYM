@@ -33,7 +33,9 @@ import { SendBirthdayWishModal } from './modals/SendBirthdayWishModal';
 import { FrontDeskQrModal } from './modals/FrontDeskQrModal';
 import { PendingEnrollmentsModal } from './modals/PendingEnrollmentsModal';
 import { getPendingEnrollments } from '@/actions/enrollments';
-import type { EnrollmentRecord } from '../types';
+import { getSupplementsAndSales } from '@/actions/supplements';
+import { getWorkoutAndDietPlans } from '@/actions/workout-plans';
+import type { EnrollmentRecord, SupplementItem, SupplementSale, WorkoutPlanItem, DietPlanItem } from '../types';
 
 interface AppProps {
   initialGym: GymConfig;
@@ -99,6 +101,12 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
   const [isPendingEnrollmentsOpen, setIsPendingEnrollmentsOpen] = useState(false);
   const [pendingEnrollments, setPendingEnrollments] = useState<EnrollmentRecord[]>([]);
 
+  // Instant POS & Workout/Diet Plans Cache
+  const [cachedSupplements, setCachedSupplements] = useState<SupplementItem[] | null>(null);
+  const [cachedSupplementSales, setCachedSupplementSales] = useState<SupplementSale[] | null>(null);
+  const [cachedWorkoutPlans, setCachedWorkoutPlans] = useState<WorkoutPlanItem[] | null>(null);
+  const [cachedDietPlans, setCachedDietPlans] = useState<DietPlanItem[] | null>(null);
+
   const fetchPending = async () => {
     try {
       const rows = await getPendingEnrollments();
@@ -110,6 +118,21 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
 
   useEffect(() => {
     fetchPending();
+
+    // Background preloading to eliminate loading delay on POS and Workout Plans tabs
+    getSupplementsAndSales()
+      .then((data) => {
+        setCachedSupplements(data.supplements);
+        setCachedSupplementSales(data.sales);
+      })
+      .catch((err) => console.error('Background prefetch supplements error:', err));
+
+    getWorkoutAndDietPlans()
+      .then((data) => {
+        setCachedWorkoutPlans(data.workoutPlans);
+        setCachedDietPlans(data.dietPlans);
+      })
+      .catch((err) => console.error('Background prefetch workout/diet plans error:', err));
   }, []);
 
   // Toast notifications
@@ -460,6 +483,12 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
               gymName={gym.name}
               members={members}
               isOwner={currentUser.role === 'Gym Owner'}
+              initialSupplements={cachedSupplements || undefined}
+              initialSales={cachedSupplementSales || undefined}
+              onDataUpdated={(sups, sls) => {
+                setCachedSupplements(sups);
+                setCachedSupplementSales(sls);
+              }}
             />
           )}
 
@@ -467,6 +496,13 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
             <WorkoutPlansView
               gymName={gym.name}
               members={members}
+              isOwner={currentUser.role === 'Gym Owner'}
+              initialWorkoutPlans={cachedWorkoutPlans || undefined}
+              initialDietPlans={cachedDietPlans || undefined}
+              onPlansUpdated={(workouts, diets) => {
+                setCachedWorkoutPlans(workouts);
+                setCachedDietPlans(diets);
+              }}
             />
           )}
 
