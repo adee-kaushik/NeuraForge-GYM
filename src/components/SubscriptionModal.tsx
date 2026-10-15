@@ -218,11 +218,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-surface-container-high flex items-center justify-between bg-surface-container-low/30">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               <img
-                src="/icon.png"
+                src="/logo.png"
                 alt="NeuraFitness"
-                className="w-7 h-7 rounded-lg object-contain border border-surface-container-high shrink-0 shadow-xs"
+                className="h-6 w-auto object-contain shrink-0"
               />
               <h2 className="font-sora text-sm sm:text-base font-bold text-on-surface">
                 {plan === 'trial' ? 'Start 1-Month Free Trial' : 'Activate Gym Subscription'}

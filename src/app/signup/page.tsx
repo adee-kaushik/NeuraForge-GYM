@@ -101,7 +101,7 @@ export default function SignupPage() {
             <span className="material-symbols-outlined text-base">arrow_back</span>
             Back to Home
           </Link>
-          <span className="text-xs font-bold text-secondary">NeuraFitness</span>
+          <img src="/logo.png" alt="NeuraFitness" className="h-6 w-auto object-contain" />
         </div>
 
         <form

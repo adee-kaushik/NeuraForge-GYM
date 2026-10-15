@@ -216,15 +216,12 @@ export default function Landing() {
       {/* Responsive Top Navigation */}
       <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-md border-b border-surface-container-high transition-all">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6">
-          <Link href="/" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex items-center group">
             <img
-              src="/icon.png"
-              alt="NeuraFitness Icon"
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain border border-surface-container-high shadow-xs"
+              src="/logo.png"
+              alt="NeuraFitness"
+              className="h-8 sm:h-9.5 w-auto object-contain"
             />
-            <span className="font-sora text-base sm:text-lg font-bold tracking-tight text-on-surface">
-              NeuraFitness
-            </span>
           </Link>
 
           {/* Navigation items: Pricing link + ONLY Login button */}
@@ -259,15 +256,6 @@ export default function Landing() {
         {/* Hero Section */}
         <section className="mx-auto max-w-6xl px-4 pt-12 sm:pt-20 sm:px-6">
           <div className="text-center max-w-3xl mx-auto space-y-6">
-            {/* Brand Logo Banner */}
-            <div className="flex justify-center items-center pt-2">
-              <img
-                src="/logo.png"
-                alt="NeuraFitness Platform Logo"
-                className="h-16 sm:h-20 w-auto object-contain rounded-2xl shadow-sm border border-surface-container-high bg-surface-container-lowest p-2"
-              />
-            </div>
-
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-secondary/30 bg-secondary/10 text-secondary text-xs font-semibold">
               <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
               Built for Modern Indian Gyms · Biometrics, Turnstiles & QR
