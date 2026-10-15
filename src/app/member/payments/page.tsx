@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { getCurrentMember } from '@/lib/auth';
 import { MemberNav } from '@/components/member/MemberNav';
-import { MemberHeaderActions } from '@/components/member/MemberHeaderActions';
+import { MemberBannerHeader } from '@/components/member/MemberBannerHeader';
 import {
   MemberPaymentsHistoryView,
   type MemberPaymentItem,
@@ -79,26 +79,16 @@ export default async function MemberPaymentsPage() {
   return (
     <main className="min-h-screen bg-background text-on-surface px-5 py-8 sm:py-10">
       <div className="mx-auto w-full max-w-md space-y-6">
-        {/* Header */}
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-outline">{member.gym.name}</span>
-              <span className="px-2 py-0.5 rounded-full bg-surface-container border border-surface-container-high text-[10px] font-mono text-secondary">
-                Code: {member.gym.slug}
-              </span>
-            </div>
-            <h1 className="font-sora text-2xl font-bold mt-1">Hi, {member.name.split(' ')[0]}</h1>
-            <p className="text-xs text-outline mt-1 font-mono">
-              Member ID: <span className="text-on-surface font-bold">{member.phone}</span>
-            </p>
-          </div>
-          <MemberHeaderActions
-            gymCode={member.gym.slug}
-            phone={member.phone}
-            memberName={member.name}
-          />
-        </header>
+        {/* Banner & Profile Header */}
+        <MemberBannerHeader
+          gymName={member.gym?.name || 'Your Gym'}
+          gymSlug={member.gym?.slug || ''}
+          gymBannerUrl={(member.gym as any)?.bannerUrl || null}
+          gymTagline={(member.gym as any)?.tagline || null}
+          memberName={member.name || 'Member'}
+          memberPhone={member.phone || ''}
+          memberPhotoUrl={(member as any)?.photoUrl || null}
+        />
 
         {/* Member Navigation Tabs */}
         <MemberNav />

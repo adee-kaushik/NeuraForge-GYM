@@ -10,12 +10,15 @@ type GymRow = {
   monthlyRevenueGoal: number;
   upiId?: string | null;
   paymentQrUrl?: string | null;
+  bannerUrl?: string | null;
+  tagline?: string | null;
 };
 
 type UserRow = {
   name: string;
   email: string;
   role: 'OWNER' | 'STAFF';
+  avatarUrl?: string | null;
 };
 
 const initialsOf = (text: string): string =>
@@ -38,6 +41,8 @@ export const toGymConfig = (gym: GymRow): GymConfig => ({
   monthlyRevenueGoal: gym.monthlyRevenueGoal,
   upiId: gym.upiId ?? '',
   paymentQrUrl: gym.paymentQrUrl ?? '',
+  bannerUrl: gym.bannerUrl ?? '',
+  tagline: gym.tagline ?? '',
 });
 
 export const toCurrentUser = (user: UserRow): CurrentUser => ({
@@ -45,4 +50,5 @@ export const toCurrentUser = (user: UserRow): CurrentUser => ({
   initials: initialsOf(user.name),
   role: user.role === 'OWNER' ? 'Gym Owner' : 'Staff',
   email: user.email,
+  avatarUrl: user.avatarUrl ?? null,
 });

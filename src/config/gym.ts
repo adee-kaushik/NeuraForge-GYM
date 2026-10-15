@@ -11,6 +11,8 @@ export interface GymConfig {
   monthlyRevenueGoal: number;
   upiId?: string; // UPI ID for member QR payments
   paymentQrUrl?: string; // Custom uploaded UPI QR code image or data URL
+  bannerUrl?: string; // Gym banner hero image
+  tagline?: string;
 }
 
 // What the owner can edit on the Settings screen
@@ -22,6 +24,8 @@ export interface GymSettingsInput {
   monthlyRevenueGoal: number;
   upiId?: string;
   paymentQrUrl?: string;
+  bannerUrl?: string;
+  tagline?: string;
 }
 
 export const GYM: GymConfig = {
@@ -35,6 +39,8 @@ export const GYM: GymConfig = {
   monthlyRevenueGoal: 100000,
   upiId: '',
   paymentQrUrl: '',
+  bannerUrl: '',
+  tagline: 'Forge Your Ultimate Strength & Endurance',
 };
 
 // The logged-in owner/staff member, shown in the header. Comes from the auth session.
@@ -43,4 +49,5 @@ export interface CurrentUser {
   initials: string;
   role: string;
   email: string;
+  avatarUrl?: string | null;
 }

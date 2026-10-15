@@ -5,6 +5,7 @@ import { DashboardStats } from '../lib/stats';
 import { inr } from '../lib/format';
 import { ActiveScreen } from '../types';
 import { getOwnerAdminNotifications, markAdminMessageAsRead } from '@/actions/feedback';
+import { updateOwnerAvatar } from '@/actions/settings';
 
 interface HeaderProps {
   user: CurrentUser;
@@ -46,6 +47,31 @@ export const Header: React.FC<HeaderProps> = ({
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notificationsRead, setNotificationsRead] = useState(false);
   const [adminMessages, setAdminMessages] = useState<AdminMessageItem[]>([]);
+  const [userAvatar, setUserAvatar] = useState<string | null>(user.avatarUrl || null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const ownerFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async () => {
+      if (typeof reader.result === 'string') {
+        const base64 = reader.result;
+        setUserAvatar(base64);
+        setIsUploadingAvatar(true);
+        try {
+          await updateOwnerAvatar(base64);
+        } catch (err) {
+          console.error('Failed to update owner avatar:', err);
+        } finally {
+          setIsUploadingAvatar(false);
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   useEffect(() => {
     getOwnerAdminNotifications()
@@ -279,12 +305,16 @@ export const Header: React.FC<HeaderProps> = ({
               setShowProfileMenu(!showProfileMenu);
               setShowNotifications(false);
             }}
-            className="h-10 w-10 rounded-xl bg-surface-container border border-surface-container-high hover:border-secondary/60 flex items-center justify-center transition-all focus:outline-none cursor-pointer"
+            className="h-10 w-10 rounded-xl bg-surface-container border border-surface-container-high hover:border-secondary/60 flex items-center justify-center transition-all focus:outline-none cursor-pointer overflow-hidden"
             aria-label="User profile menu"
           >
-            <span className="w-8 h-8 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-xs">
-              {user.initials}
-            </span>
+            {userAvatar ? (
+              <img src={userAvatar} alt={user.name} className="w-8 h-8 rounded-lg object-cover" />
+            ) : (
+              <span className="w-8 h-8 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-xs">
+                {user.initials}
+              </span>
+            )}
           </button>
 
           {/* Profile Dropdown: Fully responsive with Enquiries & Settings */}
@@ -296,16 +326,57 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={() => setShowProfileMenu(false)}
               />
 
-              <div className="fixed right-3 top-16 w-72 max-w-[calc(100vw-1.5rem)] sm:absolute sm:right-0 sm:top-12 bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2">
+              <div className="fixed right-3 top-16 w-80 max-w-[calc(100vw-1.5rem)] sm:absolute sm:right-0 sm:top-12 bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-xl p-4 z-50 animate-in fade-in slide-in-from-top-2">
                 <div className="flex items-center gap-3 pb-3 border-b border-surface-container-high">
-                  <span className="w-10 h-10 rounded-xl bg-primary text-on-primary flex items-center justify-center font-bold text-sm shrink-0">
-                    {user.initials}
-                  </span>
+                  <div className="relative group shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-primary text-on-primary flex items-center justify-center font-bold text-sm overflow-hidden border border-surface-container-high">
+                      {userAvatar ? (
+                        <img src={userAvatar} alt={user.name} className="w-full h-full object-cover" />
+                      ) : (
+                        user.initials
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => ownerFileInputRef.current?.click()}
+                      className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-secondary text-white flex items-center justify-center shadow-xs hover:scale-110 transition-transform cursor-pointer"
+                      title="Upload profile picture"
+                    >
+                      <span className="material-symbols-outlined text-[11px]">photo_camera</span>
+                    </button>
+                  </div>
                   <div className="overflow-hidden min-w-0 flex-1">
                     <p className="text-sm font-bold text-on-surface truncate">{user.name}</p>
                     <p className="text-xs text-secondary font-semibold">{user.role}</p>
                     <p className="text-xs text-outline truncate">{user.email}</p>
                   </div>
+                </div>
+
+                {/* Hidden photo file input */}
+                <input
+                  ref={ownerFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleAvatarFileSelect}
+                />
+
+                {/* Direct quick button to upload profile picture */}
+                <div className="py-2 border-b border-surface-container-high">
+                  <button
+                    type="button"
+                    disabled={isUploadingAvatar}
+                    onClick={() => ownerFileInputRef.current?.click()}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-secondary hover:bg-surface-container transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="material-symbols-outlined text-base">add_a_photo</span>
+                      <span>{userAvatar ? 'Change Profile Picture' : 'Upload Profile Picture'}</span>
+                    </span>
+                    {isUploadingAvatar && (
+                      <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                    )}
+                  </button>
                 </div>
 
                 {/* Dropdown Navigation */}

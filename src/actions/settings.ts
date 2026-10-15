@@ -22,6 +22,8 @@ export async function updateGymSettings(input: GymSettingsInput): Promise<SaveSe
   const goal = input.monthlyRevenueGoal;
   const upiId = input.upiId?.trim() || null;
   const paymentQrUrl = input.paymentQrUrl?.trim() || null;
+  const bannerUrl = input.bannerUrl?.trim() || null;
+  const tagline = input.tagline?.trim() || null;
 
   if (!name || name.length > 80) return { ok: false, error: 'Gym name must be 1 to 80 characters.' };
   if (address.length > 200) return { ok: false, error: 'Address is too long.' };
@@ -70,8 +72,57 @@ export async function updateGymSettings(input: GymSettingsInput): Promise<SaveSe
       monthlyRevenueGoal: goal,
       upiId,
       paymentQrUrl,
+      bannerUrl,
+      tagline,
     },
   });
 
   return { ok: true, gym: toGymConfig(gym) };
+}
+
+export async function updateOwnerAvatar(avatarUrl: string): Promise<{ ok: boolean; error?: string }> {
+  const staff = await requireStaff();
+
+  try {
+    await prisma.user.update({
+      where: { id: staff.id },
+      data: { avatarUrl },
+    });
+    return { ok: true };
+  } catch {
+    try {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "User" SET "avatarUrl" = $1 WHERE id = $2`,
+        avatarUrl,
+        staff.id
+      );
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Could not update profile photo.' };
+    }
+  }
+}
+
+export async function updateGymBanner(bannerUrl: string): Promise<{ ok: boolean; error?: string }> {
+  const staff = await requireStaff();
+  if (staff.role !== 'OWNER') return { ok: false, error: 'Only owners can update gym banner.' };
+
+  try {
+    await prisma.gym.update({
+      where: { id: staff.gymId },
+      data: { bannerUrl },
+    });
+    return { ok: true };
+  } catch {
+    try {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Gym" SET "bannerUrl" = $1 WHERE id = $2`,
+        bannerUrl,
+        staff.gymId
+      );
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Could not update banner.' };
+    }
+  }
 }

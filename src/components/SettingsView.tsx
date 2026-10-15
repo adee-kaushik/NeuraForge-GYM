@@ -20,6 +20,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave, isOwner
   const [revenueGoal, setRevenueGoal] = useState(String(gym.monthlyRevenueGoal));
   const [upiId, setUpiId] = useState(gym.upiId || '');
   const [paymentQrUrl, setPaymentQrUrl] = useState(gym.paymentQrUrl || '');
+  const [bannerUrl, setBannerUrl] = useState(gym.bannerUrl || '');
+  const [tagline, setTagline] = useState(gym.tagline || '');
 
   const [saving, setSaving] = useState(false);
 
@@ -30,6 +32,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave, isOwner
     reader.onload = () => {
       if (typeof reader.result === 'string') {
         setPaymentQrUrl(reader.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        setBannerUrl(reader.result);
       }
     };
     reader.readAsDataURL(file);
@@ -48,6 +62,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave, isOwner
       monthlyRevenueGoal: Number.isFinite(goal) && goal >= 0 ? goal : -1,
       upiId,
       paymentQrUrl,
+      bannerUrl,
+      tagline,
     });
     setSaving(false);
   };
@@ -183,6 +199,68 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ gym, onSave, isOwner
                 </button>
               </div>
             )}
+          </div>
+
+          {/* Gym Hero Banner & Slogan */}
+          <div className="pt-3 border-t border-surface-container-high space-y-3">
+            <div>
+              <label className={labelClass}>Gym Tagline / Slogan</label>
+              <input
+                type="text"
+                value={tagline}
+                onChange={(e) => setTagline(e.target.value)}
+                placeholder="e.g. Forge Your Strength & Resilience"
+                className={inputClass}
+              />
+            </div>
+
+            <div>
+              <label className={labelClass}>Upload Gym Banner Image (Shown on Owner & Member Panels)</label>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                <label className="px-3.5 py-2 rounded-lg bg-surface-container hover:bg-surface-container-high border border-surface-container-high text-secondary font-bold text-xs cursor-pointer flex items-center gap-1.5 transition-colors">
+                  <span className="material-symbols-outlined text-base">panorama</span>
+                  <span>Choose Banner Image File</span>
+                  <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" />
+                </label>
+
+                <span className="text-[11px] text-outline">or enter Image URL:</span>
+
+                <input
+                  type="text"
+                  value={bannerUrl}
+                  onChange={(e) => setBannerUrl(e.target.value)}
+                  placeholder="https://images.unsplash.com/... or data:image/..."
+                  className="flex-1 bg-surface-container-lowest border border-surface-container-high focus:border-secondary rounded-lg p-2 text-on-surface focus:outline-none text-xs"
+                />
+              </div>
+
+              {/* Banner Live Preview */}
+              {bannerUrl && (
+                <div className="mt-3 p-3 bg-surface-container rounded-xl border border-surface-container-high flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-outline font-bold uppercase">Gym Banner Preview</span>
+                    <button
+                      type="button"
+                      onClick={() => setBannerUrl('')}
+                      className="text-xs text-error hover:underline font-bold"
+                    >
+                      Remove Banner
+                    </button>
+                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <div className="relative h-32 w-full rounded-lg overflow-hidden border border-surface-container-high shadow-xs">
+                    <img
+                      src={bannerUrl}
+                      alt="Gym Banner"
+                      className="w-full h-full object-cover brightness-[0.75]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent flex items-end p-3">
+                      <span className="font-sora font-bold text-white text-sm">{gymName || 'Gym Name'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

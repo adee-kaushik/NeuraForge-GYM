@@ -401,6 +401,8 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
               />
             ) : (
               <DashboardView
+                gym={gym}
+                onGymUpdate={setGym}
                 stats={stats}
                 members={members}
                 transactions={transactions}

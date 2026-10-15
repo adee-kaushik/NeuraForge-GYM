@@ -15,6 +15,7 @@ interface DigitalPassCardProps {
   statusLabel: string;
   statusStyle: string;
   hasCheckedInToday: boolean;
+  photoUrl?: string | null;
 }
 
 export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
@@ -28,6 +29,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
   statusLabel,
   statusStyle,
   hasCheckedInToday,
+  photoUrl,
 }) => {
   const [qrDataUrl, setQrDataUrl] = useState<string>('');
   const [showQr, setShowQr] = useState<boolean>(false);
@@ -117,8 +119,12 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
       <div className="py-5 flex flex-col items-center justify-center text-center space-y-3">
         {/* Biometric Avatar & Verification Badge */}
         <div className="relative">
-          <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-primary/30 to-secondary/30 border-2 border-secondary/60 flex items-center justify-center text-on-surface font-sora font-extrabold text-2xl shadow-lg">
-            {initials}
+          <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-primary/30 to-secondary/30 border-2 border-secondary/60 flex items-center justify-center text-on-surface font-sora font-extrabold text-2xl shadow-lg overflow-hidden">
+            {photoUrl ? (
+              <img src={photoUrl} alt={memberName} className="w-full h-full object-cover" />
+            ) : (
+              initials
+            )}
           </div>
           <span
             className="absolute bottom-0 right-0 p-1.5 rounded-full bg-tertiary text-[#002113] shadow-md border-2 border-surface-container flex items-center justify-center"

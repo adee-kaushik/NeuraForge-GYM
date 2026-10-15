@@ -44,9 +44,8 @@ import { getMemberSessionId } from '@/lib/member-session';
 
 import { ensureDatabaseSchema } from '@/lib/db-init';
 
-// Returns the logged-in member (with their gym), or null. Owners and staff get null here.
 export const getCurrentMember = cache(async () => {
-  await ensureDatabaseSchema();
+  await ensureDatabaseSchema().catch(() => {});
   // 1. Direct passwordless member session cookie
   const sessionMemberId = await getMemberSessionId();
   if (sessionMemberId) {
@@ -60,12 +59,25 @@ export const getCurrentMember = cache(async () => {
       // Fallback if schema is initializing
       try {
         const raw = await prisma.$queryRawUnsafe<any[]>(`
-          SELECT m.*, g.name as "gym_name", g.slug as "gym_slug"
+          SELECT m.*, g.name as "gym_name", g.slug as "gym_slug", g."upiId" as "gym_upiId", g."paymentQrUrl" as "gym_paymentQrUrl", g."bannerUrl" as "gym_bannerUrl"
           FROM "Member" m
           JOIN "Gym" g ON g.id = m."gymId"
           WHERE m.id = $1 LIMIT 1
         `, sessionMemberId);
-        if (raw && raw[0]) return raw[0];
+        if (raw && raw[0]) {
+          const row = raw[0];
+          return {
+            ...row,
+            gym: {
+              id: row.gymId,
+              name: row.gym_name || 'Gym',
+              slug: row.gym_slug || '',
+              upiId: row.gym_upiId || null,
+              paymentQrUrl: row.gym_paymentQrUrl || null,
+              bannerUrl: row.gym_bannerUrl || null,
+            },
+          };
+        }
       } catch {
         return null;
       }
@@ -82,6 +94,30 @@ export const getCurrentMember = cache(async () => {
       include: { gym: true },
     });
   } catch {
+    try {
+      const raw = await prisma.$queryRawUnsafe<any[]>(`
+        SELECT m.*, g.name as "gym_name", g.slug as "gym_slug", g."upiId" as "gym_upiId", g."paymentQrUrl" as "gym_paymentQrUrl", g."bannerUrl" as "gym_bannerUrl"
+        FROM "Member" m
+        JOIN "Gym" g ON g.id = m."gymId"
+        WHERE m."authUserId" = $1 LIMIT 1
+      `, authUserId);
+      if (raw && raw[0]) {
+        const row = raw[0];
+        return {
+          ...row,
+          gym: {
+            id: row.gymId,
+            name: row.gym_name || 'Gym',
+            slug: row.gym_slug || '',
+            upiId: row.gym_upiId || null,
+            paymentQrUrl: row.gym_paymentQrUrl || null,
+            bannerUrl: row.gym_bannerUrl || null,
+          },
+        };
+      }
+    } catch {
+      return null;
+    }
     return null;
   }
 });

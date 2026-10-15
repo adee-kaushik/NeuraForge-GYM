@@ -4,10 +4,14 @@ import React, { useState, useMemo } from 'react';
 import { Member, Transaction, CheckInLog, ActiveScreen } from '../types';
 import { DashboardStats } from '../lib/stats';
 import { inr } from '../lib/format';
+import { GymBanner } from './GymBanner';
+import type { GymConfig } from '../config/gym';
 
 const PAYMENTS_PAGE_SIZE = 5;
 
 interface DashboardViewProps {
+  gym: GymConfig;
+  onGymUpdate?: (updatedGym: GymConfig) => void;
   stats: DashboardStats;
   members: Member[];
   transactions: Transaction[];
@@ -25,6 +29,8 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
+  gym,
+  onGymUpdate,
   stats,
   members,
   transactions,
@@ -69,6 +75,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   return (
     <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6">
+      {/* GYM HERO BANNER */}
+      <GymBanner gym={gym} onGymUpdate={onGymUpdate} />
+
       {/* PENDING FRONT DESK QR SELF-ENROLLMENTS BANNER */}
       {pendingEnrollments && pendingEnrollments.length > 0 && (
         <section className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-secondary/20 via-primary/15 to-[#4edea3]/20 border border-secondary/50 shadow-[0_0_35px_rgba(123,208,255,0.2)] flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">

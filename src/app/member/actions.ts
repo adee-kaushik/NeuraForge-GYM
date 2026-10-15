@@ -8,49 +8,136 @@ import { generatePassword, memberEmail } from '@/lib/member-auth';
 import { startOfDayIST } from '@/lib/format';
 import { setMemberSession, clearMemberSession } from '@/lib/member-session';
 import { getCurrentMember } from '@/lib/auth';
+import { ensureDatabaseSchema } from '@/lib/db-init';
 
 export type MemberLoginState = { error?: string; success?: boolean };
 
 export async function loginMember(_prev: MemberLoginState, formData: FormData): Promise<MemberLoginState> {
-  const gymCode = String(formData.get('gymCode') ?? '').trim().toLowerCase();
-  const rawMemberId = String(formData.get('memberCode') ?? '').trim();
+  try {
+    await ensureDatabaseSchema().catch(() => {});
 
-  if (!gymCode || !rawMemberId) {
-    return { error: 'Enter your gym code and member ID (phone number).' };
+    const rawGymCode = String(formData.get('gymCode') ?? '').trim();
+    const rawMemberId = String(formData.get('memberCode') ?? '').trim();
+
+    if (!rawGymCode || !rawMemberId) {
+      return { error: 'Please enter both your Gym Code and your registered Phone Number / Member ID.' };
+    }
+
+    const cleanGymCode = rawGymCode.toLowerCase();
+
+    // 1. Verify gym code exists (case-insensitive slug match or name match)
+    let gym = await prisma.gym.findFirst({
+      where: {
+        OR: [
+          { slug: { equals: cleanGymCode, mode: 'insensitive' } },
+          { name: { equals: rawGymCode, mode: 'insensitive' } },
+        ],
+      },
+    });
+
+    if (!gym) {
+      // Fallback: strip punctuation/spaces from slug (e.g. "iron-fitness" vs "ironfitness")
+      const allGyms = await prisma.gym.findMany({ select: { id: true, name: true, slug: true } });
+      const normalizedInput = cleanGymCode.replace(/[^a-z0-9]/g, '');
+      gym = (allGyms.find((g) => {
+        const normSlug = g.slug.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normName = g.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return normSlug === normalizedInput || normName === normalizedInput;
+      }) as any) || null;
+    }
+
+    if (!gym) {
+      return { error: `Invalid gym code "${rawGymCode}". Please verify your gym code with the front desk.` };
+    }
+
+    // 2. Member ID is phone number (clean last 10 digits) or memberCode
+    const cleanDigits = rawMemberId.replace(/\D/g, '').slice(-10);
+
+    let member = await prisma.member.findFirst({
+      where: {
+        gymId: gym.id,
+        OR: [
+          ...(cleanDigits && cleanDigits.length >= 7 ? [{ phone: { contains: cleanDigits } }] : []),
+          { memberCode: { equals: rawMemberId, mode: 'insensitive' } },
+          { phone: { equals: rawMemberId } },
+          { email: { equals: rawMemberId, mode: 'insensitive' } },
+        ],
+      },
+      include: { gym: true },
+    });
+
+    if (!member) {
+      // Robust fallback: search all members of this gym by normalized digits
+      const gymMembers = await prisma.member.findMany({
+        where: { gymId: gym.id },
+        include: { gym: true },
+      });
+
+      member =
+        gymMembers.find((m) => {
+          const mDigits = (m.phone || '').replace(/\D/g, '');
+          const inputDigits = rawMemberId.replace(/\D/g, '');
+          if (
+            inputDigits.length >= 7 &&
+            (mDigits.endsWith(inputDigits.slice(-10)) || inputDigits.endsWith(mDigits.slice(-10)))
+          ) {
+            return true;
+          }
+          if (m.memberCode && m.memberCode.trim().toLowerCase() === rawMemberId.toLowerCase()) {
+            return true;
+          }
+          if (m.email && m.email.trim().toLowerCase() === rawMemberId.toLowerCase()) {
+            return true;
+          }
+          return false;
+        }) || null;
+    }
+
+    if (!member) {
+      return {
+        error: `No member record found for "${rawMemberId}" under ${gym.name}. Please verify your phone number or speak with reception.`,
+      };
+    }
+
+    // 3. Strict Gym isolation: verify member belongs to THIS specific gym
+    if (member.gymId !== gym.id) {
+      return { error: 'Access denied. You can only access your own gym with your gym code.' };
+    }
+
+    // 4. Activate member session (direct signed HTTP-only cookie, 30 days)
+    await setMemberSession(member.id);
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Error during member login:', err);
+    return {
+      error: 'An unexpected connection error occurred while logging in. Please try again in a moment.',
+    };
   }
+}
 
-  // 1. Verify gym code exists and is unique to this gym
-  const gym = await prisma.gym.findUnique({ where: { slug: gymCode } });
-  if (!gym) {
-    return { error: 'Invalid gym code. Please check your gym code with your gym front desk.' };
+export async function updateMemberProfilePhoto(photoUrl: string): Promise<{ ok: boolean; error?: string }> {
+  const member = await getCurrentMember();
+  if (!member) return { ok: false, error: 'Please log in first.' };
+
+  try {
+    await prisma.member.update({
+      where: { id: member.id },
+      data: { photoUrl },
+    });
+    return { ok: true };
+  } catch {
+    try {
+      await prisma.$executeRawUnsafe(
+        `UPDATE "Member" SET "photoUrl" = $1 WHERE id = $2`,
+        photoUrl,
+        member.id
+      );
+      return { ok: true };
+    } catch (e: any) {
+      return { ok: false, error: e?.message || 'Could not update profile photo.' };
+    }
   }
-
-  // 2. Member ID is phone number (clean last 10 digits) or memberCode
-  const cleanDigits = rawMemberId.replace(/\D/g, '').slice(-10);
-  const member = await prisma.member.findFirst({
-    where: {
-      gymId: gym.id,
-      OR: [
-        ...(cleanDigits ? [{ phone: { contains: cleanDigits } }] : []),
-        { memberCode: rawMemberId.toUpperCase() },
-      ],
-    },
-    include: { gym: true },
-  });
-
-  if (!member) {
-    return { error: 'No member found with this ID or phone number in this gym. Verify your gym code and phone number.' };
-  }
-
-  // 3. Strict Gym isolation: verify member belongs to THIS specific gym
-  if (member.gymId !== gym.id) {
-    return { error: 'Access denied. You can only access your own gym with your gym code.' };
-  }
-
-  // 4. Activate member session (direct signed HTTP-only cookie, 30 days)
-  await setMemberSession(member.id);
-
-  return { success: true };
 }
 
 export type ResetPasswordResult = {

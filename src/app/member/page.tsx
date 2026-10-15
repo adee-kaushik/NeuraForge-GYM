@@ -5,7 +5,7 @@ import { getCurrentMember } from '@/lib/auth';
 import { inr, isSameDay, startOfDayIST } from '@/lib/format';
 import { statusFromDaysLeft } from '@/lib/mappers';
 import { DigitalPassCard } from '@/components/member/DigitalPassCard';
-import { MemberHeaderActions } from '@/components/member/MemberHeaderActions';
+import { MemberBannerHeader } from '@/components/member/MemberBannerHeader';
 import { MemberNav } from '@/components/member/MemberNav';
 import { MemberNotifications, type NotificationItem } from '@/components/member/MemberNotifications';
 import { MemberPaymentQrSection } from '@/components/member/MemberPaymentQrSection';
@@ -29,7 +29,7 @@ const sectionTitle = 'text-xs font-bold uppercase tracking-wider text-outline mb
 export const dynamic = 'force-dynamic';
 
 export default async function MemberPage() {
-  await ensureDatabaseSchema();
+  await ensureDatabaseSchema().catch(() => {});
   const member = await getCurrentMember();
   if (!member) redirect('/member/login');
 
@@ -60,43 +60,37 @@ export default async function MemberPage() {
     : null;
   const status = STATUS[daysLeft === null ? 'expired' : statusFromDaysLeft(daysLeft)];
   const pendingDue = pending._sum.amount ?? 0;
-  const hasCheckedInToday = visits.length > 0 && isSameDay(visits[0].checkedInAt, now);
+  const hasCheckedInToday = visits.length > 0 && visits[0]?.checkedInAt && isSameDay(visits[0].checkedInAt, now);
 
   const formattedReminders: NotificationItem[] = rawReminders.map((r) => ({
     id: r.id,
     title: r.title,
     message: r.message,
     type: r.type as NotificationItem['type'],
-    createdAt: r.createdAt.toLocaleDateString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      day: '2-digit',
-      month: 'short',
-    }),
+    createdAt: r.createdAt instanceof Date
+      ? r.createdAt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short' })
+      : String(r.createdAt || ''),
   }));
 
+  const gymName = member.gym?.name || 'Your Gym';
+  const gymSlug = member.gym?.slug || '';
+  const gymBannerUrl = (member.gym as any)?.bannerUrl || null;
+  const gymTagline = (member.gym as any)?.tagline || null;
+  const memberPhotoUrl = (member as any)?.photoUrl || null;
+
   return (
-    <main className="min-h-screen bg-background text-on-surface px-5 py-8 sm:py-10">
+    <main className="min-h-screen bg-background text-on-surface px-4 sm:px-6 py-6 sm:py-10">
       <div className="mx-auto w-full max-w-md space-y-6 sm:space-y-7">
-        {/* Top Header */}
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-outline">{member.gym.name}</span>
-              <span className="px-2 py-0.5 rounded-full bg-surface-container border border-surface-container-high text-[10px] font-mono text-secondary">
-                Code: {member.gym.slug}
-              </span>
-            </div>
-            <h1 className="font-sora text-2xl font-bold mt-1">Hi, {member.name.split(' ')[0]}</h1>
-            <p className="text-xs text-outline mt-1 font-mono">
-              Member ID (Phone): <span className="text-on-surface font-bold">{member.phone}</span>
-            </p>
-          </div>
-          <MemberHeaderActions
-            gymCode={member.gym.slug}
-            phone={member.phone}
-            memberName={member.name}
-          />
-        </header>
+        {/* Gym Banner & Member Profile Picture Header */}
+        <MemberBannerHeader
+          gymName={gymName}
+          gymSlug={gymSlug}
+          gymBannerUrl={gymBannerUrl}
+          gymTagline={gymTagline}
+          memberName={member.name || 'Member'}
+          memberPhone={member.phone || ''}
+          memberPhotoUrl={memberPhotoUrl}
+        />
 
         {/* Member Portal Navigation Tabs */}
         <MemberNav />
@@ -104,7 +98,7 @@ export default async function MemberPage() {
         {/* Notifications & Owner Reminders Alert Banner (Requirement 5) */}
         <MemberNotifications
           notifications={formattedReminders}
-          gymName={member.gym.name}
+          gymName={gymName}
           pendingDue={pendingDue}
           daysLeft={daysLeft}
           expiryDateStr={membership ? dateIST(membership.expiresAt) : 'N/A'}
@@ -112,16 +106,17 @@ export default async function MemberPage() {
 
         {/* Digital Biometric Pass & Optional QR Toggle (Requirement 4) */}
         <DigitalPassCard
-          gymSlug={member.gym.slug}
-          gymName={member.gym.name}
+          gymSlug={gymSlug}
+          gymName={gymName}
           memberCode={member.phone || member.memberCode}
-          memberName={member.name}
+          memberName={member.name || 'Member'}
           planName={membership ? membership.plan.name : 'No active plan'}
           expiryDateStr={membership ? dateIST(membership.expiresAt) : 'N/A'}
           daysLeft={daysLeft}
           statusLabel={status.label}
           statusStyle={status.style}
-          hasCheckedInToday={hasCheckedInToday}
+          hasCheckedInToday={Boolean(hasCheckedInToday)}
+          photoUrl={memberPhotoUrl}
         />
 
         {/* Active Plan Card */}
