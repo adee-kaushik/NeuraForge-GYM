@@ -52,6 +52,70 @@ export async function sendMemberReminder(
   return { ok: true };
 }
 
+export async function sendBulkMemberReminders(
+  memberIds: string[],
+  templateText?: string
+): Promise<{ ok: boolean; count: number; error?: string }> {
+  const staff = await requireStaff();
+
+  if (!memberIds || memberIds.length === 0) {
+    return { ok: false, count: 0, error: 'No members selected.' };
+  }
+
+  const members = await prisma.member.findMany({
+    where: {
+      id: { in: memberIds },
+      gymId: staff.gymId,
+    },
+    include: {
+      memberships: {
+        orderBy: { expiresAt: 'desc' },
+        take: 1,
+        include: { plan: true },
+      },
+    },
+  });
+
+  const remindersData = members.map((m) => {
+    const latest = m.memberships[0];
+    const planName = latest?.plan?.name || 'Membership Plan';
+    const expiryStr = latest
+      ? latest.expiresAt.toLocaleDateString('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })
+      : 'Soon';
+
+    const defaultMsg = `Hi ${m.name}, your ${staff.gym.name} (${planName}) membership is expiring on ${expiryStr}. Please renew to continue your workouts! 🏋️‍♂️💪`;
+
+    const message = templateText
+      ? templateText
+          .replace(/\{name\}/g, m.name)
+          .replace(/\{gym\}/g, staff.gym.name)
+          .replace(/\{plan\}/g, planName)
+          .replace(/\{expiryDate\}/g, expiryStr)
+      : defaultMsg;
+
+    return {
+      gymId: staff.gymId,
+      memberId: m.id,
+      title: 'Membership Renewal Reminder',
+      message,
+      type: 'EXPIRY',
+    };
+  });
+
+  if (remindersData.length > 0) {
+    await prisma.gymReminder.createMany({
+      data: remindersData,
+    });
+  }
+
+  return { ok: true, count: remindersData.length };
+}
+
 export async function broadcastGymAnnouncement(
   title: string,
   message: string

@@ -80,6 +80,12 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
   // Modals state
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isBulkWhatsAppOpen, setIsBulkWhatsAppOpen] = useState(false);
+  const [bulkWhatsAppTab, setBulkWhatsAppTab] = useState<import('./modals/BulkWhatsAppModal').CampaignType>('renewal');
+
+  const handleOpenBulkWhatsApp = (tab: import('./modals/BulkWhatsAppModal').CampaignType = 'renewal') => {
+    setBulkWhatsAppTab(tab);
+    setIsBulkWhatsAppOpen(true);
+  };
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
@@ -390,7 +396,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
                 onSelectMember={(m) => setSelectedMember(m)}
                 onOpenAddMember={() => setIsAddMemberOpen(true)}
                 onOpenImport={() => setIsImportOpen(true)}
-                onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
+                onOpenBulkWhatsApp={handleOpenBulkWhatsApp}
                 onSendSingleReminder={handleSendSingleReminder}
                 onWishBirthday={(m) => setWishingMember(m)}
                 gymSlug={gym.slug}
@@ -407,7 +413,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
                 members={members}
                 transactions={transactions}
                 checkIns={checkIns}
-                onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
+                onOpenBulkWhatsApp={handleOpenBulkWhatsApp}
                 onViewAllExpiring={() => setActiveScreen('members')}
                 onSelectMember={(m) => setSelectedMember(m)}
                 onSendSingleReminder={handleSendSingleReminder}
@@ -430,7 +436,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
               onSelectMember={(m) => setSelectedMember(m)}
               onOpenAddMember={() => setIsAddMemberOpen(true)}
               onOpenImport={() => setIsImportOpen(true)}
-              onOpenBulkWhatsApp={() => setIsBulkWhatsAppOpen(true)}
+              onOpenBulkWhatsApp={handleOpenBulkWhatsApp}
               onSendSingleReminder={handleSendSingleReminder}
               onWishBirthday={(m) => setWishingMember(m)}
               gymSlug={gym.slug}
@@ -539,6 +545,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
         gymName={gym.name}
         onClose={() => setIsBulkWhatsAppOpen(false)}
         members={members}
+        initialTab={bulkWhatsAppTab}
       />
 
       <MemberDetailModal

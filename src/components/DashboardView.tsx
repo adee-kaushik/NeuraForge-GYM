@@ -16,7 +16,7 @@ interface DashboardViewProps {
   members: Member[];
   transactions: Transaction[];
   checkIns: CheckInLog[];
-  onOpenBulkWhatsApp: () => void;
+  onOpenBulkWhatsApp: (tab?: 'renewal' | 'announcement') => void;
   onViewAllExpiring: () => void;
   onSelectMember: (member: Member) => void;
   onSendSingleReminder: (member: Member) => void;
@@ -191,10 +191,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-4 self-end sm:self-auto shrink-0">
+            <div className="flex items-center gap-2.5 self-end sm:self-auto shrink-0 flex-wrap">
               <button
-                onClick={onOpenBulkWhatsApp}
+                onClick={() => onOpenBulkWhatsApp('renewal')}
                 className="group flex items-center gap-1.5 min-h-[40px] px-3.5 py-2 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#15803d] font-bold text-xs sm:text-sm transition-all border border-[#25D366]/40 shadow-xs cursor-pointer"
+                title="Send automated bulk WhatsApp reminder with personalized name & plan"
               >
                 <span className="material-symbols-outlined text-base sm:text-lg">chat</span>
                 <span className="font-sans font-bold tracking-wide">
@@ -202,6 +203,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </span>
                 <span className="material-symbols-outlined text-sm group-hover:translate-x-0.5 transition-transform">
                   arrow_forward
+                </span>
+              </button>
+
+              <button
+                onClick={() => onOpenBulkWhatsApp('announcement')}
+                className="group flex items-center gap-1.5 min-h-[40px] px-3 py-2 rounded-xl bg-surface-container hover:bg-surface-container-high text-on-surface font-bold text-xs sm:text-sm transition-all border border-surface-container-highest shadow-xs cursor-pointer"
+                title="Broadcast Gym Notice to all active members"
+              >
+                <span className="material-symbols-outlined text-base sm:text-lg text-secondary">campaign</span>
+                <span className="font-sans font-bold tracking-wide">
+                  Gym Notice
                 </span>
               </button>
 
@@ -236,7 +248,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Priority follow-ups. Tap on any member to view details or send 1-tap WhatsApp renewal notice.
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5 flex-wrap">
+              <button
+                onClick={() => onOpenBulkWhatsApp('renewal')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#15803d] border border-[#25D366]/40 text-xs font-bold transition-all cursor-pointer shadow-xs"
+                title="Send bulk reminder to all expiring members"
+              >
+                <span className="material-symbols-outlined text-sm">chat</span>
+                <span>Send Bulk Reminder</span>
+              </button>
               <span className="px-3 py-1 rounded-full bg-error-container/30 text-error text-xs font-bold border border-error/30">
                 {stats.expiringThisWeek} EXPIRING THIS WEEK
               </span>
