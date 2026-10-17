@@ -19,6 +19,7 @@ interface HeaderProps {
   onNavigateScreen: (screen: ActiveScreen) => void;
   onOpenFeedback?: () => void;
   onOpenFrontDeskQr?: () => void;
+  onOpenRenewalModal?: () => void;
   pendingEnrollmentsCount?: number;
   gym?: GymConfig;
 }
@@ -43,6 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigateScreen,
   onOpenFeedback,
   onOpenFrontDeskQr,
+  onOpenRenewalModal,
   pendingEnrollmentsCount = 0,
   gym,
 }) => {
@@ -273,7 +275,11 @@ export const Header: React.FC<HeaderProps> = ({
                             onClick={(e) => {
                               e.stopPropagation();
                               setShowNotifications(false);
-                              setShowRenewalModal(true);
+                              if (onOpenRenewalModal) {
+                                onOpenRenewalModal();
+                              } else {
+                                setShowRenewalModal(true);
+                              }
                             }}
                             className="px-3 py-1.5 rounded-lg bg-secondary text-on-secondary hover:bg-secondary/90 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                           >

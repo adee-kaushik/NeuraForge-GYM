@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type { CurrentUser, GymConfig } from '@/config/gym';
 
 export interface GymRenewalModalProps {
@@ -78,12 +79,26 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
   gym,
   user,
 }) => {
+  const [mounted, setMounted] = useState(false);
   const [selectedTier, setSelectedTier] = useState<'BASE' | 'PRO'>('BASE');
   const [selectedPlanKey, setSelectedPlanKey] = useState<RenewalPlanKey>('base_6m');
   const [showQr, setShowQr] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !mounted) return null;
 
   const gymName = gym?.name || 'Your Gym';
   const ownerName = user?.name || 'Gym Owner';
@@ -118,23 +133,23 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
   };
 
   const upiPayUrl = `upi://pay?pa=${upiId}&pn=NeuraFitness&am=${currentPlan.price}&tn=${encodeURIComponent(`Renewal-${gymName}-${currentPlan.key}`)}&cu=INR`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(upiPayUrl)}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(upiPayUrl)}`;
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-black/85 backdrop-blur-md animate-in fade-in"
       role="dialog"
       aria-modal="true"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-2xl bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_60px_rgba(123,208,255,0.25)] overflow-hidden flex flex-col max-h-[92vh]"
+        className="relative w-full max-w-2xl sm:max-w-3xl bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_60px_rgba(123,208,255,0.25)] overflow-hidden flex flex-col max-h-[92vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header with Cross Button */}
-        <div className="px-5 py-4 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between">
+        <div className="px-5 py-4 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center border border-secondary/30">
+            <div className="w-10 h-10 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center border border-secondary/30 shrink-0">
               <span className="material-symbols-outlined text-2xl">autorenew</span>
             </div>
             <div>
@@ -147,7 +162,7 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
                 </span>
               </div>
               <p className="text-[11px] text-outline mt-0.5">
-                Keep biometric attendance turnstiles, digital pass scanning &amp; cloud member CRM active for {gymName}
+                Keep biometric attendance turnstiles, digital pass scanning &amp; cloud member CRM active for <span className="text-on-surface font-semibold">{gymName}</span>
               </p>
             </div>
           </div>
@@ -155,7 +170,7 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer shrink-0 ml-2"
             aria-label="Close"
           >
             <span className="material-symbols-outlined text-xl">close</span>
@@ -163,21 +178,21 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
         </div>
 
         {/* Modal Scrollable Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 text-xs">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs">
           {/* Tier Switcher Tabs: Base Plan vs Pro Plan */}
-          <div className="grid grid-cols-2 p-1.5 rounded-xl bg-surface-container-lowest border border-surface-container-high text-xs font-bold">
+          <div className="grid grid-cols-2 p-1 rounded-xl bg-surface-container-lowest border border-surface-container-high text-xs font-bold gap-1">
             <button
               type="button"
               onClick={() => handleSelectTier('BASE')}
-              className={`py-2.5 px-3 rounded-lg transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
+              className={`py-2 px-3 rounded-lg transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer text-center ${
                 selectedTier === 'BASE'
                   ? 'bg-secondary text-on-secondary shadow-md'
-                  : 'text-outline hover:text-on-surface'
+                  : 'text-outline hover:text-on-surface hover:bg-surface-container-low'
               }`}
             >
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 font-bold">
                 <span className="material-symbols-outlined text-base">verified</span>
-                <span>1. Base Plan</span>
+                <span>Base Plan</span>
               </div>
               <span className="text-[10px] font-normal opacity-90">
                 (No customization / modification)
@@ -187,15 +202,15 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
             <button
               type="button"
               onClick={() => handleSelectTier('PRO')}
-              className={`py-2.5 px-3 rounded-lg transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
+              className={`py-2 px-3 rounded-lg transition-all flex flex-col items-center justify-center gap-0.5 cursor-pointer text-center ${
                 selectedTier === 'PRO'
                   ? 'bg-primary text-on-primary shadow-md'
-                  : 'text-outline hover:text-on-surface'
+                  : 'text-outline hover:text-on-surface hover:bg-surface-container-low'
               }`}
             >
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 font-bold">
                 <span className="material-symbols-outlined text-base">star</span>
-                <span>2. Pro Plan</span>
+                <span>Pro Plan</span>
               </div>
               <span className="text-[10px] font-normal opacity-90">
                 (Customization &amp; personalization)
@@ -205,41 +220,47 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
 
           {/* Tier Description Badge */}
           <div
-            className={`p-3 rounded-xl border flex items-center gap-2.5 text-xs ${
+            className={`p-3 rounded-xl border flex items-start sm:items-center gap-2.5 text-xs ${
               selectedTier === 'BASE'
                 ? 'bg-secondary/10 border-secondary/30 text-on-surface'
                 : 'bg-primary/10 border-primary/30 text-on-surface'
             }`}
           >
-            <span className="material-symbols-outlined text-lg shrink-0 text-secondary">
+            <span className="material-symbols-outlined text-lg shrink-0 mt-0.5 sm:mt-0 text-secondary">
               {selectedTier === 'BASE' ? 'check_circle' : 'bolt'}
             </span>
             <div className="text-[11px] leading-relaxed">
               {selectedTier === 'BASE' ? (
                 <>
-                  <strong className="text-secondary">Base Plan:</strong> Full NeuraFitness SaaS suite with biometric turnstile sync, digital member passes, attendance tracking &amp; WhatsApp templates. <em>Standard ready-to-use software (no custom code changes).</em>
+                  <strong className="text-secondary font-bold">Base Plan:</strong> Full NeuraFitness SaaS suite with biometric turnstile sync, digital member passes, attendance tracking &amp; WhatsApp templates. <span className="text-outline">Standard ready-to-use software (no custom code changes).</span>
                 </>
               ) : (
                 <>
-                  <strong className="text-primary">Pro Plan:</strong> Complete NeuraFitness platform plus <em>bespoke software customization and gym personalization</em> to match your exact brand guidelines and specialized workflows.
+                  <strong className="text-primary font-bold">Pro Plan:</strong> Complete NeuraFitness platform plus <span className="text-primary font-semibold">bespoke software customization and gym personalization</span> to match your exact brand guidelines and specialized workflows.
                 </>
               )}
             </div>
           </div>
 
           {/* Plan Options Grid */}
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             <label className="block text-[11px] font-bold uppercase tracking-wider text-outline">
               Select Plan Duration
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div
+              className={`grid gap-3 ${
+                selectedTier === 'BASE'
+                  ? 'grid-cols-1 sm:grid-cols-3'
+                  : 'grid-cols-1 sm:grid-cols-2 max-w-xl mx-auto w-full'
+              }`}
+            >
               {activePlans.map((plan) => {
                 const isSelected = selectedPlanKey === plan.key;
                 return (
                   <div
                     key={plan.key}
                     onClick={() => setSelectedPlanKey(plan.key)}
-                    className={`p-4 rounded-xl border transition-all cursor-pointer relative flex flex-col justify-between ${
+                    className={`p-3.5 sm:p-4 rounded-xl border transition-all cursor-pointer relative flex flex-col justify-between ${
                       isSelected
                         ? selectedTier === 'BASE'
                           ? 'border-secondary bg-secondary/15 ring-2 ring-secondary/40 shadow-md'
@@ -248,7 +269,7 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
                     }`}
                   >
                     {plan.popular && (
-                      <span className="absolute -top-2.5 right-3 px-2 py-0.2 rounded-full bg-secondary text-on-secondary text-[9px] font-black uppercase tracking-wider">
+                      <span className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full bg-secondary text-on-secondary text-[9px] font-black uppercase tracking-wider shadow-xs">
                         Popular
                       </span>
                     )}
@@ -256,7 +277,7 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
                       <h4 className="font-sora font-bold text-sm text-on-surface">{plan.name}</h4>
                       <p className="text-[10px] text-outline mt-0.5">{plan.durationLabel}</p>
 
-                      <div className="mt-2.5">
+                      <div className="mt-2 flex items-baseline gap-1">
                         <span className="font-sora text-xl font-extrabold text-on-surface">
                           ₹{plan.price.toLocaleString('en-IN')}
                         </span>
@@ -270,7 +291,7 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
                       )}
                     </div>
 
-                    <div className="mt-3 pt-2.5 border-t border-surface-container-high/60 text-[10px] font-semibold text-outline">
+                    <div className="mt-3 pt-2 border-t border-surface-container-high/60 text-[10px] font-semibold text-outline">
                       {plan.customizationText}
                     </div>
                   </div>
@@ -281,7 +302,7 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
 
           {/* Summary & Payment Options */}
           <div className="p-4 rounded-xl bg-surface-container-lowest border border-surface-container-high space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
                 <span className="text-[10px] uppercase font-bold tracking-wider text-outline block">
                   Selected Subscription
@@ -295,7 +316,7 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
                   </p>
                 )}
               </div>
-              <div className="text-right">
+              <div className="sm:text-right">
                 <span className="text-[10px] uppercase font-bold tracking-wider text-outline block">
                   Amount Payable
                 </span>
@@ -319,9 +340,9 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
               <button
                 type="button"
                 onClick={handleCopyUpi}
-                className="text-[11px] text-outline hover:text-on-surface font-mono flex items-center gap-1 cursor-pointer"
+                className="text-[11px] text-outline hover:text-on-surface font-mono flex items-center gap-1 cursor-pointer px-2 py-1 rounded bg-surface-container-low hover:bg-surface-container transition-colors"
               >
-                <span>UPI ID: {upiId}</span>
+                <span>UPI ID: <strong className="text-on-surface">{upiId}</strong></span>
                 <span className="material-symbols-outlined text-xs">
                   {copiedUpi ? 'check' : 'content_copy'}
                 </span>
@@ -343,7 +364,7 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
                     Google Pay, PhonePe, Paytm, or BHIM. Amount ₹{currentPlan.price.toLocaleString('en-IN')} will auto-fill.
                   </p>
                   <p className="text-[10px] text-secondary font-bold">
-                    After payment, click &quot;Confirm on WhatsApp&quot; below for instant activation.
+                    After payment, click &quot;Confirm &amp; Renew on WhatsApp&quot; below for instant activation.
                   </p>
                 </div>
               </div>
@@ -351,28 +372,28 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+          <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="w-full sm:w-auto px-4 py-2 rounded-xl text-outline hover:text-on-surface text-xs font-bold cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-surface-container-high text-outline hover:text-on-surface text-xs font-bold cursor-pointer transition-colors text-center"
             >
-              Cancel
+              Close
             </button>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={handleWhatsAppRenew}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-base">chat</span>
-                <span>Confirm &amp; Renew on WhatsApp</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleWhatsAppRenew}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-base">chat</span>
+              <span>Confirm &amp; Renew on WhatsApp</span>
+            </button>
           </div>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };

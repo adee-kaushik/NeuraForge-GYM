@@ -32,6 +32,7 @@ import { QuickSearchModal } from './QuickSearchModal';
 import { SendBirthdayWishModal } from './modals/SendBirthdayWishModal';
 import { FrontDeskQrModal } from './modals/FrontDeskQrModal';
 import { PendingEnrollmentsModal } from './modals/PendingEnrollmentsModal';
+import { GymRenewalModal } from './modals/GymRenewalModal';
 import { getPendingEnrollments } from '@/actions/enrollments';
 import { getSupplementsAndSales } from '@/actions/supplements';
 import { getWorkoutAndDietPlans } from '@/actions/workout-plans';
@@ -99,6 +100,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
   // Front Desk QR & Pending Self-Enrollments state
   const [isFrontDeskQrOpen, setIsFrontDeskQrOpen] = useState(false);
   const [isPendingEnrollmentsOpen, setIsPendingEnrollmentsOpen] = useState(false);
+  const [isRenewalOpen, setIsRenewalOpen] = useState(false);
   const [pendingEnrollments, setPendingEnrollments] = useState<EnrollmentRecord[]>([]);
 
   // Instant POS & Workout/Diet Plans Cache
@@ -408,6 +410,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
           onNavigateScreen={setActiveScreen}
           onOpenFeedback={() => setIsFeedbackModalOpen(true)}
           onOpenFrontDeskQr={() => setIsFrontDeskQrOpen(true)}
+          onOpenRenewalModal={() => setIsRenewalOpen(true)}
           pendingEnrollmentsCount={pendingEnrollments.length}
           gym={gym}
         />
@@ -653,6 +656,14 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
           window.location.reload();
         }}
         showToast={showToast}
+      />
+
+      {/* Gym Owner SaaS Subscription Renewal Modal */}
+      <GymRenewalModal
+        isOpen={isRenewalOpen}
+        onClose={() => setIsRenewalOpen(false)}
+        gym={gym}
+        user={currentUser}
       />
     </div>
   );
