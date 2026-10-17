@@ -16,12 +16,51 @@ export function ensureDatabaseSchema(): Promise<void> {
         `ALTER TABLE "Member" ADD COLUMN IF NOT EXISTS "bmi" DOUBLE PRECISION`,
         `ALTER TABLE "Member" ADD COLUMN IF NOT EXISTS "bmiCategory" TEXT`,
         `ALTER TABLE "Member" ADD COLUMN IF NOT EXISTS "photoUrl" TEXT`,
+        `ALTER TABLE "Member" ADD COLUMN IF NOT EXISTS "biometricId" INTEGER`,
         `ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "avatarUrl" TEXT`,
         `ALTER TABLE "Gym" ADD COLUMN IF NOT EXISTS "bannerUrl" TEXT`,
         `ALTER TABLE "Gym" ADD COLUMN IF NOT EXISTS "tagline" TEXT`,
         `ALTER TABLE "Gym" ADD COLUMN IF NOT EXISTS "clearedPrefilledPlans" BOOLEAN DEFAULT false`,
+        `ALTER TABLE "Gym" ADD COLUMN IF NOT EXISTS "biometricKeyHash" TEXT`,
+        `ALTER TABLE "Gym" ADD COLUMN IF NOT EXISTS "attendanceMode" TEXT DEFAULT 'QR'`,
         `ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "discountAmount" INTEGER DEFAULT 0`,
         `ALTER TABLE "Payment" ADD COLUMN IF NOT EXISTS "notes" TEXT`,
+
+        `CREATE TABLE IF NOT EXISTS "Device" (
+          "id"           TEXT PRIMARY KEY,
+          "gymId"        TEXT NOT NULL,
+          "serialNumber" TEXT NOT NULL,
+          "name"         TEXT NOT NULL,
+          "protocol"     TEXT NOT NULL DEFAULT 'ADMS',
+          "isActive"     BOOLEAN NOT NULL DEFAULT true,
+          "lastSeenAt"   TIMESTAMP(3),
+          "lastIp"       TEXT,
+          "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS "BiometricPunch" (
+          "id"           TEXT PRIMARY KEY,
+          "gymId"        TEXT NOT NULL,
+          "deviceSerial" TEXT NOT NULL DEFAULT '',
+          "pin"          TEXT NOT NULL,
+          "memberId"     TEXT,
+          "punchedAt"    TIMESTAMP(3) NOT NULL,
+          "verifyType"   TEXT,
+          "verifyCode"   INTEGER,
+          "source"       TEXT NOT NULL DEFAULT 'ADMS',
+          "result"       TEXT NOT NULL,
+          "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`,
+
+        `CREATE TABLE IF NOT EXISTS "BiometricLog" (
+          "id"           TEXT PRIMARY KEY,
+          "gymId"        TEXT,
+          "deviceSerial" TEXT,
+          "kind"         TEXT NOT NULL,
+          "summary"      TEXT NOT NULL,
+          "rawPreview"   TEXT,
+          "createdAt"    TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )`,
 
         `CREATE TABLE IF NOT EXISTS "Supplement" (
           "id" TEXT PRIMARY KEY,

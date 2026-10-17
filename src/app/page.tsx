@@ -9,8 +9,11 @@ export const dynamic = 'force-dynamic';
 
 export default async function Page() {
   // Logged-in owner/staff get the dashboard. Everyone else sees the public landing page.
-  const staff = await getCurrentStaff();
-  if (!staff) return <Landing />;
+  const staff = await getCurrentStaff().catch((err) => {
+    console.error('getCurrentStaff error:', err);
+    return null;
+  });
+  if (!staff || !staff.gym) return <Landing />;
 
   try {
     const [plans, members, transactions, checkIns] = await Promise.all([

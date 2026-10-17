@@ -45,6 +45,7 @@ model Gym {
   tagline            String?
   attendanceMode     AttendanceMode @default(QR)
   biometricKeyHash   String?  // SHA-256 of the gym's API key (LAN bridge / REST); plain key is shown once
+  clearedPrefilledPlans Boolean? @default(false)
   saasPlan           String   @default("TRIAL_14_DAYS")
   saasStatus         String   @default("ACTIVE") // PENDING_APPROVAL, ACTIVE, TRIAL, EXPIRED, SUSPENDED
   saasExpiresAt      DateTime?

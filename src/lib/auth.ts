@@ -24,13 +24,19 @@ const getAuthUserId = cache(async (): Promise<string | null> => {
 // Returns the logged-in owner/staff user (with their gym), or null.
 // A removed staff member has no User row, so they lose access immediately even if their token is still valid.
 export const getCurrentStaff = cache(async () => {
+  await ensureDatabaseSchema().catch(() => {});
   const authUserId = await getAuthUserId();
   if (!authUserId) return null;
 
-  return prisma.user.findUnique({
-    where: { authUserId },
-    include: { gym: true },
-  });
+  try {
+    return await prisma.user.findUnique({
+      where: { authUserId },
+      include: { gym: true },
+    });
+  } catch (error) {
+    console.error('getCurrentStaff error:', error);
+    return null;
+  }
 });
 
 // For server actions: the logged-in owner/staff, or an error.
