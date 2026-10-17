@@ -215,13 +215,9 @@ export default function Landing() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('base_1y');
   const [selectedTierTab, setSelectedTierTab] = useState<'base' | 'pro'>('base');
-  const [selectedCoupon, setSelectedCoupon] = useState<string>('');
 
-  const handleOpenPlan = (p: PlanType, couponCode?: string) => {
+  const handleOpenPlan = (p: PlanType) => {
     setSelectedPlan(p);
-    if (couponCode) {
-      setSelectedCoupon(couponCode);
-    }
     setModalOpen(true);
   };
 
@@ -685,7 +681,6 @@ export default function Landing() {
       <SubscriptionModal
         isOpen={modalOpen}
         selectedPlan={selectedPlan}
-        initialCouponCode={selectedCoupon}
         onClose={() => setModalOpen(false)}
       />
     </div>

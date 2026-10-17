@@ -3,8 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useState, useActionState } from 'react';
 import { signupOwner, checkIsFirstCustomer, type SignupState } from './actions';
-import { checkCoupon } from '@/app/actions/coupon';
-import { type CouponDefinition, BASE_SETUP_FEE } from '@/lib/coupons';
 
 const initialState: SignupState = {};
 
@@ -29,24 +27,12 @@ export default function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isFirstCustomer, setIsFirstCustomer] = useState(true);
 
-  // Coupon state
-  const [couponCodeInput, setCouponCodeInput] = useState('');
-  const [appliedCoupon, setAppliedCoupon] = useState<CouponDefinition | null>(null);
-  const [couponError, setCouponError] = useState('');
-  const [couponLoading, setCouponLoading] = useState(false);
-
   useEffect(() => {
     checkIsFirstCustomer().then(setIsFirstCustomer);
-    // Check if plan or coupon query is in URL
     const searchParams = new URLSearchParams(window.location.search);
     const p = searchParams.get('plan') as SignupPlanType | null;
     if (p) {
       setPlan(p);
-    }
-    const c = searchParams.get('coupon');
-    if (c) {
-      setCouponCodeInput(c.toUpperCase());
-      handleApplyCoupon(c.toUpperCase());
     }
   }, []);
 
@@ -60,36 +46,7 @@ export default function SignupPage() {
     }
   }, [state.success, state.whatsappUrl, state.requiresPayment]);
 
-  const handleApplyCoupon = async (codeToTry?: string) => {
-    const code = (codeToTry || couponCodeInput).trim().toUpperCase();
-    if (!code) {
-      setCouponError('Enter a coupon code.');
-      return;
-    }
-    setCouponLoading(true);
-    setCouponError('');
-    try {
-      const res = await checkCoupon(code);
-      if (res.valid && res.coupon) {
-        setAppliedCoupon(res.coupon);
-        setCouponCodeInput(res.coupon.code);
-        setCouponError('');
-      } else {
-        setAppliedCoupon(null);
-        setCouponError(res.error || 'Invalid or expired coupon.');
-      }
-    } catch {
-      setCouponError('Could not verify coupon.');
-    } finally {
-      setCouponLoading(false);
-    }
-  };
 
-  const handleRemoveCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponCodeInput('');
-    setCouponError('');
-  };
 
   const isBusy = pending || Boolean(state.success);
 
@@ -311,95 +268,6 @@ export default function SignupPage() {
                   ? 'Start with full cloud access. Upgrade to Base or Pro plan anytime.'
                   : 'Includes turnstile biometric integration, WhatsApp automation, and cloud member pass sync.'}
               </p>
-
-              {/* Coupon Code Section */}
-              <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container-high space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-bold uppercase tracking-wider text-outline flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm text-secondary">confirmation_number</span>
-                    Coupons (Valid till Dec 31, 2026)
-                  </label>
-                  <span className="text-[10px] text-outline font-semibold">Max 5 uses per coupon</span>
-                </div>
-
-                {appliedCoupon ? (
-                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-tertiary/10 border border-tertiary/30">
-                    <div className="flex items-center gap-2">
-                      <span className="material-symbols-outlined text-tertiary text-base">verified</span>
-                      <div>
-                        <span className="font-bold text-xs text-on-surface block">
-                          {appliedCoupon.code} Applied ({appliedCoupon.badge})
-                        </span>
-                        <span className="text-[10px] text-tertiary font-semibold">
-                          ₹{appliedCoupon.discountAmount.toLocaleString('en-IN')} saved on one-time setup fee
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleRemoveCoupon}
-                      className="text-xs text-error font-bold hover:underline px-2 py-1 rounded cursor-pointer"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={couponCodeInput}
-                        onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
-                        placeholder="Enter SETUP50, SETUP30, or SETUP10"
-                        className="flex-1 bg-surface-container-lowest border border-surface-container-high focus:border-secondary rounded-xl px-3 py-2 text-xs text-on-surface uppercase tracking-wider font-semibold focus:outline-none"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            handleApplyCoupon();
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleApplyCoupon()}
-                        disabled={couponLoading || !couponCodeInput.trim()}
-                        className="px-4 py-2 rounded-xl bg-secondary text-on-secondary font-bold text-xs hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer shrink-0"
-                      >
-                        {couponLoading ? 'Checking...' : 'Apply Coupon'}
-                      </button>
-                    </div>
-
-                    {couponError && (
-                      <p className="text-[11px] font-semibold text-error flex items-center gap-1">
-                        <span className="material-symbols-outlined text-xs">info</span>
-                        {couponError}
-                      </p>
-                    )}
-
-                    {/* Quick-Apply Chips */}
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                      <span className="text-[10px] text-outline font-medium mr-1">Quick Apply:</span>
-                      {[
-                        { code: 'SETUP50', label: 'SETUP50 (50% Off)' },
-                        { code: 'SETUP30', label: 'SETUP30 (30% Off)' },
-                        { code: 'SETUP10', label: 'SETUP10 (10% Off)' },
-                      ].map((c) => (
-                        <button
-                          key={c.code}
-                          type="button"
-                          onClick={() => {
-                            setCouponCodeInput(c.code);
-                            handleApplyCoupon(c.code);
-                          }}
-                          className="px-2 py-0.5 rounded-lg border border-surface-container-highest bg-surface-container text-[10px] font-bold text-on-surface-variant hover:border-secondary hover:text-secondary transition-all cursor-pointer"
-                        >
-                          {c.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
             </>
           )}
 

@@ -43,7 +43,6 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
   const email = String(formData.get('email') ?? '').trim().toLowerCase();
   const phone = String(formData.get('phone') ?? '').trim();
   const password = String(formData.get('password') ?? '');
-  const couponCode = String(formData.get('couponCode') ?? '').trim();
 
   let plan = String(formData.get('plan') ?? 'monthly').trim();
   if (!['trial', 'monthly', '6months', '1year', 'pilot'].includes(plan)) {
@@ -138,10 +137,7 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
       },
     });
 
-    if (couponCode && !isFirstCustomer) {
-      const { recordCouponUsage } = await import('@/lib/coupons');
-      await recordCouponUsage(couponCode, slug);
-    }
+
   } catch {
     try {
       await admin.auth.admin.deleteUser(authUserId);
