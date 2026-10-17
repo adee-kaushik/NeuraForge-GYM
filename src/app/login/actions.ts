@@ -57,8 +57,24 @@ export async function loginAdmin(_prev: LoginState, formData: FormData): Promise
   return { success: true };
 }
 
+import { cookies } from 'next/headers';
+
 export async function logout() {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  try {
+    const cookieStore = await cookies();
+    for (const cookie of cookieStore.getAll()) {
+      if (cookie.name.includes('-auth-token') || cookie.name.includes('supabase') || cookie.name.includes('sb-')) {
+        cookieStore.delete(cookie.name);
+      }
+    }
+  } catch (err) {
+    console.error('Logout cookie clear error:', err);
+  }
+
+  try {
+    const supabase = await createClient();
+    supabase.auth.signOut().catch(() => {});
+  } catch {}
+
   redirect('/login');
 }

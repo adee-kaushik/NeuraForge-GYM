@@ -53,7 +53,28 @@ export const Header: React.FC<HeaderProps> = ({
   const [showRenewalModal, setShowRenewalModal] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string | null>(user.avatarUrl || null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const ownerFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleSignOut = async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      if (typeof document !== 'undefined') {
+        document.cookie.split(';').forEach((c) => {
+          const name = c.split('=')[0].trim();
+          if (name.includes('auth-token') || name.includes('supabase') || name.includes('sb-')) {
+            document.cookie = `${name}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+          }
+        });
+      }
+      await logout();
+    } catch {
+      // In case logout throws NEXT_REDIRECT or error, proceed to login
+    } finally {
+      window.location.href = '/login';
+    }
+  };
 
   const isMembershipRelated = (m: AdminMessageItem) => {
     const text = `${m.title} ${m.message}`.toLowerCase();
@@ -505,15 +526,21 @@ export const Header: React.FC<HeaderProps> = ({
                   )}
                 </div>
 
-                <form action={logout} className="pt-2">
+                <div className="pt-2">
                   <button
-                    type="submit"
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-error hover:bg-error-container/30 transition-colors cursor-pointer"
+                    type="button"
+                    onClick={handleSignOut}
+                    disabled={isLoggingOut}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-error hover:bg-error-container/30 transition-colors cursor-pointer disabled:opacity-60"
                   >
-                    <span className="material-symbols-outlined text-lg">logout</span>
-                    <span>Sign out of Gym OS</span>
+                    {isLoggingOut ? (
+                      <span className="material-symbols-outlined text-lg animate-spin">progress_activity</span>
+                    ) : (
+                      <span className="material-symbols-outlined text-lg">logout</span>
+                    )}
+                    <span>{isLoggingOut ? 'Signing out...' : 'Sign out'}</span>
                   </button>
-                </form>
+                </div>
               </div>
             </>
           )}
