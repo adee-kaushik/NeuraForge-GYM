@@ -725,7 +725,15 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({
       {/* Instant Digital Receipt Modal */}
       {receiptSale && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-surface-container-lowest border border-surface-container-high rounded-2xl p-6 text-center space-y-4 shadow-2xl animate-in zoom-in-95">
+          <div className="relative w-full max-w-sm bg-surface-container-lowest border border-surface-container-high rounded-2xl p-6 text-center space-y-4 shadow-2xl animate-in zoom-in-95">
+            <button
+              type="button"
+              onClick={() => setReceiptSale(null)}
+              className="absolute top-4 right-4 text-outline hover:text-on-surface p-1 rounded-lg hover:bg-surface-container transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
             <div className="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center">
               <span className="material-symbols-outlined text-2xl">check_circle</span>
             </div>

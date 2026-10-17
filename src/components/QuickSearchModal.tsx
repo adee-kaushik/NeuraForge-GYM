@@ -51,9 +51,19 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({
             placeholder="Search by member name or phone number"
             className="flex-1 bg-transparent border-none text-sm text-on-surface placeholder-outline focus:outline-none"
           />
-          <span className="px-2 py-0.5 rounded bg-surface-container-high text-xs font-bold text-on-surface-variant border border-surface-container-highest">
-            ESC to close
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="hidden sm:inline-block px-2 py-0.5 rounded bg-surface-container-high text-xs font-bold text-on-surface-variant border border-surface-container-highest">
+              ESC to close
+            </span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
+              aria-label="Close"
+            >
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+          </div>
         </div>
 
         {/* Results List */}

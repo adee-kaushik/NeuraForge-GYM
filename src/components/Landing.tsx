@@ -63,8 +63,8 @@ const features = [
 const steps = [
   {
     number: '01',
-    title: 'Select a plan or 1-month trial',
-    text: 'Activate your 1-month free trial or choose a 6-month or 1-year license with biometric integration.',
+    title: 'Select Base or Pro Plan',
+    text: 'Choose our Base plan (1-month demo, 6-month or 1-year) or Pro plan with included custom personalization.',
   },
   {
     number: '02',
@@ -78,7 +78,7 @@ const steps = [
   },
 ];
 
-// Unified services across all plans: only duration and price differ
+// Unified services across all plans
 const unifiedPlanFeatures = [
   'Unlimited Gym Members & Staff Accounts',
   'Biometric Terminal & Turnstile Sync (eSSL, ZKTeco, Mantra)',
@@ -88,79 +88,111 @@ const unifiedPlanFeatures = [
   'Complete Member History Migration from Old Software / Excel',
 ];
 
+interface PlanCardData {
+  id: PlanType;
+  name: string;
+  tier: 'Base' | 'Pro';
+  badge: string;
+  price: string;
+  period: string;
+  bonusText?: string;
+  customizationText: string;
+  effectiveNote: string;
+  description: string;
+  features: string[];
+  btnText: string;
+  popular?: boolean;
+}
 
-const pricingPlans = [
+const basePlanCards: PlanCardData[] = [
   {
-    id: 'monthly' as PlanType,
-    name: 'Monthly Plan',
-    badge: 'Flexible · Monthly',
-    price: '₹599',
-    period: '/ month',
-    effective: 'Billed monthly',
-    setupFee: '+ ₹10,000 One-Time Customization Fee',
-    description: 'Flexible monthly cloud license with all features unlocked, turnstile & WhatsApp automation.',
+    id: 'base_1m',
+    name: '1 Month Demo',
+    tier: 'Base',
+    badge: 'Demo Access',
+    price: '₹999',
+    period: 'for 1 month',
+    customizationText: 'No customization / modification',
+    effectiveNote: 'Full demo access for your gym',
+    description: '1 month full cloud demo to test all features with your gym staff and live members.',
     features: unifiedPlanFeatures,
-    mandateNote:
-      'Base total: ₹10,599 (₹599 Plan + ₹10,000 Customization). Apply coupon below for up to 50% OFF customization fee!',
-    btnText: 'Choose Monthly (₹599/mo)',
+    btnText: 'Start 1 Month Demo (₹999)',
     popular: false,
   },
   {
-    id: '6months' as PlanType,
-    name: 'Semi-Annual Plan',
-    badge: '6 Months License',
-    price: '₹3,499',
+    id: 'base_6m',
+    name: '6 Months License',
+    tier: 'Base',
+    badge: '6 Mo + 1 Mo Free Demo',
+    price: '₹2,399',
     period: 'for 6 months',
-    effective: 'Effective ₹583 / month',
-    setupFee: '+ ₹10,000 One-Time Customization Fee',
-    description: 'Semi-annual cloud license for growing gyms with full biometric and WhatsApp automation.',
+    bonusText: '+ 1 Month Free Demo',
+    customizationText: 'No customization / modification',
+    effectiveNote: '7 Months total access · Effective ₹342/mo',
+    description: 'Semi-annual cloud license for growing gyms with automated WhatsApp renewals & biometric sync.',
     features: unifiedPlanFeatures,
-    mandateNote:
-      'Base total: ₹13,499 (₹3,499 Plan + ₹10,000 Customization). Apply coupon below for up to 50% OFF customization fee!',
-    btnText: 'Choose 6 Months (₹3,499)',
+    btnText: 'Choose 6 Months (₹2,399)',
     popular: false,
   },
   {
-    id: '1year' as PlanType,
-    name: 'Annual License',
-    badge: 'Best Value · 15% OFF',
-    price: '₹6,109',
-    period: 'for 1 yr (15% off)',
-    effective: 'Effective ₹509 / month (Save ₹1,079)',
-    setupFee: '+ ₹10,000 One-Time Customization Fee',
-    description: 'Our flagship plan for gym owners who want maximum savings, custom branding, and priority support.',
+    id: 'base_1y',
+    name: '1 Year License',
+    tier: 'Base',
+    badge: 'Best Value · 1 Yr + 1 Mo Free Demo',
+    price: '₹3,499',
+    period: 'for 1 year',
+    bonusText: '+ 1 Month Free Demo',
+    customizationText: 'No customization / modification',
+    effectiveNote: '13 Months total access · Effective ₹269/mo',
+    description: 'Full year cloud license with maximum savings, full biometric sync, and GST invoicing.',
     features: unifiedPlanFeatures,
-    mandateNote:
-      'Base total: ₹16,109 (₹6,109 Plan + ₹10,000 Customization). Apply coupon below for up to 50% OFF customization fee!',
-    btnText: 'Choose 1 Year (15% OFF)',
+    btnText: 'Choose 1 Year (₹3,499)',
     popular: true,
   },
 ];
 
-const promotionalCoupons = [
+const proPlanCards: PlanCardData[] = [
   {
-    code: 'SETUP50',
-    discount: '50% OFF',
-    saveText: 'Save ₹5,000',
-    remainingFee: '₹5,000',
-    tag: 'Highest Savings',
-    color: 'border-secondary/40 bg-secondary/10 text-secondary',
+    id: 'pro_6m',
+    name: '6 Months Pro',
+    tier: 'Pro',
+    badge: '1 Customization Free',
+    price: '₹3,499',
+    period: 'for 6 months',
+    bonusText: '⭐ 1 Customization Free Included',
+    customizationText: 'Customization & Personalization',
+    effectiveNote: 'Tailored features + Personalization included',
+    description: 'Semi-annual pro license with 1 bespoke software customization and gym personalization included.',
+    features: [
+      'Everything in Base Plan included',
+      '1 Free Customization & Personalization included',
+      'Custom Brand Styling & Member Pass Theme',
+      'Priority Turnstile & Biometric ADMS Support',
+      'Dedicated WhatsApp Integration Assistance',
+    ],
+    btnText: 'Choose Pro 6 Months (₹3,499)',
+    popular: false,
   },
   {
-    code: 'SETUP30',
-    discount: '30% OFF',
-    saveText: 'Save ₹3,000',
-    remainingFee: '₹7,000',
-    tag: 'Popular Choice',
-    color: 'border-tertiary/40 bg-tertiary/10 text-tertiary',
-  },
-  {
-    code: 'SETUP10',
-    discount: '10% OFF',
-    saveText: 'Save ₹1,000',
-    remainingFee: '₹9,000',
-    tag: 'Instant Discount',
-    color: 'border-outline/40 bg-surface-container text-on-surface-variant',
+    id: 'pro_1y',
+    name: '1 Year Pro',
+    tier: 'Pro',
+    badge: '2 Customizations Free · Elite',
+    price: '₹5,499',
+    period: 'for 1 year',
+    bonusText: '⭐ 2 Customizations Free Included',
+    customizationText: 'Customization & Personalization',
+    effectiveNote: 'Tailored features + Personalization included',
+    description: 'Our flagship tier for gyms wanting tailored workflows, 2 bespoke customizations, and priority engineering.',
+    features: [
+      'Everything in Base Plan included',
+      '2 Free Customizations & Personalizations included',
+      'Full Gym Branding & Custom Feature Enhancements',
+      'Direct Developer White-glove Onboarding',
+      'Priority 24/7 SLA Support',
+    ],
+    btnText: 'Choose Pro 1 Year (₹5,499)',
+    popular: true,
   },
 ];
 
@@ -172,7 +204,7 @@ const jsonLd = {
   applicationCategory: 'BusinessApplication',
   offers: {
     '@type': 'Offer',
-    price: '0',
+    price: '999',
     priceCurrency: 'INR',
   },
   description:
@@ -181,9 +213,9 @@ const jsonLd = {
 
 export default function Landing() {
   const [modalOpen, setModalOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<PlanType>('1year');
+  const [selectedPlan, setSelectedPlan] = useState<PlanType>('base_1y');
+  const [selectedTierTab, setSelectedTierTab] = useState<'base' | 'pro'>('base');
   const [selectedCoupon, setSelectedCoupon] = useState<string>('');
-  const [copiedCoupon, setCopiedCoupon] = useState<string>('');
 
   const handleOpenPlan = (p: PlanType, couponCode?: string) => {
     setSelectedPlan(p);
@@ -191,18 +223,6 @@ export default function Landing() {
       setSelectedCoupon(couponCode);
     }
     setModalOpen(true);
-  };
-
-  const handleApplyCouponFromCard = (couponCode: string) => {
-    setSelectedCoupon(couponCode);
-    setSelectedPlan('1year');
-    setModalOpen(true);
-  };
-
-  const handleCopyCode = (code: string) => {
-    navigator.clipboard?.writeText(code);
-    setCopiedCoupon(code);
-    setTimeout(() => setCopiedCoupon(''), 2000);
   };
 
   return (
@@ -278,7 +298,7 @@ export default function Landing() {
                 href="#pricing"
                 className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-primary text-on-primary text-sm sm:text-base font-bold shadow-md hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
-                <span>View Plans (From ₹599/mo)</span>
+                <span>View Plans (From ₹999)</span>
                 <span className="material-symbols-outlined text-lg">arrow_downward</span>
               </a>
 
@@ -312,124 +332,103 @@ export default function Landing() {
 
         {/* PRICING & SUBSCRIPTION PLANS SECTION */}
         <section id="pricing" className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-24 border-t border-surface-container-high scroll-mt-12">
-          <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
+          <div className="text-center max-w-3xl mx-auto mb-10 sm:mb-12">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary/15 text-secondary text-xs font-bold uppercase tracking-wider mb-3">
               <span className="material-symbols-outlined text-sm">sell</span>
               Gym Owner Subscriptions
             </div>
             <h2 className="font-sora text-2xl sm:text-4xl font-extrabold text-on-surface">
-              Simple, Transparent Plans with Identical Features
+              Simple, Transparent Pricing Built for Gyms
             </h2>
             <p className="mt-3 text-sm sm:text-base text-on-surface-variant">
-              Every plan includes the exact same complete suite: biometrics, turnstile hardware sync, WhatsApp automation, and GST billing. Only duration and price differ.
+              Select between our turnkey <strong className="text-on-surface">Base Plan</strong> (standard software, no modifications) or <strong className="text-on-surface">Pro Plan</strong> (includes free customizations and full brand personalization).
             </p>
-          </div>
 
-          {/* Customization Fee Banner */}
-          <div className="rounded-2xl border border-secondary/30 bg-surface-container-low p-5 sm:p-6 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-2xl">handshake</span>
-              </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="font-sora text-sm sm:text-base font-bold text-on-surface">
-                    One-Time Customization Fee: ₹10,000
-                  </h3>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-secondary/20 text-secondary uppercase">
-                    One-Time Only
-                  </span>
-                </div>
-                <p className="text-xs text-on-surface-variant mt-1 leading-relaxed max-w-2xl">
-                  Dedicated white-glove setup: software customization for your gym brand, remote cloud ADMS sync of your eSSL / ZKTeco / Mantra biometric turnstiles, full member data migration from old software/Excel, and priority onboarding manager support.
-                </p>
-              </div>
-            </div>
-            <div className="text-xs font-semibold text-outline shrink-0 bg-surface-container px-3 py-1.5 rounded-lg border border-surface-container-high">
-              Coupons apply to customization fee
-            </div>
-          </div>
-
-          {/* EXCLUSIVE PROMOTIONAL COUPONS SECTION (VALID TILL DEC 31) */}
-          <div className="rounded-3xl border border-tertiary/40 bg-surface-container-low p-6 sm:p-8 mb-10 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-tertiary/5 rounded-full blur-3xl pointer-events-none" />
-
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-surface-container-high">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="material-symbols-outlined text-tertiary text-2xl">confirmation_number</span>
-                  <h3 className="font-sora text-base sm:text-xl font-bold text-on-surface">
-                    Promotional Customization Coupons — Valid till December 31, 2026
-                  </h3>
-                </div>
-                <p className="text-xs sm:text-sm text-on-surface-variant mt-1">
-                  Enjoy massive savings on the ₹10,000 one-time customization fee. Coupons apply strictly to the customization fee only. Each coupon can be redeemed a maximum of <strong className="text-on-surface">5 times</strong> before expiring.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 self-start md:self-auto">
-                <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-tertiary/15 text-tertiary border border-tertiary/30">
-                  ⚡ 5 Uses Cap per Category
-                </span>
-              </div>
-            </div>
-
-            {/* Coupons 3-Column Display */}
-            <div className="grid gap-4 sm:grid-cols-3">
-              {promotionalCoupons.map((c) => (
-                <div
-                  key={c.code}
-                  className="rounded-2xl border border-surface-container-high bg-surface-container-lowest p-5 flex flex-col justify-between hover:border-tertiary/50 transition-all shadow-xs"
+            {/* Plan Tier Switcher Tabs */}
+            <div className="flex items-center justify-center mt-6">
+              <div className="inline-flex p-1.5 rounded-2xl bg-surface-container border border-surface-container-high shadow-xs">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTierTab('base')}
+                  className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                    selectedTierTab === 'base'
+                      ? 'bg-secondary text-[#001f28] shadow-sm font-extrabold'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={`px-2.5 py-0.5 rounded-md text-[11px] font-extrabold border ${c.color}`}>
-                        {c.discount} Customization
-                      </span>
-                      <span className="text-[10px] text-outline font-semibold uppercase">{c.tag}</span>
-                    </div>
-
-                    <div className="my-2.5 p-2 rounded-xl bg-surface-container border border-surface-container-highest flex items-center justify-between">
-                      <span className="font-mono text-sm font-black tracking-wider text-on-surface">
-                        {c.code}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleCopyCode(c.code)}
-                        className="text-[10px] font-bold text-secondary hover:underline cursor-pointer"
-                      >
-                        {copiedCoupon === c.code ? '✓ Copied' : 'Copy'}
-                      </button>
-                    </div>
-
-                    <div className="space-y-1 text-xs">
-                      <p className="font-bold text-tertiary flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">savings</span>
-                        {c.saveText} on customization fee
-                      </p>
-                      <p className="text-outline text-[11px]">
-                        Pay customization: <span className="font-semibold text-on-surface">{c.remainingFee}</span> (was ₹10,000)
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 mt-3 border-t border-surface-container-high/60">
-                    <button
-                      type="button"
-                      onClick={() => handleApplyCouponFromCard(c.code)}
-                      className="w-full py-2.5 px-3 rounded-xl bg-surface-container hover:bg-tertiary hover:text-on-tertiary text-on-surface font-bold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
-                    >
-                      <span>Apply & Select Plan</span>
-                      <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
+                  <span className="material-symbols-outlined text-base">layers</span>
+                  <span>1. Base Plan</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-black/10 font-bold uppercase">
+                    No Customization
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedTierTab('pro')}
+                  className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                    selectedTierTab === 'pro'
+                      ? 'bg-secondary text-[#001f28] shadow-sm font-extrabold'
+                      : 'text-on-surface-variant hover:text-on-surface'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-base">palette</span>
+                  <span>2. Pro Plan</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-black/10 font-bold uppercase">
+                    Free Customization
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* Tier Highlight Banner */}
+          {selectedTierTab === 'base' ? (
+            <div className="rounded-2xl border border-outline/20 bg-surface-container-low p-4 sm:p-5 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-xl">bolt</span>
+                </div>
+                <div>
+                  <h4 className="font-sora text-sm font-bold text-on-surface">
+                    Base Plan: Standard Cloud Suite (No Customization / Modification)
+                  </h4>
+                  <p className="text-xs text-on-surface-variant">
+                    Ready immediately out of the box with complete biometric sync, QR passes, WhatsApp receipts, and GST billing.
+                  </p>
+                </div>
+              </div>
+              <span className="self-start sm:self-auto px-3 py-1 rounded-full text-[11px] font-bold bg-surface-container border border-surface-container-high text-outline">
+                Zero Setup Fee · Instant Cloud Setup
+              </span>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-secondary/30 bg-surface-container-low p-4 sm:p-5 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-secondary/15 text-secondary flex items-center justify-center shrink-0">
+                  <span className="material-symbols-outlined text-xl">auto_fix_high</span>
+                </div>
+                <div>
+                  <h4 className="font-sora text-sm font-bold text-on-surface">
+                    Pro Plan: Customization & Personalization Included
+                  </h4>
+                  <p className="text-xs text-on-surface-variant">
+                    Tailored software workflows, gym-specific tweaks, and direct developer engineering. Includes 1-2 free customizations!
+                  </p>
+                </div>
+              </div>
+              <span className="self-start sm:self-auto px-3 py-1 rounded-full text-[11px] font-extrabold bg-secondary/20 text-secondary border border-secondary/30">
+                ⭐ Free Bespoke Customization
+              </span>
+            </div>
+          )}
 
           {/* Pricing Grid */}
-          <div className="grid gap-6 md:grid-cols-3">
-            {pricingPlans.map((p) => (
+          <div
+            className={`grid gap-6 ${
+              selectedTierTab === 'base' ? 'md:grid-cols-3' : 'md:grid-cols-2 max-w-4xl mx-auto'
+            }`}
+          >
+            {(selectedTierTab === 'base' ? basePlanCards : proPlanCards).map((p) => (
               <div
                 key={p.id}
                 className={`rounded-3xl p-6 sm:p-8 flex flex-col justify-between transition-all relative ${
@@ -438,7 +437,7 @@ export default function Landing() {
                     : 'bg-surface-container-lowest border border-surface-container-high shadow-sm hover:border-surface-container-highest'
                 }`}
               >
-                {/* Popular Ribbon */}
+                {/* Popular / Promo Ribbon */}
                 {p.popular && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-secondary text-[#001f28] text-[10px] font-extrabold uppercase tracking-wider shadow-sm">
                     {p.badge}
@@ -464,25 +463,37 @@ export default function Landing() {
                     <span className="text-xs text-outline font-semibold">{p.period}</span>
                   </div>
 
-                  <p className="text-xs font-bold text-secondary mb-1">{p.effective}</p>
-                  <p className="text-[11px] text-outline mb-4">{p.setupFee}</p>
+                  {p.bonusText && (
+                    <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-tertiary/15 text-tertiary text-xs font-bold mb-2">
+                      <span className="material-symbols-outlined text-xs">redeem</span>
+                      <span>{p.bonusText}</span>
+                    </div>
+                  )}
+
+                  <p className="text-xs font-bold text-secondary mb-1">{p.effectiveNote}</p>
+                  <p className="text-[11px] text-outline mb-4 flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs">
+                      {p.tier === 'Base' ? 'block' : 'verified'}
+                    </span>
+                    <span>{p.customizationText}</span>
+                  </p>
 
                   <p className="text-xs text-on-surface-variant leading-relaxed pb-5 border-b border-surface-container-high">
                     {p.description}
                   </p>
 
-                  {/* Feature Checklist (Identical Across All Plans) */}
-                  <div className="py-3">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-outline mb-2">
-                      Included in this plan:
+                  {/* Feature Checklist */}
+                  <div className="py-4">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-outline mb-2.5">
+                      Included in this license:
                     </p>
                     <ul className="space-y-2.5 text-xs text-on-surface">
                       {p.features.map((feat, idx) => (
-                        <li key={idx} className="flex items-center gap-2">
+                        <li key={idx} className="flex items-start gap-2">
                           <span className="material-symbols-outlined text-tertiary text-base shrink-0">
                             check_circle
                           </span>
-                          <span>{feat}</span>
+                          <span className="leading-tight">{feat}</span>
                         </li>
                       ))}
                     </ul>
@@ -490,10 +501,6 @@ export default function Landing() {
                 </div>
 
                 <div className="pt-4 border-t border-surface-container-high space-y-3">
-                  <div className="p-2.5 rounded-xl bg-surface-container text-[11px] text-outline leading-tight">
-                    {p.mandateNote}
-                  </div>
-
                   <button
                     type="button"
                     onClick={() => handleOpenPlan(p.id)}
@@ -509,6 +516,23 @@ export default function Landing() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs text-outline text-center">
+            <span className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-tertiary text-sm">check_circle</span>
+              UPI, Netbanking & Cards accepted
+            </span>
+            <span>·</span>
+            <span className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-tertiary text-sm">lock</span>
+              Instant cloud activation
+            </span>
+            <span>·</span>
+            <span className="flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-tertiary text-sm">support_agent</span>
+              WhatsApp onboarding support
+            </span>
           </div>
 
           <div className="mt-8 text-center">
@@ -602,16 +626,16 @@ export default function Landing() {
               Ready to upgrade your gym management?
             </h2>
             <p className="mx-auto mt-4 max-w-lg text-sm sm:text-base text-on-surface-variant">
-              Message us on WhatsApp for a live walkthrough, or activate your 1-month free trial right now.
+              Message us on WhatsApp for a live walkthrough, or start your 1-month demo right now.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <button
                 type="button"
-                onClick={() => handleOpenPlan('trial')}
+                onClick={() => handleOpenPlan('base_1m')}
                 className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-primary text-on-primary text-sm sm:text-base font-bold shadow-md hover:opacity-90 transition-all cursor-pointer"
               >
                 <span className="material-symbols-outlined text-xl">bolt</span>
-                <span>Start 1-Month Free Trial</span>
+                <span>Start 1-Month Demo (₹999)</span>
               </button>
               <a
                 href={DEMO_LINK}

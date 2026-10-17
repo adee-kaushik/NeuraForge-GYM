@@ -12,9 +12,20 @@ const labelClass = 'block text-xs font-bold uppercase tracking-wider text-outlin
 const inputClass =
   'w-full bg-surface-container-low border border-surface-container-highest focus:border-secondary focus:bg-surface-container-lowest rounded-xl px-4 py-3 text-base text-on-surface focus:outline-none transition-all';
 
+export type SignupPlanType =
+  | 'base_1m'
+  | 'base_6m'
+  | 'base_1y'
+  | 'pro_6m'
+  | 'pro_1y'
+  | 'monthly'
+  | '6months'
+  | '1year'
+  | 'trial';
+
 export default function SignupPage() {
   const [state, formAction, pending] = useActionState(signupOwner, initialState);
-  const [plan, setPlan] = useState<'trial' | '6months' | '1year'>('trial');
+  const [plan, setPlan] = useState<SignupPlanType>('base_1y');
   const [showPassword, setShowPassword] = useState(false);
   const [isFirstCustomer, setIsFirstCustomer] = useState(true);
 
@@ -28,8 +39,8 @@ export default function SignupPage() {
     checkIsFirstCustomer().then(setIsFirstCustomer);
     // Check if plan or coupon query is in URL
     const searchParams = new URLSearchParams(window.location.search);
-    const p = searchParams.get('plan');
-    if (p === '6months' || p === '1year' || p === 'trial') {
+    const p = searchParams.get('plan') as SignupPlanType | null;
+    if (p) {
       setPlan(p);
     }
     const c = searchParams.get('coupon');
@@ -83,11 +94,37 @@ export default function SignupPage() {
   const isBusy = pending || Boolean(state.success);
 
   // Pricing calculations
-  const basePlanPrice = plan === 'trial' ? 0 : plan === '6months' ? 3000 : 5000;
+  let basePlanPrice = 0;
+  let planTitle = '1-Month Free Trial';
+  let bonusTag = '';
+  let customTag = 'No customization / modification';
+
+  if (plan === 'base_1m' || plan === 'monthly') {
+    basePlanPrice = 999;
+    planTitle = 'Base Plan: 1 Month Demo';
+    customTag = 'No customization / modification';
+  } else if (plan === 'base_6m' || plan === '6months') {
+    basePlanPrice = 2399;
+    planTitle = 'Base Plan: 6 Months (+1 Mo Free Demo)';
+    bonusTag = '+1 Month Free Demo';
+    customTag = 'No customization / modification';
+  } else if (plan === 'base_1y' || plan === '1year') {
+    basePlanPrice = 3499;
+    planTitle = 'Base Plan: 1 Year (+1 Mo Free Demo)';
+    bonusTag = '+1 Month Free Demo';
+    customTag = 'No customization / modification';
+  } else if (plan === 'pro_6m') {
+    basePlanPrice = 3499;
+    planTitle = 'Pro Plan: 6 Months';
+    customTag = '1 Customization Free & Full Personalization';
+  } else if (plan === 'pro_1y') {
+    basePlanPrice = 5499;
+    planTitle = 'Pro Plan: 1 Year';
+    customTag = '2 Customizations Free & Full Personalization';
+  }
+
   const isPaidPlan = plan !== 'trial';
-  const setupDiscount = appliedCoupon ? appliedCoupon.discountAmount : 0;
-  const effectiveSetupFee = isPaidPlan ? Math.max(0, BASE_SETUP_FEE - setupDiscount) : 0;
-  const remainingTotalToPay = isPaidPlan ? basePlanPrice + effectiveSetupFee : 0;
+  const remainingTotalToPay = isPaidPlan ? basePlanPrice : 0;
 
   return (
     <main className="min-h-screen bg-background text-on-surface flex flex-col justify-center px-4 py-8 sm:py-12">
@@ -113,7 +150,7 @@ export default function SignupPage() {
               Activate Gym Subscription
             </h1>
             <p className="text-xs sm:text-sm text-on-surface-variant mt-1">
-              Select your subscription plan or activate a 1-month free trial.
+              Select Base Plan (Standard) or Pro Plan (Customization &amp; Personalization).
             </p>
           </div>
 
@@ -137,95 +174,143 @@ export default function SignupPage() {
           ) : (
             <>
               {/* Plan Selector */}
-              <div>
+              <div className="space-y-3">
                 <label className={labelClass}>Select Your Subscription Plan *</label>
-                <div className="grid grid-cols-3 p-1 rounded-xl bg-surface-container border border-surface-container-high text-center font-bold text-xs">
+
+                {/* Base Plan Group */}
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-secondary block mb-1">
+                    1. Base Plan (No Customization / Modification)
+                  </span>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPlan('base_1m')}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        plan === 'base_1m' || plan === 'monthly'
+                          ? 'border-secondary bg-secondary/15 ring-2 ring-secondary/30 text-on-surface'
+                          : 'border-surface-container-high bg-surface-container-low text-outline hover:text-on-surface'
+                      }`}
+                    >
+                      <span className="font-bold block text-xs">1M Demo</span>
+                      <span className="text-[11px] text-secondary font-extrabold block">₹999/-</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPlan('base_6m')}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        plan === 'base_6m' || plan === '6months'
+                          ? 'border-secondary bg-secondary/15 ring-2 ring-secondary/30 text-on-surface'
+                          : 'border-surface-container-high bg-surface-container-low text-outline hover:text-on-surface'
+                      }`}
+                    >
+                      <span className="font-bold block text-xs">6 Months</span>
+                      <span className="text-[11px] text-secondary font-extrabold block">₹2,399/-</span>
+                      <span className="text-[9px] text-emerald-400 font-bold block mt-0.5">+1M Demo Free</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPlan('base_1y')}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        plan === 'base_1y' || plan === '1year'
+                          ? 'border-secondary bg-secondary/15 ring-2 ring-secondary/30 text-on-surface'
+                          : 'border-surface-container-high bg-surface-container-low text-outline hover:text-on-surface'
+                      }`}
+                    >
+                      <span className="font-bold block text-xs">1 Year</span>
+                      <span className="text-[11px] text-secondary font-extrabold block">₹3,499/-</span>
+                      <span className="text-[9px] text-emerald-400 font-bold block mt-0.5">+1M Demo Free</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Pro Plan Group */}
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary block mb-1">
+                    2. Pro Plan (Customization &amp; Personalization)
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPlan('pro_6m')}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        plan === 'pro_6m'
+                          ? 'border-primary bg-primary/15 ring-2 ring-primary/30 text-on-surface'
+                          : 'border-surface-container-high bg-surface-container-low text-outline hover:text-on-surface'
+                      }`}
+                    >
+                      <span className="font-bold block text-xs">6 Months Pro</span>
+                      <span className="text-[11px] text-primary font-extrabold block">₹3,499/-</span>
+                      <span className="text-[9px] text-primary/80 block mt-0.5">1 customization free</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPlan('pro_1y')}
+                      className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        plan === 'pro_1y'
+                          ? 'border-primary bg-primary/15 ring-2 ring-primary/30 text-on-surface'
+                          : 'border-surface-container-high bg-surface-container-low text-outline hover:text-on-surface'
+                      }`}
+                    >
+                      <span className="font-bold block text-xs">1 Year Pro</span>
+                      <span className="text-[11px] text-primary font-extrabold block">₹5,499/-</span>
+                      <span className="text-[9px] text-primary/80 block mt-0.5">2 customizations free</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Free Trial Option */}
+                <div className="pt-1">
                   <button
                     type="button"
                     onClick={() => setPlan('trial')}
-                    className={`py-2 px-1 rounded-lg transition-all cursor-pointer ${
+                    className={`w-full py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-between ${
                       plan === 'trial'
-                        ? 'bg-surface-container-lowest text-secondary shadow-xs'
-                        : 'text-outline hover:text-on-surface'
+                        ? 'border-amber-500/50 bg-amber-500/10 text-amber-400'
+                        : 'border-surface-container-high bg-surface-container-low text-outline hover:text-on-surface'
                     }`}
                   >
-                    1-Month Trial (₹0)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPlan('6months')}
-                    className={`py-2 px-1 rounded-lg transition-all cursor-pointer ${
-                      plan === '6months'
-                        ? 'bg-surface-container-lowest text-secondary shadow-xs'
-                        : 'text-outline hover:text-on-surface'
-                    }`}
-                  >
-                    6 Months (₹3k)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPlan('1year')}
-                    className={`py-2 px-1 rounded-lg transition-all cursor-pointer ${
-                      plan === '1year'
-                        ? 'bg-surface-container-lowest text-secondary shadow-xs'
-                        : 'text-outline hover:text-on-surface'
-                    }`}
-                  >
-                    1 Year (₹5k) ★
+                    <span className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-sm">timer</span>
+                      <span>Or Start 30-Day Free Trial (₹0 Today)</span>
+                    </span>
+                    <span>Free</span>
                   </button>
                 </div>
+
                 <input type="hidden" name="plan" value={plan} />
-                {appliedCoupon && (
-                  <input type="hidden" name="couponCode" value={appliedCoupon.code} />
-                )}
               </div>
 
-              {/* Pricing Summary Card & Remaining Amount to Pay */}
+              {/* Pricing Summary Card */}
               <div className="p-3.5 rounded-xl bg-surface-container-low border border-surface-container-high text-xs space-y-2">
                 <div className="flex items-center justify-between font-bold">
-                  <span className="text-on-surface">
-                    {plan === 'trial'
-                      ? '1-Month Full Free Trial (30 Days)'
-                      : plan === '6months'
-                      ? 'Semi-Annual Plan (6 Months)'
-                      : 'Annual Plan (1 Year)'}
-                  </span>
+                  <div>
+                    <span className="text-on-surface block font-sora">{planTitle}</span>
+                    {bonusTag && (
+                      <span className="text-[10px] text-emerald-400 font-semibold block">
+                        🎉 {bonusTag}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-secondary font-sora text-sm">
-                    {isPaidPlan ? `₹${remainingTotalToPay.toLocaleString('en-IN')} Total to Pay` : '₹0 Today'}
+                    {isPaidPlan ? `₹${remainingTotalToPay.toLocaleString('en-IN')}/-` : '₹0 Today'}
                   </span>
                 </div>
 
-                {isPaidPlan && (
-                  <div className="pt-2 border-t border-surface-container-high/60 space-y-1.5 text-[11px]">
-                    <div className="flex items-center justify-between text-outline">
-                      <span>Plan License Price:</span>
-                      <span className="text-on-surface font-semibold">₹{basePlanPrice.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-outline">
-                      <span>One-Time Hardware & Onboarding Setup:</span>
-                      <span className={appliedCoupon ? 'line-through text-outline' : 'text-on-surface font-semibold'}>
-                        ₹{BASE_SETUP_FEE.toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                    {appliedCoupon && (
-                      <div className="flex items-center justify-between text-tertiary font-bold">
-                        <span>Coupon Discount ({appliedCoupon.code} - {appliedCoupon.discountPercent}% Off):</span>
-                        <span>-₹{appliedCoupon.discountAmount.toLocaleString('en-IN')}</span>
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between pt-1.5 border-t border-surface-container-high font-bold text-xs text-on-surface">
-                      <span>Remaining Amount to Pay Today:</span>
-                      <span className="text-secondary font-sora text-sm">₹{remainingTotalToPay.toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
-                )}
-
-                <p className="text-[11px] text-outline">
-                  {plan === 'trial'
-                    ? 'Card / UPI Autopay details required. Renews at ₹5,000/yr (+ setup fee) after 1 month. We remind you 36 hours before deducting. Cancel anytime.'
-                    : 'Includes one-time cloud biometric gateway setup, WhatsApp automation, and historical data migration.'}
-                </p>
+                <div className="pt-2 border-t border-surface-container-high/60 flex items-center justify-between text-[11px] text-outline">
+                  <span>Customization:</span>
+                  <span className="text-on-surface font-semibold">{customTag}</span>
+                </div>
               </div>
+
+              <p className="text-[11px] text-outline">
+                {plan === 'trial'
+                  ? 'Start with full cloud access. Upgrade to Base or Pro plan anytime.'
+                  : 'Includes turnstile biometric integration, WhatsApp automation, and cloud member pass sync.'}
+              </p>
 
               {/* Coupon Code Section */}
               <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container-high space-y-2">

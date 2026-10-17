@@ -83,21 +83,43 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
     authUserId = publicCreated.user.id;
   }
 
-  // Pricing & Status calculation: 599/m, 3499 (6mo), 6109 (1yr, 15% off) + 10,000 one-time customization fee
-  const isPaid = plan === 'monthly' || plan === '6months' || plan === '1year';
-  const basePrice = plan === 'monthly' ? 599 : plan === '6months' ? 3499 : plan === '1year' ? 6109 : 0;
-  let setupFee = isPaid ? 10000 : 0;
-  if (couponCode && isPaid) {
-    if (couponCode.toUpperCase() === 'SETUP50') setupFee = Math.max(0, setupFee - 5000);
-    else if (couponCode.toUpperCase() === 'SETUP30') setupFee = Math.max(0, setupFee - 3000);
-    else if (couponCode.toUpperCase() === 'SETUP10') setupFee = Math.max(0, setupFee - 1000);
+  // Pricing & Status calculation:
+  // Base plan: 1m (₹999), 6m (₹2,399 + 1m free demo), 1y (₹3,499 + 1m free demo)
+  // Pro plan: 6m (₹3,499 - 1 customization free), 1y (₹5,499 - 2 customization free)
+  const isPaid = plan !== 'trial' && plan !== 'pilot';
+  let basePrice = 0;
+  let durationDays = 30;
+  let planLabel = '1-Month Free Trial';
+
+  if (plan === 'base_1m' || plan === 'monthly') {
+    basePrice = 999;
+    durationDays = 30;
+    planLabel = 'Base Plan: 1 Month Demo (₹999)';
+  } else if (plan === 'base_6m' || plan === '6months') {
+    basePrice = 2399;
+    durationDays = 210; // 6 months + 1 month free demo = 7 months
+    planLabel = 'Base Plan: 6 Months + 1 Mo Free Demo (₹2,399)';
+  } else if (plan === 'base_1y' || plan === '1year') {
+    basePrice = 3499;
+    durationDays = 395; // 12 months + 1 month free demo = 13 months
+    planLabel = 'Base Plan: 1 Year + 1 Mo Free Demo (₹3,499)';
+  } else if (plan === 'pro_6m') {
+    basePrice = 3499;
+    durationDays = 180;
+    planLabel = 'Pro Plan: 6 Months (1 Customization Free - ₹3,499)';
+  } else if (plan === 'pro_1y') {
+    basePrice = 5499;
+    durationDays = 365;
+    planLabel = 'Pro Plan: 1 Year (2 Customizations Free - ₹5,499)';
+  } else if (isFirstCustomer) {
+    planLabel = 'Pilot Launch Partner (Free)';
   }
-  const totalAmount = isPaid ? basePrice + setupFee : 0;
+
+  const totalAmount = isPaid ? basePrice : 0;
 
   // Free trial and pilot partner are active immediately; paid plans await WhatsApp UPI approval
   const saasStatus = isFirstCustomer || !isPaid ? 'ACTIVE' : 'PENDING_APPROVAL';
   const saasPlan = isFirstCustomer ? 'PILOT_PARTNER' : plan === 'trial' ? 'TRIAL_14_DAYS' : plan.toUpperCase();
-  const durationDays = plan === '1year' ? 365 : plan === '6months' ? 180 : 30;
   const expiresAt = new Date(Date.now() + durationDays * 86400000);
 
   try {
@@ -130,17 +152,6 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
   // Auto-login the owner session
   const supabase = await createClient();
   await supabase.auth.signInWithPassword({ email, password });
-
-  const planLabel =
-    plan === '1year'
-      ? '1-Year Annual Pro Plan (15% OFF - ₹6,109)'
-      : plan === '6months'
-      ? '6-Month Semi-Annual Plan (₹3,499)'
-      : plan === 'monthly'
-      ? 'Monthly Plan (₹599/month)'
-      : isFirstCustomer
-      ? 'Pilot Launch Partner (Free)'
-      : '1-Month Free Trial';
 
   const whatsappMessage =
     `Hi NeuraFitness Team! I registered our gym on the portal and want to activate our SaaS via UPI payment.\n\n` +

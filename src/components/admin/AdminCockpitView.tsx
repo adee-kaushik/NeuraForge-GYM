@@ -113,6 +113,9 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
     setTimeout(() => setToast(null), 3500);
   };
 
+  // Expiring in 48h modal state
+  const [showExpiring48hModal, setShowExpiring48hModal] = useState(false);
+
   // Onboard Gym Modal
   const [showCreateGymModal, setShowCreateGymModal] = useState(false);
   const [newGymName, setNewGymName] = useState('');
@@ -121,19 +124,28 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
   const [newOwnerEmail, setNewOwnerEmail] = useState('');
   const [newOwnerPhone, setNewOwnerPhone] = useState('');
   const [newPassword, setNewPassword] = useState('GymMaster@2026');
-  const [newSaasPlan, setNewSaasPlan] = useState<'SEMI_ANNUAL' | 'ANNUAL' | 'TRIAL'>('SEMI_ANNUAL');
-  const [newDurationMonths, setNewDurationMonths] = useState<number>(6);
-  const [newSubscriptionAmount, setNewSubscriptionAmount] = useState<number>(3000);
+  const [newSaasPlan, setNewSaasPlan] = useState<string>('BASE_6M');
+  const [newDurationMonths, setNewDurationMonths] = useState<number>(7);
+  const [newSubscriptionAmount, setNewSubscriptionAmount] = useState<number>(2399);
   const [creatingGym, setCreatingGym] = useState(false);
 
-  const handlePlanChange = (p: 'SEMI_ANNUAL' | 'ANNUAL' | 'TRIAL') => {
+  const handlePlanChange = (p: string) => {
     setNewSaasPlan(p);
-    if (p === 'ANNUAL') {
-      setNewDurationMonths(12);
-      setNewSubscriptionAmount(5000);
-    } else if (p === 'SEMI_ANNUAL') {
+    if (p === 'BASE_1M') {
+      setNewDurationMonths(1);
+      setNewSubscriptionAmount(999);
+    } else if (p === 'BASE_6M') {
+      setNewDurationMonths(7); // 6 + 1 month free demo
+      setNewSubscriptionAmount(2399);
+    } else if (p === 'BASE_1Y') {
+      setNewDurationMonths(13); // 12 + 1 month free demo
+      setNewSubscriptionAmount(3499);
+    } else if (p === 'PRO_6M') {
       setNewDurationMonths(6);
-      setNewSubscriptionAmount(3000);
+      setNewSubscriptionAmount(3499);
+    } else if (p === 'PRO_1Y') {
+      setNewDurationMonths(12);
+      setNewSubscriptionAmount(5499);
     } else {
       setNewDurationMonths(1);
       setNewSubscriptionAmount(0);
@@ -374,10 +386,75 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
     return true;
   });
 
+  // Gyms expiring within 48 hours
+  const expiring48hGyms = gyms.filter((g) => {
+    if (!g.saasExpiresAt) return false;
+    const expiresAtMs = new Date(g.saasExpiresAt).getTime();
+    if (isNaN(expiresAtMs)) return false;
+    const diffHours = (expiresAtMs - Date.now()) / (3600 * 1000);
+    return diffHours <= 48 && diffHours >= -48;
+  });
+
+  const handleOpenPrefilledReminder = (gym: AdminGymRow) => {
+    setShowExpiring48hModal(false);
+    setMessageTargetGym(gym);
+    setMsgTitle('⚠️ NeuraFitness SaaS Subscription Expiring Soon');
+    setMsgBody(
+      `Dear ${gym.ownerName},\n\nYour NeuraFitness subscription for ${gym.name} is expiring in under 48 hours. Please renew your plan to prevent any interruption in your biometric turnstiles, attendance sync, and member passes.\n\nBase Plans: 1M Demo (₹999), 6M (+1M Free: ₹2,399), 1Yr (+1M Free: ₹3,499)\nPro Plans: 6M (₹3,499 - 1 Free Customization), 1Yr (₹5,499 - 2 Free Customizations)\n\nTap the Renew button in your notification bell or contact NeuraFitness directly.`
+    );
+    setMsgPriority('URGENT');
+  };
+
+  const handleSendWhatsAppReminder = (gym: AdminGymRow) => {
+    const cleanPhone = gym.ownerPhone.replace(/\D/g, '');
+    const text = encodeURIComponent(
+      `Hi ${gym.ownerName}, greeting from NeuraFitness Co-Founders! Your gym's SaaS subscription for ${gym.name} is expiring within 48 hours. Please renew your plan (Base or Pro) to avoid any interruption to your biometric turnstiles and member check-ins. Please let us know if you would like us to renew your plan today!`
+    );
+    window.open(`https://api.whatsapp.com/send?phone=91${cleanPhone}&text=${text}`, '_blank');
+  };
+
+  const applyPresetMessage = (preset: 'EXPIRED' | 'EXPIRING' | 'RENEWED') => {
+    const owner = messageTargetGym?.ownerName || 'Gym Owner';
+    const gymName = messageTargetGym?.name || 'your gym';
+    if (preset === 'EXPIRED') {
+      setMsgTitle('🚨 Gym Membership Expired — Renewal Required');
+      setMsgBody(
+        `Dear ${owner},\n\nYour NeuraFitness SaaS membership subscription for ${gymName} has expired. Turnstile biometrics and cloud software are pending renewal.\n\nPlease click the Renew button in your notifications to choose a Base or Pro plan and restore uninterrupted access.`
+      );
+      setMsgPriority('URGENT');
+    } else if (preset === 'EXPIRING') {
+      setMsgTitle('⚠️ Gym Membership Expiring within 48 Hours');
+      setMsgBody(
+        `Dear ${owner},\n\nThis is a priority reminder that your NeuraFitness SaaS membership subscription for ${gymName} will expire within 48 hours.\n\nPlease renew your subscription to maintain uninterrupted biometric sync, turnstiles, and member passes.`
+      );
+      setMsgPriority('HIGH');
+    } else if (preset === 'RENEWED') {
+      setMsgTitle('🎉 Gym Membership Renewed Successfully!');
+      setMsgBody(
+        `Dear ${owner},\n\nThank you for renewing your NeuraFitness membership subscription for ${gymName}! Your cloud features, digital passes, and turnstile biometrics are fully active. Thank you for partnering with NeuraFitness.`
+      );
+      setMsgPriority('NORMAL');
+    }
+  };
+
   const getPlanBadge = (plan: string) => {
-    if (plan.includes('ANNUAL')) return { label: '1-Year Annual (₹5K)', bg: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' };
-    if (plan.includes('SEMI')) return { label: '6-Month Plan (₹3K)', bg: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30' };
-    if (plan.includes('TRIAL')) return { label: '14-Day Free Trial', bg: 'bg-amber-500/15 text-amber-400 border-amber-500/30' };
+    const p = (plan || '').toUpperCase();
+    if (p.includes('PRO_1Y') || p.includes('5499') || (p.includes('PRO') && p.includes('1Y')))
+      return { label: 'Pro 1-Year (₹5,499)', bg: 'bg-purple-500/15 text-purple-400 border-purple-500/30' };
+    if (p.includes('PRO_6M') || (p.includes('PRO') && p.includes('6M')))
+      return { label: 'Pro 6-Month (₹3,499)', bg: 'bg-primary/15 text-primary border-primary/30' };
+    if (p.includes('BASE_1Y') || (p.includes('3499') && p.includes('BASE')))
+      return { label: 'Base 1-Year (₹3,499)', bg: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' };
+    if (p.includes('BASE_6M') || p.includes('2399'))
+      return { label: 'Base 6-Month (₹2,399)', bg: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30' };
+    if (p.includes('BASE_1M') || p.includes('999'))
+      return { label: 'Base 1-Mo Demo (₹999)', bg: 'bg-blue-500/15 text-blue-400 border-blue-500/30' };
+    if (p.includes('ANNUAL'))
+      return { label: '1-Year Annual (₹3,499)', bg: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' };
+    if (p.includes('SEMI'))
+      return { label: '6-Month Plan (₹2,399)', bg: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30' };
+    if (p.includes('TRIAL'))
+      return { label: 'Demo Trial', bg: 'bg-amber-500/15 text-amber-400 border-amber-500/30' };
     return { label: plan || 'Standard', bg: 'bg-secondary/15 text-secondary border-secondary/30' };
   };
 
@@ -434,7 +511,7 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
       </div>
 
       {/* Cockpit HUD Gauges / Flight Instruments */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 sm:gap-4">
         <div className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high">
           <span className="text-[10px] font-bold uppercase tracking-wider text-outline block">
             Fleet Gyms
@@ -477,6 +554,34 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
             {initialStats.pendingApprovalsCount}
           </span>
           <span className="text-[10px] text-outline mt-0.5 block">1-Click activation ready</span>
+        </div>
+
+        {/* Expiring within 48 Hours Box (Click for Popup with Prefilled Reminders) */}
+        <div
+          onClick={() => setShowExpiring48hModal(true)}
+          className={`p-4 rounded-xl cursor-pointer transition-all border relative overflow-hidden group ${
+            expiring48hGyms.length > 0
+              ? 'bg-amber-500/10 border-amber-500/50 hover:border-amber-400 hover:bg-amber-500/15 ring-1 ring-amber-500/30 shadow-md'
+              : 'bg-surface-container-low border-surface-container-high hover:border-surface-container-highest'
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 block">
+              Expiring ≤ 48h
+            </span>
+            {expiring48hGyms.length > 0 ? (
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+            ) : (
+              <span className="material-symbols-outlined text-outline text-sm">schedule</span>
+            )}
+          </div>
+          <span className="font-sora text-2xl font-black text-amber-400 mt-1 block">
+            {expiring48hGyms.length}
+          </span>
+          <span className="text-[10px] text-outline mt-0.5 flex items-center gap-1 group-hover:text-on-surface">
+            <span>Reminder Popup</span>
+            <span className="material-symbols-outlined text-[12px]">arrow_forward</span>
+          </span>
         </div>
 
         <div className="p-4 rounded-xl bg-surface-container-low border border-error/40">
@@ -1038,6 +1143,39 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
               </button>
             </div>
 
+            {/* Preset Message Templates */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1.5">
+                Quick Preset Templates (1-Click Fill)
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => applyPresetMessage('EXPIRED')}
+                  className="px-2.5 py-2 rounded-xl border border-error/30 hover:border-error bg-error/10 text-error text-[11px] font-bold text-left transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-sm shrink-0">cancel</span>
+                  <span className="truncate">1. Membership Expired</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPresetMessage('EXPIRING')}
+                  className="px-2.5 py-2 rounded-xl border border-amber-500/30 hover:border-amber-500 bg-amber-500/10 text-amber-400 text-[11px] font-bold text-left transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-sm shrink-0">schedule</span>
+                  <span className="truncate">2. Membership Expiring</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyPresetMessage('RENEWED')}
+                  className="px-2.5 py-2 rounded-xl border border-emerald-500/30 hover:border-emerald-500 bg-emerald-500/10 text-emerald-400 text-[11px] font-bold text-left transition-all cursor-pointer flex items-center gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-sm shrink-0">verified</span>
+                  <span className="truncate">3. Membership Renewed</span>
+                </button>
+              </div>
+            </div>
+
             <form onSubmit={handleSendMessage} className="space-y-3.5">
               <div>
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
@@ -1299,31 +1437,70 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
                 <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
                   SaaS Subscription Plan
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   <button
                     type="button"
-                    onClick={() => handlePlanChange('SEMI_ANNUAL')}
+                    onClick={() => handlePlanChange('BASE_1M')}
                     className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
-                      newSaasPlan === 'SEMI_ANNUAL'
+                      newSaasPlan === 'BASE_1M'
                         ? 'border-secondary bg-secondary/10 text-on-surface'
                         : 'border-surface-container-high bg-surface-container-low text-outline'
                     }`}
                   >
-                    <span className="font-bold block text-xs">Semi-Annual</span>
-                    <span className="text-[10px] text-secondary">6 Mo · ₹3,000</span>
+                    <span className="font-bold block text-xs">Base: 1M Demo</span>
+                    <span className="text-[10px] text-secondary">1 Mo · ₹999</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => handlePlanChange('ANNUAL')}
+                    onClick={() => handlePlanChange('BASE_6M')}
                     className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
-                      newSaasPlan === 'ANNUAL'
+                      newSaasPlan === 'BASE_6M'
                         ? 'border-secondary bg-secondary/10 text-on-surface'
                         : 'border-surface-container-high bg-surface-container-low text-outline'
                     }`}
                   >
-                    <span className="font-bold block text-xs">Annual (1 Yr)</span>
-                    <span className="text-[10px] text-secondary">12 Mo · ₹5,000</span>
+                    <span className="font-bold block text-xs">Base: 6 Months</span>
+                    <span className="text-[10px] text-secondary">6+1 Mo · ₹2,399</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePlanChange('BASE_1Y')}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                      newSaasPlan === 'BASE_1Y'
+                        ? 'border-secondary bg-secondary/10 text-on-surface'
+                        : 'border-surface-container-high bg-surface-container-low text-outline'
+                    }`}
+                  >
+                    <span className="font-bold block text-xs">Base: 1 Year</span>
+                    <span className="text-[10px] text-secondary">12+1 Mo · ₹3,499</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePlanChange('PRO_6M')}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                      newSaasPlan === 'PRO_6M'
+                        ? 'border-primary bg-primary/10 text-on-surface'
+                        : 'border-surface-container-high bg-surface-container-low text-outline'
+                    }`}
+                  >
+                    <span className="font-bold block text-xs">Pro: 6 Months</span>
+                    <span className="text-[10px] text-primary">1 Custom · ₹3,499</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handlePlanChange('PRO_1Y')}
+                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all ${
+                      newSaasPlan === 'PRO_1Y'
+                        ? 'border-primary bg-primary/10 text-on-surface'
+                        : 'border-surface-container-high bg-surface-container-low text-outline'
+                    }`}
+                  >
+                    <span className="font-bold block text-xs">Pro: 1 Year</span>
+                    <span className="text-[10px] text-primary">2 Custom · ₹5,499</span>
                   </button>
 
                   <button
@@ -1335,7 +1512,7 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
                         : 'border-surface-container-high bg-surface-container-low text-outline'
                     }`}
                   >
-                    <span className="font-bold block text-xs">Trial</span>
+                    <span className="font-bold block text-xs">Free Demo Trial</span>
                     <span className="text-[10px] text-secondary">30 Days · ₹0</span>
                   </button>
                 </div>
@@ -1385,6 +1562,128 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 5: Gym Subscriptions Expiring in 48 Hours */}
+      {showExpiring48hModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-3xl bg-surface-container-lowest border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+            {/* Modal Header with Close Cross Button */}
+            <div className="p-4 sm:p-5 border-b border-surface-container-high flex items-center justify-between bg-surface-container-low/60">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center border border-amber-500/40">
+                  <span className="material-symbols-outlined text-2xl">timer</span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-sora font-bold text-on-surface text-base sm:text-lg">
+                      Gyms Expiring Within 48 Hours
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40">
+                      {expiring48hGyms.length} Gym{expiring48hGyms.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <p className="text-xs text-outline mt-0.5">
+                    SaaS subscriptions expiring in ≤ 48 hrs or expired recently. Send 1-tap reminders.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowExpiring48hModal(false)}
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
+                aria-label="Close"
+              >
+                <span className="material-symbols-outlined text-xl">close</span>
+              </button>
+            </div>
+
+            {/* Modal Body: List of Expiring Gyms */}
+            <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-3">
+              {expiring48hGyms.length === 0 ? (
+                <div className="py-12 text-center text-outline text-xs space-y-2">
+                  <span className="material-symbols-outlined text-3xl text-emerald-400">check_circle</span>
+                  <p className="font-bold text-on-surface text-sm">No Gym Subscriptions Expiring Soon</p>
+                  <p>All active gyms have healthy subscription validity beyond 48 hours.</p>
+                </div>
+              ) : (
+                expiring48hGyms.map((g) => {
+                  const expiresAtMs = g.saasExpiresAt ? new Date(g.saasExpiresAt).getTime() : 0;
+                  const diffHours = Math.round((expiresAtMs - Date.now()) / (3600 * 1000));
+                  const isExpired = diffHours <= 0;
+
+                  return (
+                    <div
+                      key={g.id}
+                      className="p-4 rounded-xl bg-surface-container-low border border-surface-container-high hover:border-amber-500/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="font-sora font-bold text-sm text-on-surface">{g.name}</h4>
+                          <span className="font-mono text-[10px] text-outline">({g.slug})</span>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              isExpired
+                                ? 'bg-error/20 text-error border border-error/40'
+                                : 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                            }`}
+                          >
+                            {isExpired
+                              ? `Expired ${Math.abs(diffHours)}h ago`
+                              : `Expires in ${diffHours} hours`}
+                          </span>
+                        </div>
+                        <p className="text-xs text-outline">
+                          Owner: <span className="text-on-surface font-semibold">{g.ownerName}</span> · {g.ownerPhone || 'No phone'} · {g.ownerEmail}
+                        </p>
+                        <p className="text-[11px] text-outline">
+                          Plan: <span className="text-secondary font-bold">{g.saasPlan}</span> · Expiry: {g.saasExpiresAt ? new Date(g.saasExpiresAt).toLocaleString('en-IN') : 'N/A'}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenPrefilledReminder(g)}
+                          className="px-3.5 py-2 rounded-xl bg-secondary text-on-secondary hover:bg-secondary/90 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-sm">notifications_active</span>
+                          <span>Prefilled Reminder</span>
+                        </button>
+
+                        {g.ownerPhone && (
+                          <button
+                            type="button"
+                            onClick={() => handleSendWhatsAppReminder(g)}
+                            className="px-3 py-2 rounded-xl bg-[#25D366] text-white hover:bg-[#20ba59] font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                            title="Send WhatsApp Reminder"
+                          >
+                            <span className="material-symbols-outlined text-sm">chat</span>
+                            <span className="hidden sm:inline">WhatsApp</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-surface-container-high bg-surface-container-low/40 flex items-center justify-between">
+              <span className="text-[11px] text-outline">
+                Tip: Click Prefilled Reminder to load preset reminder in the broadcast drawer.
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowExpiring48hModal(false)}
+                className="px-4 py-1.5 rounded-lg text-xs font-bold text-outline hover:text-on-surface cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

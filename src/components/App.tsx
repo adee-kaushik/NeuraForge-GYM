@@ -404,6 +404,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
           onOpenFeedback={() => setIsFeedbackModalOpen(true)}
           onOpenFrontDeskQr={() => setIsFrontDeskQrOpen(true)}
           pendingEnrollmentsCount={pendingEnrollments.length}
+          gym={gym}
         />
 
         {/* View Routing */}

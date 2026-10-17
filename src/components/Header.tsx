@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { CurrentUser } from '../config/gym';
+import { CurrentUser, GymConfig } from '../config/gym';
 import { logout } from '@/app/login/actions';
 import { DashboardStats } from '../lib/stats';
 import { inr } from '../lib/format';
 import { ActiveScreen } from '../types';
 import { getOwnerAdminNotifications, markAdminMessageAsRead } from '@/actions/feedback';
 import { updateOwnerAvatar } from '@/actions/settings';
+import { GymRenewalModal } from './modals/GymRenewalModal';
 
 interface HeaderProps {
   user: CurrentUser;
@@ -19,6 +20,7 @@ interface HeaderProps {
   onOpenFeedback?: () => void;
   onOpenFrontDeskQr?: () => void;
   pendingEnrollmentsCount?: number;
+  gym?: GymConfig;
 }
 
 interface AdminMessageItem {
@@ -42,14 +44,28 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenFeedback,
   onOpenFrontDeskQr,
   pendingEnrollmentsCount = 0,
+  gym,
 }) => {
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [notificationsRead, setNotificationsRead] = useState(false);
   const [adminMessages, setAdminMessages] = useState<AdminMessageItem[]>([]);
+  const [showRenewalModal, setShowRenewalModal] = useState(false);
   const [userAvatar, setUserAvatar] = useState<string | null>(user.avatarUrl || null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const ownerFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const isMembershipRelated = (m: AdminMessageItem) => {
+    const text = `${m.title} ${m.message}`.toLowerCase();
+    return (
+      text.includes('membership') ||
+      text.includes('subscription') ||
+      text.includes('expir') ||
+      text.includes('renew') ||
+      text.includes('plan') ||
+      text.includes('due')
+    );
+  };
 
   const handleAvatarFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -226,6 +242,25 @@ export const Header: React.FC<HeaderProps> = ({
                           minute: '2-digit',
                         })}
                       </p>
+
+                      {/* Renewal Button on Membership Related Messages */}
+                      {isMembershipRelated(msg) && (
+                        <div className="mt-2.5 pt-2 border-t border-surface-container-high/60 flex items-center justify-between gap-2">
+                          <span className="text-[10px] text-outline font-semibold">SaaS Subscription Notice</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setShowNotifications(false);
+                              setShowRenewalModal(true);
+                            }}
+                            className="px-3 py-1.5 rounded-lg bg-secondary text-on-secondary hover:bg-secondary/90 font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                          >
+                            <span className="material-symbols-outlined text-sm">autorenew</span>
+                            <span>Renew Subscription</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ))}
 
@@ -484,6 +519,16 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
       </div>
+
+      {/* Gym Owner SaaS Subscription Renewal Modal */}
+      {showRenewalModal && (
+        <GymRenewalModal
+          isOpen={showRenewalModal}
+          onClose={() => setShowRenewalModal(false)}
+          gym={gym}
+          user={user}
+        />
+      )}
     </header>
   );
 };

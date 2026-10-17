@@ -64,7 +64,17 @@ export const PlanModal: React.FC<PlanModalProps> = ({ plan, onClose, onSaved }) 
         onSubmit={handleSubmit}
         className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-surface-container-low border border-surface-container-high rounded-2xl p-6 space-y-5"
       >
-        <h2 className="font-sora text-lg font-bold text-on-surface">{plan ? 'Edit plan' : 'Add plan'}</h2>
+        <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">
+          <h2 className="font-sora text-lg font-bold text-on-surface">{plan ? 'Edit plan' : 'Add plan'}</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-outline hover:text-on-surface hover:bg-surface-container transition-colors cursor-pointer"
+            aria-label="Close"
+          >
+            <span className="material-symbols-outlined text-xl">close</span>
+          </button>
+        </div>
 
         <div>
           <label className={labelClass} htmlFor="plan-name">Plan name</label>

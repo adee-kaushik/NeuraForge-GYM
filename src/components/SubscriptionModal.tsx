@@ -5,7 +5,16 @@ import { signupOwner } from '@/app/signup/actions';
 import { checkCoupon } from '@/app/actions/coupon';
 import { type CouponDefinition, BASE_SETUP_FEE } from '@/lib/coupons';
 
-export type PlanType = 'monthly' | '6months' | '1year' | 'trial';
+export type PlanType =
+  | 'base_1m'
+  | 'base_6m'
+  | 'base_1y'
+  | 'pro_6m'
+  | 'pro_1y'
+  | 'monthly'
+  | '6months'
+  | '1year'
+  | 'trial';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -18,48 +27,115 @@ const PLAN_DETAILS: Record<
   PlanType,
   {
     name: string;
+    tier: 'BASE' | 'PRO';
     priceLabel: string;
     basePrice: number;
     periodLabel: string;
     setupFee: number;
+    bonusText?: string;
+    customizationNote: string;
     billingNotice: string;
   }
 > = {
-  monthly: {
-    name: 'Monthly Plan',
-    priceLabel: '₹599 / month',
-    basePrice: 599,
-    periodLabel: 'Per Month License',
-    setupFee: BASE_SETUP_FEE,
+  base_1m: {
+    name: 'Base Plan: 1 Month Demo',
+    tier: 'BASE',
+    priceLabel: '₹999',
+    basePrice: 999,
+    periodLabel: '1 Month Full Demo',
+    setupFee: 0,
+    customizationNote: 'No customization / modification',
     billingNotice:
-      'Monthly cloud license fee (₹599) + one-time customization fee (₹10,000). Coupon discounts apply strictly to the one-time customization fee.',
+      'Base Plan: 1 Month Demo for ₹999. Standard full cloud suite (no customization / modification).',
   },
-  '6months': {
-    name: 'Semi-Annual Plan (6 Months)',
+  base_6m: {
+    name: 'Base Plan: 6 Months',
+    tier: 'BASE',
+    priceLabel: '₹2,399',
+    basePrice: 2399,
+    periodLabel: '6 Months + 1 Month Free Demo (7 Months Total)',
+    setupFee: 0,
+    bonusText: '+ 1 Month Free Demo',
+    customizationNote: 'No customization / modification',
+    billingNotice:
+      'Base Plan: 6 Months for ₹2,399 + 1 Month Free Demo. Standard full cloud suite (no customization / modification).',
+  },
+  base_1y: {
+    name: 'Base Plan: 1 Year',
+    tier: 'BASE',
     priceLabel: '₹3,499',
     basePrice: 3499,
-    periodLabel: '6 Months License',
-    setupFee: BASE_SETUP_FEE,
+    periodLabel: '1 Year + 1 Month Free Demo (13 Months Total)',
+    setupFee: 0,
+    bonusText: '+ 1 Month Free Demo',
+    customizationNote: 'No customization / modification',
     billingNotice:
-      '6 Months full cloud license (₹3,499) + one-time customization fee (₹10,000). Coupon discounts apply strictly to the one-time customization fee.',
+      'Base Plan: 1 Year for ₹3,499 + 1 Month Free Demo. Standard full cloud suite (no customization / modification).',
+  },
+  pro_6m: {
+    name: 'Pro Plan: 6 Months',
+    tier: 'PRO',
+    priceLabel: '₹3,499',
+    basePrice: 3499,
+    periodLabel: '6 Months Pro License',
+    setupFee: 0,
+    customizationNote: '1 Customization Free & Full Personalization',
+    billingNotice:
+      'Pro Plan: 6 Months for ₹3,499 with 1 free software customization and gym personalization included.',
+  },
+  pro_1y: {
+    name: 'Pro Plan: 1 Year',
+    tier: 'PRO',
+    priceLabel: '₹5,499',
+    basePrice: 5499,
+    periodLabel: '1 Year Pro License',
+    setupFee: 0,
+    customizationNote: '2 Customizations Free & Full Personalization',
+    billingNotice:
+      'Pro Plan: 1 Year for ₹5,499 with 2 free software customizations and gym personalization included.',
+  },
+  monthly: {
+    name: 'Base Plan: 1 Month Demo',
+    tier: 'BASE',
+    priceLabel: '₹999',
+    basePrice: 999,
+    periodLabel: '1 Month Full Demo',
+    setupFee: 0,
+    customizationNote: 'No customization / modification',
+    billingNotice: 'Base Plan: 1 Month Demo for ₹999.',
+  },
+  '6months': {
+    name: 'Base Plan: 6 Months',
+    tier: 'BASE',
+    priceLabel: '₹2,399',
+    basePrice: 2399,
+    periodLabel: '6 Months + 1 Month Free Demo (7 Months Total)',
+    setupFee: 0,
+    bonusText: '+ 1 Month Free Demo',
+    customizationNote: 'No customization / modification',
+    billingNotice: 'Base Plan: 6 Months for ₹2,399 + 1 Month Free Demo.',
   },
   '1year': {
-    name: 'Annual Plan (1 Year) — 15% OFF',
-    priceLabel: '₹6,109',
-    basePrice: 6109,
-    periodLabel: '1 Year License (15% OFF)',
-    setupFee: BASE_SETUP_FEE,
-    billingNotice:
-      '1 Full Year cloud license (₹6,109 with 15% discount) + one-time customization fee (₹10,000). Coupon discounts apply strictly to the one-time customization fee.',
+    name: 'Base Plan: 1 Year',
+    tier: 'BASE',
+    priceLabel: '₹3,499',
+    basePrice: 3499,
+    periodLabel: '1 Year + 1 Month Free Demo (13 Months Total)',
+    setupFee: 0,
+    bonusText: '+ 1 Month Free Demo',
+    customizationNote: 'No customization / modification',
+    billingNotice: 'Base Plan: 1 Year for ₹3,499 + 1 Month Free Demo.',
   },
   trial: {
-    name: '1-Month Full Free Trial',
+    name: '1-Month Free Trial',
+    tier: 'BASE',
     priceLabel: '₹0 Today',
     basePrice: 0,
     periodLabel: '30 Days Full Access',
     setupFee: 0,
+    customizationNote: 'Standard software features',
     billingNotice:
-      'Auto-debit begins after 1 month (30 days) at ₹599/m or choose annual (15% off). Cancel anytime.',
+      'Auto-debit begins after 1 month (30 days) at standard Base Plan rates. Cancel anytime.',
   },
 };
 
@@ -250,41 +326,99 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             </div>
           )}
 
-          {/* Plan Selector Bar */}
-          <div className="grid grid-cols-3 p-1 rounded-xl bg-surface-container border border-surface-container-high text-center font-bold text-[11px]">
-            <button
-              type="button"
-              onClick={() => setPlan('monthly')}
-              className={`py-2 px-1 rounded-lg transition-all cursor-pointer ${
-                plan === 'monthly'
-                  ? 'bg-surface-container-lowest text-secondary shadow-xs'
-                  : 'text-outline hover:text-on-surface'
-              }`}
-            >
-              Monthly (₹599)
-            </button>
-            <button
-              type="button"
-              onClick={() => setPlan('6months')}
-              className={`py-2 px-1 rounded-lg transition-all cursor-pointer ${
-                plan === '6months'
-                  ? 'bg-surface-container-lowest text-secondary shadow-xs'
-                  : 'text-outline hover:text-on-surface'
-              }`}
-            >
-              6 Months (₹3,499)
-            </button>
-            <button
-              type="button"
-              onClick={() => setPlan('1year')}
-              className={`py-2 px-1 rounded-lg transition-all cursor-pointer ${
-                plan === '1year'
-                  ? 'bg-surface-container-lowest text-secondary shadow-xs'
-                  : 'text-outline hover:text-on-surface'
-              }`}
-            >
-              1 Year (₹6,109) ★
-            </button>
+          {/* Plan Selector: Base vs Pro */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className={labelClass}>Select Your Plan *</label>
+              <span className="text-[10px] text-outline">
+                {currentPlan.tier === 'BASE' ? 'Standard software (no customization)' : 'Includes customization & personalizations'}
+              </span>
+            </div>
+
+            {/* Base Plan Options */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-secondary">
+                1. Base Plan (No customization / modification)
+              </span>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPlan('base_1m')}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    plan === 'base_1m' || plan === 'monthly'
+                      ? 'border-secondary bg-secondary/15 ring-2 ring-secondary/30 text-on-surface'
+                      : 'border-surface-container-high bg-surface-container-low text-outline hover:text-on-surface'
+                  }`}
+                >
+                  <span className="font-bold block text-xs">1 Mo Demo</span>
+                  <span className="text-[11px] text-secondary font-extrabold">₹999/-</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPlan('base_6m')}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer relative ${
+                    plan === 'base_6m' || plan === '6months'
+                      ? 'border-secondary bg-secondary/15 ring-2 ring-secondary/30 text-on-surface'
+                      : 'border-surface-container-high bg-surface-container-low text-outline hover:text-on-surface'
+                  }`}
+                >
+                  <span className="font-bold block text-xs">6 Months</span>
+                  <span className="text-[11px] text-secondary font-extrabold">₹2,399/-</span>
+                  <span className="text-[9px] text-emerald-400 block font-bold mt-0.5">+1 Mo Free Demo</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPlan('base_1y')}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer relative ${
+                    plan === 'base_1y' || plan === '1year'
+                      ? 'border-secondary bg-secondary/15 ring-2 ring-secondary/30 text-on-surface'
+                      : 'border-surface-container-high bg-surface-container-low text-outline hover:text-on-surface'
+                  }`}
+                >
+                  <span className="font-bold block text-xs">1 Year</span>
+                  <span className="text-[11px] text-secondary font-extrabold">₹3,499/-</span>
+                  <span className="text-[9px] text-emerald-400 block font-bold mt-0.5">+1 Mo Free Demo</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Pro Plan Options */}
+            <div className="space-y-1.5 pt-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
+                2. Pro Plan (Customization & Personalization)
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPlan('pro_6m')}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    plan === 'pro_6m'
+                      ? 'border-primary bg-primary/15 ring-2 ring-primary/30 text-on-surface'
+                      : 'border-surface-container-high bg-surface-container-low text-outline hover:text-on-surface'
+                  }`}
+                >
+                  <span className="font-bold block text-xs">6 Months Pro</span>
+                  <span className="text-[11px] text-primary font-extrabold">₹3,499/-</span>
+                  <span className="text-[9px] text-primary/90 block font-medium mt-0.5">1 customization free</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPlan('pro_1y')}
+                  className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                    plan === 'pro_1y'
+                      ? 'border-primary bg-primary/15 ring-2 ring-primary/30 text-on-surface'
+                      : 'border-surface-container-high bg-surface-container-low text-outline hover:text-on-surface'
+                  }`}
+                >
+                  <span className="font-bold block text-xs">1 Year Pro</span>
+                  <span className="text-[11px] text-primary font-extrabold">₹5,499/-</span>
+                  <span className="text-[9px] text-primary/90 block font-medium mt-0.5">2 customizations free</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {plan === 'trial' && (
@@ -295,10 +429,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </span>
               <button
                 type="button"
-                onClick={() => setPlan('1year')}
+                onClick={() => setPlan('base_6m')}
                 className="text-xs text-outline hover:text-on-surface font-semibold underline cursor-pointer"
               >
-                Switch to Annual (Save 15%)
+                Switch to Base 6M (+1M Free)
               </button>
             </div>
           )}
@@ -309,57 +443,28 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               <div>
                 <span className="font-sora text-sm font-bold text-on-surface block">{currentPlan.name}</span>
                 <span className="text-[11px] text-outline">{currentPlan.periodLabel}</span>
+                {currentPlan.bonusText && (
+                  <span className="text-[10px] text-emerald-400 font-bold block mt-0.5">
+                    🎉 {currentPlan.bonusText}
+                  </span>
+                )}
               </div>
               <div className="text-right">
                 <span className="font-sora text-lg font-extrabold text-secondary block">
-                  {isPaidPlan ? `₹${remainingTotalToPay.toLocaleString('en-IN')}` : '₹0 Today'}
+                  {isPaidPlan ? `₹${remainingTotalToPay.toLocaleString('en-IN')}/-` : '₹0 Today'}
                 </span>
                 <span className="text-[10px] text-outline block">
-                  {isPaidPlan ? 'Remaining amount to pay' : 'Customization fee deferred for 30 days'}
+                  {isPaidPlan ? 'Total amount to pay' : '30 days full testing'}
                 </span>
               </div>
             </div>
 
-            {/* Itemized Price Breakdown */}
-            {isPaidPlan && (
-              <div className="pt-2 border-t border-surface-container-high/60 space-y-1.5 text-[11px]">
-                <div className="flex items-center justify-between text-outline">
-                  <span>Plan License ({currentPlan.name}):</span>
-                  <span className="text-on-surface font-semibold">₹{currentPlan.basePrice.toLocaleString('en-IN')}</span>
-                </div>
-
-                <div className="flex items-center justify-between text-outline">
-                  <span>One-Time Customization Fee:</span>
-                  <span className={appliedCoupon ? 'line-through text-outline' : 'text-on-surface font-semibold'}>
-                    ₹{BASE_SETUP_FEE.toLocaleString('en-IN')}
-                  </span>
-                </div>
-
-                {appliedCoupon && (
-                  <div className="flex items-center justify-between text-tertiary font-bold">
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">local_activity</span>
-                      Coupon Discount ({appliedCoupon.code} - {appliedCoupon.discountPercent}% Off Customization):
-                    </span>
-                    <span>-₹{appliedCoupon.discountAmount.toLocaleString('en-IN')}</span>
-                  </div>
-                )}
-
-                <div className="flex items-center justify-between pt-1.5 border-t border-surface-container-high font-bold text-xs text-on-surface">
-                  <span>Remaining Amount to Pay Today:</span>
-                  <span className="text-secondary font-sora text-sm">₹{remainingTotalToPay.toLocaleString('en-IN')}</span>
-                </div>
-              </div>
-            )}
-
-            {plan === 'trial' && appliedCoupon && (
-              <div className="p-2 rounded-lg bg-tertiary/10 border border-tertiary/20 text-[11px] text-tertiary flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm shrink-0">check_circle</span>
-                <span>
-                  <strong>{appliedCoupon.code} Locked:</strong> You will get {appliedCoupon.discountPercent}% (₹{appliedCoupon.discountAmount}) off your customization fee when your 1-month trial converts.
-                </span>
-              </div>
-            )}
+            {/* Features summary note */}
+            <div className="pt-2 border-t border-surface-container-high/60 flex items-center justify-between text-[11px] text-outline">
+              <span>Features Included:</span>
+              <span className="text-on-surface font-semibold">{currentPlan.customizationNote}</span>
+            </div>
+          </div>
 
             {/* Advance Notice / Autopay Guarantee Notice */}
             <div className="p-2.5 rounded-lg bg-surface-container text-[11px] text-on-surface-variant flex items-start gap-2 border border-surface-container-high">
@@ -368,7 +473,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </span>
               <p className="leading-relaxed">{currentPlan.billingNotice}</p>
             </div>
-          </div>
 
           {/* Section: Promotional Coupon Section */}
           <div className="p-3 rounded-xl bg-surface-container-low border border-surface-container-high space-y-2">
