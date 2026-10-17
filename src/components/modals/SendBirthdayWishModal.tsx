@@ -112,8 +112,14 @@ export const SendBirthdayWishModal: React.FC<SendBirthdayWishModalProps> = ({
   const ageText = typeof member.age === 'number' ? `Turning ${member.age} years` : null;
 
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-xl bg-surface-container-low border border-primary/40 rounded-2xl shadow-[0_0_50px_rgba(148,125,255,0.25)] overflow-hidden flex flex-col max-h-[92vh]">
+    <div
+      className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-xl bg-surface-container-low border border-primary/40 rounded-2xl shadow-[0_0_50px_rgba(148,125,255,0.25)] overflow-hidden flex flex-col max-h-[92vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Corner accents */}
         <div className="absolute top-1.5 left-1.5 w-3 h-3 border-t-2 border-l-2 border-secondary"></div>
         <div className="absolute top-1.5 right-1.5 w-3 h-3 border-t-2 border-r-2 border-secondary"></div>

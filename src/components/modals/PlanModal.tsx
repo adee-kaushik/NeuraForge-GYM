@@ -59,9 +59,13 @@ export const PlanModal: React.FC<PlanModalProps> = ({ plan, onClose, onSaved }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+    <div
+      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
       <form
         onSubmit={handleSubmit}
+        onClick={(e) => e.stopPropagation()}
         className="w-full max-w-md max-h-[90vh] overflow-y-auto bg-surface-container-low border border-surface-container-high rounded-2xl p-6 space-y-5"
       >
         <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">

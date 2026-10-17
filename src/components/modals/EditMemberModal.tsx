@@ -72,9 +72,13 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ member, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+      onClick={onClose}
+    >
       <form
         onSubmit={handleSubmit}
+        onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg bg-surface-container-low border border-secondary/40 rounded-xl p-6 space-y-4 text-xs text-on-surface max-h-[92vh] overflow-y-auto"
       >
         <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">

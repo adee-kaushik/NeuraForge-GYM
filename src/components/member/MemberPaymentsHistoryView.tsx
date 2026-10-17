@@ -174,8 +174,14 @@ export const MemberPaymentsHistoryView: React.FC<MemberPaymentsHistoryViewProps>
 
       {/* Receipt Modal */}
       {selectedReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-sm bg-surface-container-low border border-secondary/40 rounded-2xl p-6 shadow-2xl space-y-4 text-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setSelectedReceipt(null)}
+        >
+          <div
+            className="relative w-full max-w-sm bg-surface-container-low border border-secondary/40 rounded-2xl p-6 shadow-2xl space-y-4 text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary text-xl">receipt_long</span>

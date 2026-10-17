@@ -487,8 +487,14 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({
 
       {/* POS Quick Sell Modal */}
       {sellingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-surface-container-lowest border border-surface-container-high rounded-2xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
+          onClick={() => setSellingItem(null)}
+        >
+          <div
+            className="w-full max-w-md bg-surface-container-lowest border border-surface-container-high rounded-2xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in fade-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary text-xl">point_of_sale</span>
@@ -724,8 +730,14 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({
 
       {/* Instant Digital Receipt Modal */}
       {receiptSale && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
-          <div className="relative w-full max-w-sm bg-surface-container-lowest border border-surface-container-high rounded-2xl p-6 text-center space-y-4 shadow-2xl animate-in zoom-in-95">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
+          onClick={() => setReceiptSale(null)}
+        >
+          <div
+            className="relative w-full max-w-sm bg-surface-container-lowest border border-surface-container-high rounded-2xl p-6 text-center space-y-4 shadow-2xl animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               onClick={() => setReceiptSale(null)}
@@ -785,9 +797,13 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({
 
       {/* Edit / Add Product Modal */}
       {editingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
+          onClick={() => setEditingItem(null)}
+        >
           <form
             onSubmit={handleSaveItem}
+            onClick={(e) => e.stopPropagation()}
             className="w-full max-w-lg bg-surface-container-lowest border border-surface-container-high rounded-2xl p-5 sm:p-6 space-y-4 shadow-2xl animate-in zoom-in-95 text-xs"
           >
             <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">

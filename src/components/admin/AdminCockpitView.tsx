@@ -1031,8 +1031,14 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
 
       {/* MODAL 1: Inspect Gym Members */}
       {inspectGym && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-3xl bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setInspectGym(null)}
+        >
+          <div
+            className="w-full max-w-3xl bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-4 border-b border-surface-container-high flex items-center justify-between bg-surface-container-low/50">
               <div className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-secondary text-2xl">group</span>
@@ -1117,8 +1123,16 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
             messageTargetGym === null && activeTab !== 'BROADCAST' ? 'hidden' : ''
           }`}
           style={{ display: messageTargetGym || (activeTab === 'BROADCAST' && msgTitle) ? 'flex' : 'none' }}
+          onClick={() => {
+            setMessageTargetGym(null);
+            setMsgTitle('');
+            setMsgBody('');
+          }}
         >
-          <div className="w-full max-w-lg bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-2xl p-5 space-y-4">
+          <div
+            className="w-full max-w-lg bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-2xl p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-surface-container-high pb-3">
               <div className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-secondary text-2xl">campaign</span>
@@ -1253,8 +1267,14 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
 
       {/* MODAL 3: Reply to Owner Feedback */}
       {replyTargetFeedback && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-2xl p-5 space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setReplyTargetFeedback(null)}
+        >
+          <div
+            className="w-full max-w-lg bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-2xl p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-surface-container-high pb-3">
               <div className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-secondary text-2xl">reply</span>
@@ -1318,8 +1338,14 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
       )}
       {/* MODAL 4: Onboard New Gym (After WhatsApp UPI Payment) */}
       {showCreateGymModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setShowCreateGymModal(false)}
+        >
+          <div
+            className="w-full max-w-lg bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-2xl p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between border-b border-surface-container-high pb-3">
               <div className="flex items-center gap-2.5">
                 <span className="material-symbols-outlined text-secondary text-2xl">add_business</span>
@@ -1568,8 +1594,14 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
 
       {/* MODAL 5: Gym Subscriptions Expiring in 48 Hours */}
       {showExpiring48hModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-3xl bg-surface-container-lowest border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setShowExpiring48hModal(false)}
+        >
+          <div
+            className="w-full max-w-3xl bg-surface-container-lowest border border-amber-500/40 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Modal Header with Close Cross Button */}
             <div className="p-4 sm:p-5 border-b border-surface-container-high flex items-center justify-between bg-surface-container-low/60">
               <div className="flex items-center gap-3">

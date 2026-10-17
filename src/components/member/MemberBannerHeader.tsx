@@ -196,7 +196,10 @@ export const MemberBannerHeader: React.FC<MemberBannerHeaderProps> = ({
 
       {/* Profile Picture Upload Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setIsModalOpen(false)}
+        >
           <div
             className="w-full max-w-sm bg-surface-container-lowest border border-surface-container-high rounded-3xl p-6 shadow-2xl space-y-5 animate-in zoom-in-95"
             onClick={(e) => e.stopPropagation()}

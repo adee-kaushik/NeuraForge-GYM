@@ -79,8 +79,14 @@ export const FrontDeskQrModal: React.FC<FrontDeskQrModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in overflow-y-auto">
-      <div className="relative w-full max-w-xl bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_60px_rgba(123,208,255,0.25)] overflow-hidden flex flex-col my-auto max-h-[95vh]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-xl bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_60px_rgba(123,208,255,0.25)] overflow-hidden flex flex-col my-auto max-h-[95vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Header */}
         <div className="px-5 py-3.5 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between">
           <div className="flex items-center gap-2.5">

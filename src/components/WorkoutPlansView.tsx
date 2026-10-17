@@ -989,8 +989,14 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
          MODAL: CREATE / EDIT WORKOUT PLAN
          ═══════════════════════════════════════════════ */}
       {editingPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setEditingPlan(null)}
+        >
+          <div
+            className="bg-surface-container-lowest border border-surface-container-high rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-4 sm:p-6 border-b border-surface-container-high flex items-center justify-between">
               <div>
                 <h2 className="font-sora text-base sm:text-lg font-bold text-on-surface">
@@ -1238,8 +1244,14 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
          MODAL: CREATE / EDIT DIET PLAN
          ═══════════════════════════════════════════════ */}
       {editingDietPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setEditingDietPlan(null)}
+        >
+          <div
+            className="bg-surface-container-lowest border border-surface-container-high rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-4 sm:p-6 border-b border-surface-container-high flex items-center justify-between">
               <div>
                 <h2 className="font-sora text-base sm:text-lg font-bold text-on-surface">
@@ -1564,8 +1576,14 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
          MODAL: SHARE WORKOUT ROUTINE VIA WHATSAPP
          ═══════════════════════════════════════════════ */}
       {sharingPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setSharingPlan(null)}
+        >
+          <div
+            className="bg-surface-container-lowest border border-surface-container-high rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#25D366] text-2xl">send</span>
@@ -1646,8 +1664,14 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
          MODAL: SHARE DIET PLAN VIA WHATSAPP
          ═══════════════════════════════════════════════ */}
       {sharingDietPlan && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          onClick={() => setSharingDietPlan(null)}
+        >
+          <div
+            className="bg-surface-container-lowest border border-surface-container-high rounded-2xl w-full max-w-lg p-6 space-y-5 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#25D366] text-2xl">send</span>

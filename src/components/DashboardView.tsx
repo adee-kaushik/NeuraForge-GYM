@@ -828,8 +828,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* POPUP MODAL ON STAT BOX CLICKS (With Top-Right Cross to Close) */}
       {activeStatModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="relative w-full max-w-3xl bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_50px_rgba(123,208,255,0.2)] overflow-hidden flex flex-col max-h-[88vh]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+          onClick={() => setActiveStatModal(null)}
+        >
+          <div
+            className="relative w-full max-w-3xl bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_50px_rgba(123,208,255,0.2)] overflow-hidden flex flex-col max-h-[88vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Modal Header */}
             <div className="p-4 sm:p-5 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between">
               <div className="flex items-center gap-2.5">

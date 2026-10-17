@@ -125,8 +125,12 @@ export const GymRenewalModal: React.FC<GymRenewalModalProps> = ({
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in"
       role="dialog"
       aria-modal="true"
+      onClick={onClose}
     >
-      <div className="relative w-full max-w-2xl bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_60px_rgba(123,208,255,0.25)] overflow-hidden flex flex-col max-h-[92vh]">
+      <div
+        className="relative w-full max-w-2xl bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_60px_rgba(123,208,255,0.25)] overflow-hidden flex flex-col max-h-[92vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Modal Header with Cross Button */}
         <div className="px-5 py-4 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between">
           <div className="flex items-center gap-3">

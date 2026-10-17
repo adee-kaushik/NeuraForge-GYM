@@ -146,8 +146,13 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-      <div className={`relative w-full max-w-xl bg-surface-container-low border rounded-xl overflow-hidden flex flex-col max-h-[92vh] ${
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`relative w-full max-w-xl bg-surface-container-low border rounded-xl overflow-hidden flex flex-col max-h-[92vh] ${
         isExpired
           ? 'border-rose-500/50 shadow-[0_0_50px_rgba(244,63,94,0.22)]'
           : 'border-secondary/40 shadow-[0_0_50px_rgba(123,208,255,0.25)]'

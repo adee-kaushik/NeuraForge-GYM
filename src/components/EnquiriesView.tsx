@@ -383,8 +383,14 @@ export const EnquiriesView: React.FC<EnquiriesViewProps> = ({
 
       {/* Add Enquiry Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-xl p-5 space-y-4">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <div
+            className="w-full max-w-md bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-xl p-5 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-secondary text-xl">contact_phone</span>

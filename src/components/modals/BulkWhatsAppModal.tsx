@@ -210,8 +210,14 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-3xl bg-surface-container-low border border-[#25D366]/40 rounded-2xl shadow-[0_0_50px_rgba(37,211,102,0.2)] overflow-hidden flex flex-col max-h-[92vh]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-3xl bg-surface-container-low border border-[#25D366]/40 rounded-2xl shadow-[0_0_50px_rgba(37,211,102,0.2)] overflow-hidden flex flex-col max-h-[92vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="px-5 py-4 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between">
           <div className="flex items-center gap-3">

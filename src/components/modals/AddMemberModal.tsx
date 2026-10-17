@@ -210,8 +210,14 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-2xl bg-surface-container-low border border-primary-container/40 rounded-2xl shadow-[0_0_50px_rgba(148,125,255,0.25)] overflow-hidden flex flex-col max-h-[94vh]">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in"
+      onClick={handleClose}
+    >
+      <div
+        className="relative w-full max-w-2xl bg-surface-container-low border border-primary-container/40 rounded-2xl shadow-[0_0_50px_rgba(148,125,255,0.25)] overflow-hidden flex flex-col max-h-[94vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Corner neon accents */}
         <div className="absolute top-1.5 left-1.5 w-3 h-3 border-t-2 border-l-2 border-primary"></div>
         <div className="absolute top-1.5 right-1.5 w-3 h-3 border-t-2 border-r-2 border-primary"></div>

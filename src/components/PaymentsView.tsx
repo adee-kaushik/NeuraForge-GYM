@@ -633,8 +633,14 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
 
       {/* DETAIL POPUP MODALS FOR KPI BOXES (With Top-Right Close Button) */}
       {activeKpiModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="relative w-full max-w-3xl bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_50px_rgba(123,208,255,0.2)] overflow-hidden flex flex-col max-h-[88vh]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+          onClick={() => setActiveKpiModal(null)}
+        >
+          <div
+            className="relative w-full max-w-3xl bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_50px_rgba(123,208,255,0.2)] overflow-hidden flex flex-col max-h-[88vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Modal Header with Close Button (X) */}
             <div className="p-4 sm:p-5 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -945,8 +951,14 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
 
       {/* Manual Cash/Counter Payment Modal */}
       {showManualModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="relative w-full max-w-md bg-surface-container-low border border-primary-container/40 rounded-xl shadow-[0_0_40px_rgba(148,125,255,0.25)] overflow-hidden flex flex-col">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+          onClick={() => setShowManualModal(false)}
+        >
+          <div
+            className="relative w-full max-w-md bg-surface-container-low border border-primary-container/40 rounded-xl shadow-[0_0_40px_rgba(148,125,255,0.25)] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="p-4 bg-surface-container-lowest border-b border-surface-container-high flex items-center justify-between">
               <h3 className="font-sora text-sm font-semibold text-on-surface">Record Cash / Counter Payment</h3>
               <button onClick={() => setShowManualModal(false)} className="text-outline hover:text-on-surface p-1 cursor-pointer">
@@ -1020,8 +1032,14 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
 
       {/* Payment Receipt Modal */}
       {selectedReceipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="relative w-full max-w-md bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_40px_rgba(123,208,255,0.25)] p-5 sm:p-6 space-y-4 text-xs">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+          onClick={() => setSelectedReceipt(null)}
+        >
+          <div
+            className="relative w-full max-w-md bg-surface-container-low border border-secondary/40 rounded-2xl shadow-[0_0_40px_rgba(123,208,255,0.25)] p-5 sm:p-6 space-y-4 text-xs"
+            onClick={(e) => e.stopPropagation()}
+          >
             {(() => {
               const rawDate = selectedReceipt.createdAt ? new Date(selectedReceipt.createdAt) : new Date();
               const dateFormatted = !isNaN(rawDate.getTime())

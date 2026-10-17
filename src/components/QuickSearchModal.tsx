@@ -38,8 +38,14 @@ export const QuickSearchModal: React.FC<QuickSearchModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-      <div className="relative w-full max-w-xl bg-surface-container-low border border-secondary/40 rounded-xl shadow-[0_0_40px_rgba(123,208,255,0.25)] overflow-hidden flex flex-col">
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center pt-20 p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-xl bg-surface-container-low border border-secondary/40 rounded-xl shadow-[0_0_40px_rgba(123,208,255,0.25)] overflow-hidden flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Search Input Bar */}
         <div className="p-4 bg-surface-container-lowest border-b border-surface-container-high flex items-center gap-3">
           <span className="material-symbols-outlined text-secondary text-2xl">search</span>
