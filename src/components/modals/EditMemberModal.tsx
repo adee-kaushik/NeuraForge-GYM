@@ -16,6 +16,7 @@ interface EditMemberModalProps {
       height?: number | null;
       bmi?: number | null;
       bmiCategory?: string | null;
+      biometricId?: string | null;
     }
   ) => Promise<boolean>;
 }
@@ -33,6 +34,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ member, onClos
   const [timingSlot, setTimingSlot] = useState<'MORNING' | 'EVENING' | 'BOTH' | string>(member.timingSlot || 'MORNING');
   const [weight, setWeight] = useState(member.weight ? String(member.weight) : '');
   const [height, setHeight] = useState(member.height ? String(member.height) : '');
+  const [biometricId, setBiometricId] = useState(member.biometricId ? String(member.biometricId) : '');
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -63,6 +65,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ member, onClos
       height: h,
       bmi,
       bmiCategory,
+      biometricId: biometricId.trim() || null,
     });
     setSaving(false);
     if (ok) onClose();
@@ -117,6 +120,25 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ member, onClos
             onChange={(e) => setDob(e.target.value)}
             className={inputClass}
           />
+        </div>
+
+        {/* Biometric machine ID */}
+        <div>
+          <label className="text-xs font-bold uppercase tracking-wider text-outline flex items-center gap-1.5 mb-1" htmlFor="edit-biometric-id">
+            <span className="material-symbols-outlined text-sm text-secondary">fingerprint</span>
+            <span>Biometric ID (number on the machine)</span>
+          </label>
+          <input
+            id="edit-biometric-id"
+            inputMode="numeric"
+            value={biometricId}
+            onChange={(e) => setBiometricId(e.target.value.replace(/\D/g, '').slice(0, 8))}
+            placeholder="e.g. 42"
+            className={`${inputClass} font-mono`}
+          />
+          <p className="text-[10px] text-outline mt-1">
+            Change this only to match a number the member is already enrolled under on the machine.
+          </p>
         </div>
 
         {/* Timing Slot */}

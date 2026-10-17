@@ -117,6 +117,7 @@ export default async function MemberPage() {
           gymSlug={gymSlug}
           gymName={gymName}
           memberCode={member.phone || member.memberCode}
+          biometricId={(member as { biometricId?: number | null }).biometricId ?? null}
           memberName={member.name || 'Member'}
           planName={membership?.plan?.name || 'No active plan'}
           expiryDateStr={membership && membership.expiresAt ? dateIST(membership.expiresAt) : 'N/A'}

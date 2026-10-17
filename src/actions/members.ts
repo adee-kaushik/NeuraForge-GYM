@@ -6,9 +6,13 @@ import { requireStaff } from '@/lib/auth';
 import { addMonths, gstIncluded } from '@/lib/format';
 import { nextId, nextInvoiceNo } from '@/lib/ids';
 import { toMemberRecord, toTransactionRecord } from '@/lib/records';
+import { nextBiometricId, parseBiometricIdInput } from '@/lib/biometric';
 import type { MemberRecord, NewMemberInput, PaymentMode, TransactionRecord } from '@/types';
 
 const PAYMENT_MODES = ['UPI', 'Card', 'Cash'];
+
+// An error whose message is safe to show to the person using the app (everything else becomes a generic failure).
+class UserFacingError extends Error {}
 
 export type AddMemberResult =
   | { ok: true; member: MemberRecord; payment?: TransactionRecord; duePayment?: TransactionRecord }
@@ -49,6 +53,9 @@ export async function addMember(input: NewMemberInput): Promise<AddMemberResult>
   const plan = await prisma.plan.findFirst({ where: { id: input.planId, gymId, isActive: true } });
   if (!plan) return { ok: false, error: 'The selected plan was not found.' };
 
+  const parsedBiometricId = parseBiometricIdInput(input.biometricId);
+  if ('error' in parsedBiometricId) return { ok: false, error: parsedBiometricId.error };
+
   await ensureMemberColumnsSafe();
 
   const discountAmount = Math.max(0, Math.min(plan.price, Math.round(input.discountAmount || 0)));
@@ -61,25 +68,35 @@ export async function addMember(input: NewMemberInput): Promise<AddMemberResult>
       const result = await prisma.$transaction(async (tx) => {
         const now = new Date();
 
-        let memberCode = input.biometricId?.trim().toUpperCase();
-        if (memberCode) {
-          const existing = await tx.member.findFirst({ where: { gymId, memberCode } });
-          if (existing) {
-            throw new Error(`Biometric / Member Code "${memberCode}" is already in use by another member.`);
-          }
-        } else {
-          const codes = await tx.member.findMany({
-            where: { gymId, memberCode: { startsWith: 'MEM-' } },
-            select: { memberCode: true },
-            orderBy: { createdAt: 'desc' },
-            take: 100,
+        // Member code is the gym's own label (MEM-001). The biometric ID is the separate NUMBER the member is
+        // enrolled under on the machine, because machines only accept digits.
+        const codes = await tx.member.findMany({
+          where: { gymId, memberCode: { startsWith: 'MEM-' } },
+          select: { memberCode: true },
+          orderBy: { createdAt: 'desc' },
+          take: 100,
+        });
+        const memberCode = nextId(
+          codes.map((c) => c.memberCode),
+          'MEM-',
+          1,
+          3
+        );
+
+        let biometricId: number;
+        if (parsedBiometricId.value !== null) {
+          const taken = await tx.member.findFirst({
+            where: { gymId, biometricId: parsedBiometricId.value },
+            select: { name: true },
           });
-          memberCode = nextId(
-            codes.map((c) => c.memberCode),
-            'MEM-',
-            1,
-            3
-          );
+          if (taken) {
+            throw new UserFacingError(
+              `Biometric ID ${parsedBiometricId.value} is already used by ${taken.name}. Pick another number or leave it empty to assign one automatically.`
+            );
+          }
+          biometricId = parsedBiometricId.value;
+        } else {
+          biometricId = await nextBiometricId(tx, gymId);
         }
 
         // Calculate membership expiry: custom renewal days or plan duration
@@ -88,56 +105,32 @@ export async function addMember(input: NewMemberInput): Promise<AddMemberResult>
           ? new Date(now.getTime() + customDays * 24 * 60 * 60 * 1000)
           : addMonths(now, plan.durationMonths);
 
-        let member;
-        try {
-          member = await tx.member.create({
-            data: {
-              gymId,
-              memberCode,
-              name,
-              phone,
-              email: email || null,
-              dob: input.dob && input.dob.trim() ? new Date(input.dob.trim()) : null,
-              timingSlot: input.timingSlot || 'MORNING',
-              weight: typeof input.weight === 'number' && input.weight > 0 ? input.weight : null,
-              height: typeof input.height === 'number' && input.height > 0 ? input.height : null,
-              bmi: typeof input.bmi === 'number' && input.bmi > 0 ? input.bmi : null,
-              bmiCategory: input.bmiCategory?.trim() || null,
-              joinedAt: now,
-              memberships: {
-                create: {
-                  gymId,
-                  planId: plan.id,
-                  startsAt: now,
-                  expiresAt,
-                },
+        const member = await tx.member.create({
+          data: {
+            gymId,
+            memberCode,
+            biometricId,
+            name,
+            phone,
+            email: email || null,
+            dob: input.dob && input.dob.trim() ? new Date(input.dob.trim()) : null,
+            timingSlot: input.timingSlot || 'MORNING',
+            weight: typeof input.weight === 'number' && input.weight > 0 ? input.weight : null,
+            height: typeof input.height === 'number' && input.height > 0 ? input.height : null,
+            bmi: typeof input.bmi === 'number' && input.bmi > 0 ? input.bmi : null,
+            bmiCategory: input.bmiCategory?.trim() || null,
+            joinedAt: now,
+            memberships: {
+              create: {
+                gymId,
+                planId: plan.id,
+                startsAt: now,
+                expiresAt,
               },
             },
-            include: { memberships: { orderBy: { expiresAt: 'desc' }, take: 1 } },
-          });
-        } catch {
-          // Graceful fallback if new columns are pending in DB
-          member = await tx.member.create({
-            data: {
-              gymId,
-              memberCode,
-              name,
-              phone,
-              email: email || null,
-              dob: input.dob && input.dob.trim() ? new Date(input.dob.trim()) : null,
-              joinedAt: now,
-              memberships: {
-                create: {
-                  gymId,
-                  planId: plan.id,
-                  startsAt: now,
-                  expiresAt,
-                },
-              },
-            },
-            include: { memberships: { orderBy: { expiresAt: 'desc' }, take: 1 } },
-          });
-        }
+          },
+          include: { memberships: { orderBy: { expiresAt: 'desc' }, take: 1 } },
+        });
 
         let payment = null;
         let duePayment = null;
@@ -220,6 +213,7 @@ export async function addMember(input: NewMemberInput): Promise<AddMemberResult>
         duePayment: result.duePayment ? toTransactionRecord(result.duePayment) : undefined,
       };
     } catch (e) {
+      if (e instanceof UserFacingError) return { ok: false, error: e.message };
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') continue;
       return { ok: false, error: 'Could not add the member. Please try again.' };
     }
@@ -430,6 +424,8 @@ export type UpdateMemberInput = {
   height?: number | null;
   bmi?: number | null;
   bmiCategory?: string | null;
+  /** The number the member is enrolled under on the machine. Empty / undefined = leave unchanged. */
+  biometricId?: string | number | null;
 };
 export type UpdateMemberResult = { ok: true; member: MemberRecord } | { ok: false; error: string };
 
@@ -454,6 +450,20 @@ export async function updateMember(memberId: string, input: UpdateMemberInput): 
     parsedDob = input.dob && input.dob.trim() ? new Date(input.dob.trim()) : null;
   }
 
+  let newBiometricId: number | undefined;
+  if (input.biometricId !== undefined && input.biometricId !== null && String(input.biometricId).trim() !== '') {
+    const parsed = parseBiometricIdInput(input.biometricId);
+    if ('error' in parsed) return { ok: false, error: parsed.error };
+    if (parsed.value !== null) {
+      const taken = await prisma.member.findFirst({
+        where: { gymId, biometricId: parsed.value, NOT: { id: memberId } },
+        select: { name: true },
+      });
+      if (taken) return { ok: false, error: `Biometric ID ${parsed.value} is already used by ${taken.name}.` };
+      newBiometricId = parsed.value;
+    }
+  }
+
   await ensureMemberColumnsSafe();
 
   const updateData: Record<string, unknown> = {
@@ -466,6 +476,7 @@ export async function updateMember(memberId: string, input: UpdateMemberInput): 
     ...(input.height !== undefined ? { height: input.height } : {}),
     ...(input.bmi !== undefined ? { bmi: input.bmi } : {}),
     ...(input.bmiCategory !== undefined ? { bmiCategory: input.bmiCategory } : {}),
+    ...(newBiometricId !== undefined ? { biometricId: newBiometricId } : {}),
   };
 
   try {
@@ -474,7 +485,10 @@ export async function updateMember(memberId: string, input: UpdateMemberInput): 
       data: updateData,
     });
     if (res.count !== 1) return { ok: false, error: 'Member not found.' };
-  } catch {
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+      return { ok: false, error: 'That biometric ID was just taken by another member. Pick a different number.' };
+    }
     // Fallback if columns not migrated
     const res = await prisma.member.updateMany({
       where: { id: memberId, gymId },

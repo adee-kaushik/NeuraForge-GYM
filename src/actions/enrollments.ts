@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { requireStaff } from '@/lib/auth';
 import { ensureDatabaseSchema } from '@/lib/db-init';
+import { nextBiometricId } from '@/lib/biometric';
 import { addMonths, gstIncluded } from '@/lib/format';
 import { nextId, nextInvoiceNo } from '@/lib/ids';
 import type { EnrollmentRecord, MembershipPlan } from '@/types';
@@ -241,10 +242,12 @@ export async function approveEnrollment(
 
     // Create Member, Membership, Payment, and update Enrollment in a transaction
     const result = await prisma.$transaction(async (tx) => {
+      const biometricId = await nextBiometricId(tx, gymId);
       const member = await tx.member.create({
         data: {
           gymId,
           memberCode,
+          biometricId,
           name: enrollment.name,
           phone: enrollment.phone,
           email: enrollment.email,

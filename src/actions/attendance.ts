@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { requireStaff } from '@/lib/auth';
 import { startOfDayIST } from '@/lib/format';
 import { toCheckInRecord } from '@/lib/records';
+import { membershipActiveAt, processPunches } from '@/lib/biometric';
 import type { CheckInRecord } from '@/types';
 
 export type CheckInResult = { ok: true; checkIn: CheckInRecord } | { ok: false; error: string };
@@ -21,13 +22,14 @@ export async function checkInMember(memberId: string): Promise<CheckInResult> {
 
   const now = new Date();
   const latest = member.memberships[0];
-  if (!latest || latest.expiresAt < now) {
+  // Valid through the whole last day (IST), exactly like the biometric machines
+  if (!latest || !membershipActiveAt(latest.expiresAt, now)) {
     const daysOverdue = latest
       ? Math.max(1, Math.round((startOfDayIST(now).getTime() - startOfDayIST(latest.expiresAt).getTime()) / 86400000))
       : 0;
     return {
       ok: false,
-      error: `🚫 ACCESS DENIED: ${member.name}'s membership has EXPIRED${daysOverdue ? ` (${daysOverdue}d ago)` : ''}. Biometric turnstile access is locked. Please renew first.`,
+      error: `🚫 ACCESS DENIED: ${member.name}'s membership has EXPIRED${daysOverdue ? ` (${daysOverdue}d ago)` : ''}. Please renew first.`,
     };
   }
 
@@ -75,69 +77,37 @@ export async function checkInByCode(rawInput: string): Promise<ScanCheckInResult
     }
   }
 
-  const member = await prisma.member.findFirst({
-    where: {
-      gymId,
-      OR: [
-        { memberCode: { equals: memberCode, mode: 'insensitive' } },
-        { phone: { equals: memberCode.replace(/\D/g, '') } },
-      ],
-    },
-    include: {
-      memberships: {
-        orderBy: { expiresAt: 'desc' },
-        take: 1,
-        include: { plan: true },
-      },
-    },
+  // Same pipeline as the machines: matches the biometric ID first, then member code, then phone.
+  const [outcome] = await processPunches({
+    gymId,
+    punches: [{ pin: memberCode, punchedAt: new Date() }],
+    source: 'MANUAL',
   });
 
-  if (!member) {
-    return { ok: false, error: `Member "${memberCode}" not found in this gym.` };
+  switch (outcome.status) {
+    case 'GRANTED':
+      return {
+        ok: true,
+        checkIn: { id: outcome.checkInId!, memberId: outcome.memberId!, checkedInAt: outcome.checkedInAt! },
+        member: {
+          id: outcome.memberId!,
+          name: outcome.memberName!,
+          memberCode: outcome.memberCode!,
+          phone: outcome.phone ?? '',
+          planName: outcome.planName ?? '',
+          daysLeft: outcome.daysLeft ?? 0,
+        },
+      };
+    case 'ALREADY_IN':
+    case 'REPLAY':
+      return { ok: false, error: `${outcome.memberName} is already marked present today.`, memberName: outcome.memberName };
+    case 'EXPIRED':
+      return {
+        ok: false,
+        error: `🚫 ACCESS DENIED: Membership for ${outcome.memberName} has EXPIRED${outcome.daysOverdue ? ` (${outcome.daysOverdue}d ago)` : ''}. Please renew first.`,
+        memberName: outcome.memberName,
+      };
+    default:
+      return { ok: false, error: `Member "${memberCode}" not found in this gym.` };
   }
-
-  const now = new Date();
-  const latest = member.memberships[0];
-  if (!latest || latest.expiresAt < now) {
-    const daysOverdue = latest
-      ? Math.max(1, Math.round((startOfDayIST(now).getTime() - startOfDayIST(latest.expiresAt).getTime()) / 86400000))
-      : 0;
-    return {
-      ok: false,
-      error: `🚫 ACCESS DENIED: Membership for ${member.name} has EXPIRED${daysOverdue ? ` (${daysOverdue}d ago)` : ''}. Biometric & turnstiles are locked. Please renew first.`,
-      memberName: member.name,
-    };
-  }
-
-  const alreadyIn = await prisma.attendance.findFirst({
-    where: { gymId, memberId: member.id, checkedInAt: { gte: startOfDayIST(now) } },
-  });
-  if (alreadyIn) {
-    return {
-      ok: false,
-      error: `${member.name} is already marked present today.`,
-      memberName: member.name,
-    };
-  }
-
-  const row = await prisma.attendance.create({
-    data: { gymId, memberId: member.id, checkedInAt: now },
-  });
-
-  const daysLeft = Math.round(
-    (startOfDayIST(latest.expiresAt).getTime() - startOfDayIST(now).getTime()) / 86400000
-  );
-
-  return {
-    ok: true,
-    checkIn: toCheckInRecord(row),
-    member: {
-      id: member.id,
-      name: member.name,
-      memberCode: member.memberCode,
-      phone: member.phone,
-      planName: latest.plan.name,
-      daysLeft,
-    },
-  };
 }

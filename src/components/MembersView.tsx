@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useRef } from 'react';
+import { BiometricDevicesPanel } from './BiometricDevicesPanel';
 import { Member, MembershipPlan, CheckInLog } from '../types';
 import { formatTimestamp, formatTime, isSameDay } from '../lib/format';
 import type { ScanCheckInResult } from '@/actions/attendance';
@@ -124,7 +125,8 @@ export const MembersView: React.FC<MembersViewProps> = ({
         m.name.toLowerCase().includes(q) ||
         m.phone.includes(q) ||
         m.email.toLowerCase().includes(q) ||
-        (m.memberCode && m.memberCode.toLowerCase().includes(q));
+        (m.memberCode && m.memberCode.toLowerCase().includes(q)) ||
+        (m.biometricId != null && String(m.biometricId) === q.replace(/^id\s*/, ''));
 
       // 2. Plan filter (from plan cards or dropdown)
       const matchesPlan = selectedPlan === 'All' || m.planName === selectedPlan || m.planDuration === selectedPlan;
@@ -271,7 +273,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
   };
 
   const copyAdmsPath = () => {
-    navigator.clipboard.writeText('/iclock/cdata');
+    navigator.clipboard.writeText(window.location.hostname);
     setCopiedUrl(true);
     setTimeout(() => setCopiedUrl(false), 2000);
   };
@@ -392,10 +394,13 @@ export const MembersView: React.FC<MembersViewProps> = ({
                 onClick={copyAdmsPath}
                 className="px-2.5 py-1 rounded-lg bg-secondary/15 hover:bg-secondary/25 text-xs font-bold text-secondary transition-colors cursor-pointer"
               >
-                {copiedUrl ? 'Copied ADMS!' : 'Copy ADMS Path'}
+                {copiedUrl ? 'Copied!' : 'Copy Server Address'}
               </button>
             </div>
           </div>
+
+          {/* Registered machines, key, recent punches */}
+          <BiometricDevicesPanel />
 
           {/* Biometric Simulator & Setup Guides */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
@@ -417,7 +422,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                   value={bioId}
                   onChange={(e) => setBioId(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleBiometricPunch(bioId)}
-                  placeholder="Enter Member Code (e.g. MEM-001)"
+                  placeholder="Enter Biometric ID (e.g. 42)"
                   className="flex-1 bg-surface-container px-3 py-2 rounded-xl text-xs font-mono text-on-surface border border-surface-container-high focus:border-secondary focus:outline-none"
                 />
                 <button
@@ -437,10 +442,10 @@ export const MembersView: React.FC<MembersViewProps> = ({
                   {members.slice(0, 6).map((m) => (
                     <button
                       key={m.id}
-                      onClick={() => handleBiometricPunch(m.memberCode)}
+                      onClick={() => handleBiometricPunch(String(m.biometricId ?? m.memberCode))}
                       className="px-2 py-0.5 rounded-lg bg-surface-container hover:bg-surface-container-high text-[11px] font-mono text-secondary border border-surface-container-high cursor-pointer transition-colors"
                     >
-                      {m.memberCode} ({m.name.split(' ')[0]})
+                      {m.biometricId != null ? `ID ${m.biometricId}` : m.memberCode} ({m.name.split(' ')[0]})
                     </button>
                   ))}
                 </div>
@@ -495,26 +500,32 @@ export const MembersView: React.FC<MembersViewProps> = ({
               {deviceGuideTab === 'essl' && (
                 <div className="space-y-2 text-xs">
                   <p className="text-on-surface-variant text-[11px]">
-                    <strong>Direct Cloud Push (Zero PC Required):</strong> Enter these settings on your eSSL / ZKTeco machine screen:
+                    <strong>Direct cloud push (no PC needed):</strong> on the machine, open Menu → Comm. → Cloud Server (ADMS) and enter:
                   </p>
                   <div className="p-2.5 bg-surface-container rounded-xl font-mono text-[11px] space-y-1.5 border border-surface-container-high">
-                    <div className="flex items-center justify-between">
-                      <span className="text-outline">Server Address:</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-outline">Server address:</span>
                       <span className="text-secondary font-bold select-all">
-                        {typeof window !== 'undefined' ? window.location.host : 'neurafitness.com'}
+                        {typeof window !== 'undefined' ? window.location.hostname : 'your-site.com'}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-outline">Server Port:</span>
-                      <span className="text-secondary font-bold">443 (HTTPS) or 80 (HTTP)</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-outline">Server port:</span>
+                      <span className="text-secondary font-bold">443</span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-outline">ADMS / iClock Path:</span>
-                      <span className="text-tertiary font-bold">/iclock/cdata</span>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-outline">HTTPS:</span>
+                      <span className="text-secondary font-bold">ON</span>
                     </div>
                   </div>
-                  <p className="text-[11px] text-outline">
-                    Menu → Comm. → Cloud Server / ADMS → Enable Domain Name ON → Save.
+                  <ol className="text-[11px] text-outline list-decimal pl-4 space-y-0.5">
+                    <li>Register the machine's serial number above. Unregistered machines are ignored.</li>
+                    <li>Set the machine's date, time and timezone to India (IST).</li>
+                    <li>Enroll each member under their Biometric ID (shown on the member row).</li>
+                    <li>Scan once. The punch should appear in "Recent machine punches" within seconds.</li>
+                  </ol>
+                  <p className="text-[11px] text-amber-400">
+                    No HTTPS option on the machine, or it only accepts port 80? Many older models cannot talk to this site directly. Use the relay in tools/adms-relay.js (see docs/BIOMETRICS.md).
                   </p>
                 </div>
               )}
@@ -522,18 +533,21 @@ export const MembersView: React.FC<MembersViewProps> = ({
               {deviceGuideTab === 'lan' && (
                 <div className="space-y-2 text-xs">
                   <p className="text-on-surface-variant text-[11px]">
-                    <strong>Local LAN Bridge:</strong> For offline WiFi/Ethernet devices on port 4370:
+                    <strong>LAN bridge:</strong> for machines that only work on the gym's local network (port 4370). Run on a PC at the gym that stays switched on:
                   </p>
-                  <code className="text-secondary block p-2 bg-surface-container rounded text-[11px] font-mono border border-surface-container-high select-all">
-                    node public/scripts/neurafitness-sync.js
+                  <code className="text-secondary block p-2 bg-surface-container rounded text-[11px] font-mono border border-surface-container-high select-all whitespace-pre-wrap break-all">
+                    {`npm install node-zklib\nNEURAFITNESS_URL=https://${typeof window !== 'undefined' ? window.location.host : 'your-site.com'} GYM_SLUG=${gymSlug || 'your-gym-slug'} DEVICE_IP=192.168.1.201 BIOMETRIC_API_KEY=<your key> node neurafitness-sync.js`}
                   </code>
+                  <p className="text-[11px] text-outline">
+                    Needs the gym API key (generate it above). The script also re-sends anything it missed while the PC or internet was off.
+                  </p>
                   <a
                     href="/scripts/neurafitness-sync.js"
                     download="neurafitness-sync.js"
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-surface-container-high text-secondary text-xs font-bold hover:bg-surface-container-highest transition-colors"
                   >
                     <span className="material-symbols-outlined text-sm">download</span>
-                    <span>Download Desktop Script</span>
+                    <span>Download bridge script</span>
                   </a>
                 </div>
               )}
@@ -541,15 +555,18 @@ export const MembersView: React.FC<MembersViewProps> = ({
               {deviceGuideTab === 'json' && (
                 <div className="space-y-2 text-xs">
                   <p className="text-on-surface-variant text-[11px]">
-                    <strong>REST Endpoint:</strong> POST /api/attendance/biometric
+                    <strong>REST API (Mantra and custom):</strong> POST /api/attendance/biometric with the header <code className="font-mono">x-api-key: &lt;your key&gt;</code>
                   </p>
                   <pre className="p-2 bg-surface-container rounded text-[10px] font-mono text-tertiary overflow-x-auto border border-surface-container-high">
 {`{
   "gymSlug": "${gymSlug || 'your-gym-slug'}",
-  "identifier": "MEM-001",
+  "identifier": "42",
   "timestamp": "${new Date().toISOString()}"
 }`}
                   </pre>
+                  <p className="text-[11px] text-outline">
+                    "identifier" is the member's Biometric ID. Send many at once with "punches": [ ... ] (up to 500). A timestamp without a timezone is read as IST; leave it out to mean now.
+                  </p>
                 </div>
               )}
             </div>
@@ -975,6 +992,15 @@ export const MembersView: React.FC<MembersViewProps> = ({
                             <span className="text-slate-200">{member.phone}</span>
                             {member.memberCode && (
                               <span className="font-mono text-[10px] text-secondary font-bold">({member.memberCode})</span>
+                            )}
+                            {member.biometricId != null && (
+                              <span
+                                title="Number this member is enrolled under on the biometric machine"
+                                className="font-mono text-[10px] text-slate-300 font-bold inline-flex items-center gap-0.5"
+                              >
+                                <span className="material-symbols-outlined text-[11px]">fingerprint</span>
+                                ID {member.biometricId}
+                              </span>
                             )}
                             {member.dobFormatted && (
                               <span className="text-[10px] text-slate-300 font-medium">· DOB: {member.dobFormatted}</span>

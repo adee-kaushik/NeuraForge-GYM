@@ -18,3 +18,9 @@ Open http://localhost:3000
 - `src/components/` — screens (Dashboard, Members, Memberships, Attendance, Payments, Settings) and modals
 - `src/types/` — shared TypeScript types
 - `src/data/` — mock data
+
+## Biometric attendance
+
+Machines (eSSL / ZKTeco cloud push, LAN bridge, REST) are managed in Members → Biometrics Hub.
+Setup, rules and troubleshooting: [docs/BIOMETRICS.md](docs/BIOMETRICS.md).
+**After pulling this change, run the migration `20261017000000_biometric_devices` before deploying.**

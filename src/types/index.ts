@@ -48,6 +48,7 @@ export interface StaffRecord {
 export interface MemberRecord {
   id: string;
   memberCode: string; // e.g. 'MEM-001', unique within a gym
+  biometricId?: number | null; // number the member is enrolled under on the biometric machine, unique within a gym
   name: string;
   phone: string;
   email: string;
@@ -135,7 +136,7 @@ export interface NewMemberInput {
   planId: string;
   recordPayment: boolean;
   paymentMode: PaymentMode;
-  biometricId?: string;
+  biometricId?: string; // digits only; empty = assigned automatically
   // Timings (Morning / Evening slot)
   timingSlot?: 'MORNING' | 'EVENING' | 'BOTH';
   // Custom discount

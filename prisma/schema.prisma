@@ -25,6 +25,12 @@ enum PaymentStatus {
   PENDING
 }
 
+// How a gym takes attendance. Matches the enum created by the attendance_modes migration.
+enum AttendanceMode {
+  QR
+  BIOMETRIC
+}
+
 model Gym {
   id                 String   @id @default(cuid())
   name               String
@@ -37,7 +43,8 @@ model Gym {
   paymentQrUrl       String?
   bannerUrl          String?
   tagline            String?
-  attendanceMode     String?  @default("biometric")
+  attendanceMode     AttendanceMode @default(QR)
+  biometricKeyHash   String?  // SHA-256 of the gym's API key (LAN bridge / REST); plain key is shown once
   saasPlan           String   @default("TRIAL_14_DAYS")
   saasStatus         String   @default("ACTIVE") // PENDING_APPROVAL, ACTIVE, TRIAL, EXPIRED, SUSPENDED
   saasExpiresAt      DateTime?
@@ -57,6 +64,9 @@ model Gym {
   ownerFeedbacks OwnerFeedback[]
   adminMessages  AdminMessage[]
   enrollments    Enrollment[]
+  devices        Device[]
+  biometricPunches BiometricPunch[]
+  biometricLogs  BiometricLog[]
 }
 
 model User {
@@ -98,6 +108,7 @@ model Member {
   gymId      String
   authUserId String?  @unique @db.Uuid // Supabase Auth user id, set when the login is created
   memberCode String
+  biometricId Int?    // number the member is enrolled under on the machine (machines only accept digits); unique per gym
   name       String
   phone      String
   email      String?
@@ -119,6 +130,7 @@ model Member {
   reminders   GymReminder[]
 
   @@unique([gymId, memberCode])
+  @@unique([gymId, biometricId])
   @@index([gymId])
 }
 
@@ -281,4 +293,56 @@ model Enrollment {
   @@index([status])
 }
 
+// A physical biometric machine. The serial number (SN) is how the machine introduces itself
+// to /iclock/* (ADMS push), so registering the SN under a gym is what authorises the machine.
+model Device {
+  id           String    @id @default(cuid())
+  gymId        String
+  serialNumber String    @unique
+  name         String
+  protocol     String    @default("ADMS") // ADMS (cloud push) or API (LAN bridge / REST)
+  isActive     Boolean   @default(true)
+  lastSeenAt   DateTime?
+  lastIp       String?
+  createdAt    DateTime  @default(now())
 
+  gym Gym @relation(fields: [gymId], references: [id])
+
+  @@index([gymId])
+}
+
+// Every raw punch we receive. The unique key makes re-sent punches (machines resend until they get "OK") harmless.
+model BiometricPunch {
+  id           String   @id @default(cuid())
+  gymId        String
+  deviceSerial String   @default("") // empty for punches that did not come from a registered machine (REST / test)
+  pin          String   // the ID exactly as the machine sent it
+  memberId     String?
+  punchedAt    DateTime
+  verifyType   String?  // FINGERPRINT, FACE, CARD, PASSWORD, PALM, OTHER
+  verifyCode   Int?
+  source       String   @default("ADMS") // ADMS, API, TEST
+  result       String   // GRANTED, ALREADY_IN, EXPIRED, UNKNOWN_ID, BAD_TIME, STALE
+  createdAt    DateTime @default(now())
+
+  gym Gym @relation(fields: [gymId], references: [id])
+
+  @@unique([gymId, deviceSerial, pin, punchedAt])
+  @@index([gymId, punchedAt])
+}
+
+// Short activity trail for debugging connections without visiting the gym. Pruned after ~14 days.
+model BiometricLog {
+  id           String   @id @default(cuid())
+  gymId        String?  // null when the machine is not registered to any gym
+  deviceSerial String?
+  kind         String   // HANDSHAKE, ATTLOG, OPERLOG, UNREGISTERED, API, ERROR
+  summary      String
+  rawPreview   String?
+  createdAt    DateTime @default(now())
+
+  gym Gym? @relation(fields: [gymId], references: [id])
+
+  @@index([gymId, createdAt])
+  @@index([deviceSerial, createdAt])
+}

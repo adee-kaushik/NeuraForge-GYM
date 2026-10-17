@@ -296,28 +296,23 @@ export const AddMemberModal: React.FC<AddMemberModalProps> = ({ isOpen, plans, o
                 />
               </div>
 
-              {/* Hardware / Biometric Code */}
+              {/* Biometric machine ID (digits only) */}
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="text-xs font-bold uppercase tracking-wider text-outline flex items-center gap-1">
-                    <span className="material-symbols-outlined text-sm text-secondary">fingerprint</span>
-                    <span>Biometric / Member Code</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setBiometricId(`MEM-${Math.floor(100 + Math.random() * 900)}`)}
-                    className="text-[10px] font-bold text-secondary hover:underline cursor-pointer"
-                  >
-                    Auto-generate
-                  </button>
-                </div>
+                <label className="text-xs font-bold uppercase tracking-wider text-outline flex items-center gap-1 mb-1">
+                  <span className="material-symbols-outlined text-sm text-secondary">fingerprint</span>
+                  <span>Biometric ID (number on the machine)</span>
+                </label>
                 <input
                   type="text"
+                  inputMode="numeric"
                   value={biometricId}
-                  onChange={(e) => setBiometricId(e.target.value)}
-                  placeholder="e.g. MEM-005 (auto if blank)"
+                  onChange={(e) => setBiometricId(e.target.value.replace(/\D/g, '').slice(0, 8))}
+                  placeholder="Auto-assigned if left blank"
                   className={`${inputClass} font-mono`}
                 />
+                <p className="text-[10px] text-outline mt-1">
+                  Enroll the member's finger or face on the machine under this same number. Digits only.
+                </p>
               </div>
             </div>
           </div>

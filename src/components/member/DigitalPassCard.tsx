@@ -8,6 +8,7 @@ interface DigitalPassCardProps {
   gymSlug: string;
   gymName: string;
   memberCode: string;
+  biometricId?: number | null;
   memberName: string;
   planName: string;
   expiryDateStr: string;
@@ -22,6 +23,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
   gymSlug,
   gymName,
   memberCode,
+  biometricId,
   memberName,
   planName,
   expiryDateStr,
@@ -149,7 +151,7 @@ export const DigitalPassCard: React.FC<DigitalPassCardProps> = ({
         <div className="p-3 rounded-xl bg-surface-container border border-surface-container-high text-xs text-on-surface-variant flex items-center gap-2 max-w-sm">
           <span className="material-symbols-outlined text-secondary text-lg shrink-0">fingerprint</span>
           <p className="text-[11px] text-left leading-relaxed">
-            Scan your <b>Fingerprint</b> or <b>Face ID</b> on the gym terminal. Your biometric terminal ID is <b>{memberCode}</b>.
+            Scan your <b>Fingerprint</b> or <b>Face ID</b> on the gym terminal. Your biometric terminal ID is <b>{biometricId ?? memberCode}</b>.
           </p>
         </div>
 

@@ -11,6 +11,7 @@ export const toMemberRecord = (m: MemberWithLatestMembership): MemberRecord => {
   return {
     id: m.id,
     memberCode: m.memberCode,
+    biometricId: m.biometricId,
     name: m.name,
     phone: m.phone,
     email: m.email ?? '',

@@ -8,6 +8,7 @@ import { generatePassword, memberEmail } from '@/lib/member-auth';
 import { startOfDayIST } from '@/lib/format';
 import { setMemberSession, clearMemberSession } from '@/lib/member-session';
 import { getCurrentMember } from '@/lib/auth';
+import { membershipActiveAt } from '@/lib/biometric';
 import { ensureDatabaseSchema } from '@/lib/db-init';
 
 export type MemberLoginState = { error?: string; success?: boolean };
@@ -238,14 +239,20 @@ export async function memberSelfCheckIn(): Promise<{ ok: boolean; error?: string
   const member = await getCurrentMember();
   if (!member) return { ok: false, error: 'Please log in first.' };
 
+  // A gym that takes attendance on a biometric machine must not also let members tap "check in" from home.
+  const gymRow = await prisma.gym.findUnique({ where: { id: member.gymId }, select: { attendanceMode: true } }).catch(() => null);
+  if (gymRow?.attendanceMode === 'BIOMETRIC') {
+    return { ok: false, error: 'This gym marks attendance on its biometric machine. Please scan your finger or face at the entrance.' };
+  }
+
   const now = new Date();
   const latestMembership = await prisma.membership.findFirst({
     where: { memberId: member.id, gymId: member.gymId },
     orderBy: { expiresAt: 'desc' },
   });
 
-  if (!latestMembership || latestMembership.expiresAt < now) {
-    return { ok: false, error: '🚫 ACCESS DENIED: Your membership has expired. Biometric & turnstile access is locked. Please renew with the front desk.' };
+  if (!latestMembership || !membershipActiveAt(latestMembership.expiresAt, now)) {
+    return { ok: false, error: '🚫 ACCESS DENIED: Your membership has expired. Please renew with the front desk.' };
   }
 
   const alreadyIn = await prisma.attendance.findFirst({

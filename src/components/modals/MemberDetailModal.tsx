@@ -200,6 +200,9 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
               </div>
               <p className="text-xs text-outline">
                 {member.email} · {member.phone}
+                {member.biometricId != null && (
+                  <span> · <span className="text-secondary font-mono font-medium">Machine ID {member.biometricId}</span></span>
+                )}
                 {member.dobFormatted && (
                   <span> · <span className="text-secondary font-medium">🎂 DOB: {member.dobFormatted}{typeof member.age === 'number' ? ` (${member.age} yrs)` : ''}</span></span>
                 )}

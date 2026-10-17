@@ -174,7 +174,11 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
     if (newTxns.length > 0) {
       setTxnRecords((prev) => [...newTxns, ...prev]);
     }
-    showToast(`${res.member.name} registered as a member.`);
+    showToast(
+      res.member.biometricId
+        ? `${res.member.name} registered. Enroll them on the machine as ID ${res.member.biometricId}.`
+        : `${res.member.name} registered as a member.`
+    );
     return true;
   };
 
@@ -190,6 +194,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
       height?: number | null;
       bmi?: number | null;
       bmiCategory?: string | null;
+      biometricId?: string | null;
     }
   ): Promise<boolean> => {
     const res = await updateMember(memberId, input);
