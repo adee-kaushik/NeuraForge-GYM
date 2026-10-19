@@ -62,6 +62,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
   const handleLogin = async () => {
     setBusy(true);
+    if (hasLogin && !confirm(`Reset ${member.name}'s password? Their previous password will stop working.`)) { setBusy(false); return; }
     const result = await (hasLogin ? resetMemberPassword : createMemberLogin)(member.id);
     setBusy(false);
     setLogin({ memberId: member.id, result });
@@ -76,11 +77,13 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
     if (res.ok) {
       setLoginRevoked(true);
       setLogin(null);
+    } else {
+      setLogin({ memberId: member.id, result: { ok: false, error: res.error || 'Could not revoke login.' } });
     }
   };
 
   const sendLoginOnWhatsApp = (r: { gymCode: string; memberCode: string; password?: string }) => {
-    const text = `Hi ${member.name}, your ${gymName} digital pass access:\nGym Code: ${r.gymCode}\nMember ID (Phone): ${r.memberCode}\nPass Link: ${window.location.origin}/member/login\n(No password required - simply enter your Gym Code and Phone Number!)`;
+    const text = `Hi ${member.name}, your ${gymName} digital pass access:\nGym Code: ${r.gymCode}\nMember ID: ${r.memberCode}\nPass Link: ${window.location.origin}/member/login\nPassword: ${r.password}\nKeep these login details private.`;
     const digits = member.phone.replace(/[^0-9]/g, '');
     const waPhone = digits.length === 10 ? `91${digits}` : digits;
     window.open(
@@ -667,17 +670,17 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
                   {busy && (
                     <span className="material-symbols-outlined text-xs animate-spin">progress_activity</span>
                   )}
-                  {busy ? 'Please wait...' : hasLogin ? 'Resend Pass Details' : 'Share Pass Access'}
+                  {busy ? 'Please wait...' : hasLogin ? 'Reset Password' : 'Create Login'}
                 </button>
               </div>
             </div>
             {created ? (
               <div className="rounded-lg border border-secondary/30 bg-secondary/10 p-3 text-xs space-y-1.5">
                 <p className="text-on-surface">
-                  Gym code: <b>{created.gymCode}</b> · Member ID (Phone): <b>{created.memberCode}</b>
+                  Gym code: <b>{created.gymCode}</b> · Member ID: <b>{created.memberCode}</b>
                 </p>
                 <p className="text-tertiary font-medium">
-                  ✓ Passwordless login enabled. Member can access their pass directly using Gym Code &amp; Phone Number.
+                  Password: <b className="font-mono select-all">{created.password}</b>. Share privately with this member.
                 </p>
                 <button
                   onClick={() => sendLoginOnWhatsApp(created)}
@@ -691,7 +694,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
               <p className="text-xs text-error">{failure}</p>
             ) : (
               <p className="text-xs text-outline">
-                {hasLogin ? 'Member has active digital pass access (No password required).' : 'Pass access not shared yet.'}
+                {hasLogin ? 'Member has password-protected digital pass access.' : 'Pass access not shared yet.'}
               </p>
             )}
           </div>

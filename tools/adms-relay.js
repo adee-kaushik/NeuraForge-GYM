@@ -16,16 +16,23 @@ const http = require('http');
 const https = require('https');
 const { URL } = require('url');
 
-const TARGET = new URL(process.env.TARGET_URL || '');
+if (!process.env.TARGET_URL || !process.env.NF_API_KEY) {
+  console.error('Set TARGET_URL (HTTPS site URL) and NF_API_KEY (this gym API key).');
+  process.exit(1);
+}
+const TARGET = new URL(process.env.TARGET_URL);
+if (TARGET.protocol !== 'https:') throw new Error('TARGET_URL must use HTTPS');
 const PORT = parseInt(process.env.PORT || '8080', 10);
 const client = TARGET.protocol === 'https:' ? https : http;
 
 const server = http.createServer((req, res) => {
+  if (!req.url?.startsWith('/iclock/')) { res.writeHead(404); res.end('Not found'); return; }
   const chunks = [];
-  req.on('data', (c) => chunks.push(c));
+  let size = 0;
+  req.on('data', (c) => { size += c.length; if (size > 1024 * 1024) { req.destroy(); return; } chunks.push(c); });
   req.on('end', () => {
     const body = Buffer.concat(chunks);
-    const headers = { ...req.headers, host: TARGET.host, 'content-length': body.length };
+    const headers = { ...req.headers, host: TARGET.host, 'content-length': body.length, 'x-api-key': process.env.NF_API_KEY };
     delete headers.connection;
 
     const upstream = client.request(

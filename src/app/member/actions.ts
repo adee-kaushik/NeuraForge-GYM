@@ -4,9 +4,8 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
 import { createAdminClient } from '@/utils/supabase/admin';
-import { generatePassword, memberEmail } from '@/lib/member-auth';
 import { startOfDayIST } from '@/lib/format';
-import { setMemberSession, clearMemberSession } from '@/lib/member-session';
+import { clearMemberSession } from '@/lib/member-session';
 import { getCurrentMember } from '@/lib/auth';
 import { membershipActiveAt } from '@/lib/biometric';
 import { ensureDatabaseSchema } from '@/lib/db-init';
@@ -14,106 +13,29 @@ import { ensureDatabaseSchema } from '@/lib/db-init';
 export type MemberLoginState = { error?: string; success?: boolean };
 
 export async function loginMember(_prev: MemberLoginState, formData: FormData): Promise<MemberLoginState> {
+  const gymCode = String(formData.get('gymCode') ?? '').trim().toLowerCase();
+  const memberCode = String(formData.get('memberCode') ?? '').trim();
+  const password = String(formData.get('password') ?? '');
+  const invalid = { error: 'Invalid gym code, member ID or password. Ask reception for your login details.' };
+  if (!gymCode || !memberCode || !password || gymCode.length > 50 || memberCode.length > 80 || password.length > 256) return invalid;
   try {
-    await ensureDatabaseSchema().catch(() => {});
-
-    const rawGymCode = String(formData.get('gymCode') ?? '').trim();
-    const rawMemberId = String(formData.get('memberCode') ?? '').trim();
-
-    if (!rawGymCode || !rawMemberId) {
-      return { error: 'Please enter both your Gym Code and your registered Phone Number / Member ID.' };
-    }
-
-    const cleanGymCode = rawGymCode.toLowerCase();
-
-    // 1. Verify gym code exists (case-insensitive slug match or name match)
-    let gym = await prisma.gym.findFirst({
-      where: {
-        OR: [
-          { slug: { equals: cleanGymCode, mode: 'insensitive' } },
-          { name: { equals: rawGymCode, mode: 'insensitive' } },
-        ],
-      },
+    const member = await prisma.member.findFirst({
+      where: { gym: { slug: gymCode }, memberCode: { equals: memberCode, mode: 'insensitive' } },
+      select: { authUserId: true },
     });
-
-    if (!gym) {
-      // Fallback: strip punctuation/spaces from slug (e.g. "iron-fitness" vs "ironfitness")
-      const allGyms = await prisma.gym.findMany({ select: { id: true, name: true, slug: true } });
-      const normalizedInput = cleanGymCode.replace(/[^a-z0-9]/g, '');
-      gym = (allGyms.find((g) => {
-        const normSlug = g.slug.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const normName = g.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-        return normSlug === normalizedInput || normName === normalizedInput;
-      }) as any) || null;
-    }
-
-    if (!gym) {
-      return { error: `Invalid gym code "${rawGymCode}". Please verify your gym code with the front desk.` };
-    }
-
-    // 2. Member ID is phone number (clean last 10 digits) or memberCode
-    const cleanDigits = rawMemberId.replace(/\D/g, '').slice(-10);
-
-    let member = await prisma.member.findFirst({
-      where: {
-        gymId: gym.id,
-        OR: [
-          ...(cleanDigits && cleanDigits.length >= 7 ? [{ phone: { contains: cleanDigits } }] : []),
-          { memberCode: { equals: rawMemberId, mode: 'insensitive' } },
-          { phone: { equals: rawMemberId } },
-          { email: { equals: rawMemberId, mode: 'insensitive' } },
-        ],
-      },
-      include: { gym: true },
-    });
-
-    if (!member) {
-      // Robust fallback: search all members of this gym by normalized digits
-      const gymMembers = await prisma.member.findMany({
-        where: { gymId: gym.id },
-        include: { gym: true },
-      });
-
-      member =
-        gymMembers.find((m) => {
-          const mDigits = (m.phone || '').replace(/\D/g, '');
-          const inputDigits = rawMemberId.replace(/\D/g, '');
-          if (
-            inputDigits.length >= 7 &&
-            (mDigits.endsWith(inputDigits.slice(-10)) || inputDigits.endsWith(mDigits.slice(-10)))
-          ) {
-            return true;
-          }
-          if (m.memberCode && m.memberCode.trim().toLowerCase() === rawMemberId.toLowerCase()) {
-            return true;
-          }
-          if (m.email && m.email.trim().toLowerCase() === rawMemberId.toLowerCase()) {
-            return true;
-          }
-          return false;
-        }) || null;
-    }
-
-    if (!member) {
-      return {
-        error: `No member record found for "${rawMemberId}" under ${gym.name}. Please verify your phone number or speak with reception.`,
-      };
-    }
-
-    // 3. Strict Gym isolation: verify member belongs to THIS specific gym
-    if (member.gymId !== gym.id) {
-      return { error: 'Access denied. You can only access your own gym with your gym code.' };
-    }
-
-    // 4. Activate member session (direct signed HTTP-only cookie, 30 days)
-    await setMemberSession(member.id);
-
+    if (!member?.authUserId) return invalid;
+    // Read the existing auth email so gym-code changes do not break established logins.
+    const admin = createAdminClient();
+    const { data: account, error: accountError } = await admin.auth.admin.getUserById(member.authUserId);
+    if (accountError || !account.user?.email) return invalid;
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({ email: account.user.email, password });
+    if (error || data.user?.id !== member.authUserId) return invalid;
+    await clearMemberSession();
     return { success: true };
-  } catch (err: any) {
-    console.error('Error during member login:', err);
-    return {
-      error: 'An unexpected connection error occurred while logging in. Please try again in a moment.',
-    };
+  } catch (error) {
+    console.error('Member login failed:', error);
+    return { error: 'Unable to sign in right now. Please try again.' };
   }
 }
 
@@ -154,78 +76,9 @@ export type ResetPasswordResult = {
   messageText?: string;
 };
 
-// Member self-service password reset: sends new password to their WhatsApp / phone message
-export async function resetMemberPasswordByPhone(gymCodeRaw: string, phoneOrIdRaw: string): Promise<ResetPasswordResult> {
-  const gymCode = gymCodeRaw.trim().toLowerCase();
-  const rawId = phoneOrIdRaw.trim();
-
-  if (!gymCode || !rawId) {
-    return { ok: false, error: 'Please enter your Gym Code and Phone Number.' };
-  }
-
-  // 1. Find Gym
-  const gym = await prisma.gym.findUnique({ where: { slug: gymCode } });
-  if (!gym) {
-    return { ok: false, error: 'Invalid Gym Code. Please check the code provided by your gym.' };
-  }
-
-  // 2. Find Member strictly within this gym by phone number or code
-  const cleanPhone = rawId.replace(/\D/g, '').slice(-10);
-  const member = await prisma.member.findFirst({
-    where: {
-      gymId: gym.id,
-      OR: [
-        ...(cleanPhone ? [{ phone: { contains: cleanPhone } }] : []),
-        { memberCode: rawId.toUpperCase() },
-      ],
-    },
-  });
-
-  if (!member) {
-    return { ok: false, error: 'No member found with this phone number in this gym. Verify your gym code and phone.' };
-  }
-
-  const password = generatePassword();
-  const admin = createAdminClient();
-  const loginIdentifier = cleanPhone || member.memberCode;
-
-  if (member.authUserId) {
-    // Member has existing login -> update password
-    const { error } = await admin.auth.admin.updateUserById(member.authUserId, { password });
-    if (error) {
-      return { ok: false, error: 'Could not reset password. Please contact gym reception.' };
-    }
-  } else {
-    // Member was enrolled by gym but had no login yet -> create login
-    const { data, error } = await admin.auth.admin.createUser({
-      email: memberEmail(gym.slug, loginIdentifier),
-      password,
-      email_confirm: true,
-      app_metadata: { role: 'MEMBER', gym_id: gym.id, member_id: member.id },
-    });
-    if (error || !data.user) {
-      return { ok: false, error: 'Could not generate login credentials. Please try again.' };
-    }
-    await prisma.member.update({ where: { id: member.id }, data: { authUserId: data.user.id } });
-  }
-
-  const digits = member.phone.replace(/\D/g, '');
-  const waPhone = digits.length === 10 ? `91${digits}` : digits;
-  const messageText = `Hi ${member.name}, your login access for ${gym.name}:\nGym Code: ${gym.slug}\nMember ID (Phone): ${cleanPhone || digits.slice(-10)}\nInstant Access: https://neurafitness.com/member/login`;
-  const whatsappUrl = `https://api.whatsapp.com/send?phone=${encodeURIComponent(waPhone)}&text=${encodeURIComponent(messageText)}`;
-  const smsUrl = `sms:${digits}?body=${encodeURIComponent(messageText)}`;
-
-  return {
-    ok: true,
-    memberName: member.name,
-    phone: member.phone,
-    gymName: gym.name,
-    gymCode: gym.slug,
-    password,
-    whatsappUrl,
-    smsUrl,
-    messageText,
-  };
+// Phone numbers and gym codes do not prove identity. Recovery is handled by authenticated staff.
+export async function resetMemberPasswordByPhone(_gymCode: string, _phoneOrId: string): Promise<ResetPasswordResult> {
+  return { ok: false, error: 'Please contact your gym reception to reset your member password.' };
 }
 
 export async function logoutMember() {

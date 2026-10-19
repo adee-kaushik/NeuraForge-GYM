@@ -151,7 +151,7 @@ export async function submitSelfEnrollment(
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to submit registration.';
     console.error('submitSelfEnrollment error:', err);
-    return { ok: false, error: msg };
+    return { ok: false, error: 'Could not process enrollment. Please refresh and try again.' };
   }
 }
 
@@ -197,7 +197,8 @@ export async function getPendingEnrollments(): Promise<EnrollmentRecord[]> {
 // 4. Approve candidate self-enrollment (Staff & Owner)
 export async function approveEnrollment(
   enrollmentId: string,
-  customMemberCode?: string
+  customMemberCode?: string,
+  paymentVerified = false
 ): Promise<{ ok: true; memberId: string; memberName: string; memberCode: string } | { ok: false; error: string }> {
   try {
     const staff = await requireStaff();
@@ -242,6 +243,12 @@ export async function approveEnrollment(
 
     // Create Member, Membership, Payment, and update Enrollment in a transaction
     const result = await prisma.$transaction(async (tx) => {
+      // Claim once inside the same transaction; concurrent approvals cannot create two members.
+      const claimed = await tx.enrollment.updateMany({
+        where: { id: enrollment.id, gymId, status: 'PENDING' },
+        data: { status: 'APPROVED', ...(paymentVerified ? { paymentStatus: 'PAID' } : {}) },
+      });
+      if (claimed.count !== 1) throw new Error('Enrollment already processed.');
       const biometricId = await nextBiometricId(tx, gymId);
       const member = await tx.member.create({
         data: {
@@ -291,8 +298,8 @@ export async function approveEnrollment(
           membershipId: membership.id,
           amount: enrollment.amount,
           gstAmount: gstIncluded(enrollment.amount, staff.gym.gstRatePercent),
-          mode: 'UPI',
-          status: 'PAID',
+          mode: enrollment.utrNumber ? 'UPI' : 'Cash',
+          status: paymentVerified === true ? 'PAID' : 'PENDING',
           invoiceNo,
           notes: enrollment.utrNumber
             ? `Self-enrolled via Front Desk QR (UTR: ${enrollment.utrNumber})`
@@ -317,7 +324,7 @@ export async function approveEnrollment(
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to approve enrollment.';
     console.error('approveEnrollment error:', err);
-    return { ok: false, error: msg };
+    return { ok: false, error: 'Could not process enrollment. Please refresh and try again.' };
   }
 }
 
@@ -338,6 +345,6 @@ export async function rejectEnrollment(
     return { ok: true };
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : 'Failed to reject enrollment.';
-    return { ok: false, error: msg };
+    return { ok: false, error: 'Could not process enrollment. Please refresh and try again.' };
   }
 }

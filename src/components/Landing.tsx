@@ -82,7 +82,7 @@ const steps = [
 const unifiedPlanFeatures = [
   'Unlimited Gym Members & Staff Accounts',
   'Biometric Terminal & Turnstile Sync (eSSL, ZKTeco, Mantra)',
-  'Dynamic Mobile QR Pass Portal for Members',
+  'Digital Mobile QR Pass Portal for Members',
   '1-Tap WhatsApp Receipts, Expiry Alerts & Reminders',
   'Automated Billing & Sequential GST Invoicing',
   'Complete Member History Migration from Old Software / Excel',
@@ -255,7 +255,7 @@ export default function Landing() {
               Features
             </a>
             <Link
-              href="/member/login"
+              href="/login"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl border border-surface-container-highest bg-surface-container-lowest text-xs sm:text-sm font-bold text-on-surface hover:border-secondary hover:text-secondary transition-all shadow-xs cursor-pointer"
             >
               <span className="material-symbols-outlined text-sm sm:text-base text-secondary">
@@ -280,12 +280,12 @@ export default function Landing() {
             <h1 className="font-sora text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-on-surface leading-[1.15]">
               Run your entire gym on autopilot.{' '}
               <span className="text-secondary underline decoration-secondary/30 underline-offset-8">
-                Zero missed renewals.
+                Stay on top of renewals.
               </span>
             </h1>
 
             <p className="text-base sm:text-lg text-on-surface-variant max-w-2xl mx-auto leading-relaxed">
-              Replace Excel sheets with automated WhatsApp reminders, turnstile biometric integration, dynamic QR member passes, and GST billing.
+              Replace Excel sheets with one-tap WhatsApp reminders, turnstile biometric integration, digital QR member passes, and GST billing.
             </p>
 
             {/* Direct CTA Buttons */}
@@ -522,7 +522,7 @@ export default function Landing() {
             <span>·</span>
             <span className="flex items-center gap-1.5">
               <span className="material-symbols-outlined text-tertiary text-sm">lock</span>
-              Instant cloud activation
+              Activation after payment verification
             </span>
             <span>·</span>
             <span className="flex items-center gap-1.5">

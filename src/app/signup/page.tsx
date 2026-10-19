@@ -25,7 +25,7 @@ export default function SignupPage() {
   const [state, formAction, pending] = useActionState(signupOwner, initialState);
   const [plan, setPlan] = useState<SignupPlanType>('base_1y');
   const [showPassword, setShowPassword] = useState(false);
-  const [isFirstCustomer, setIsFirstCustomer] = useState(true);
+  const [isFirstCustomer, setIsFirstCustomer] = useState(false);
 
   useEffect(() => {
     checkIsFirstCustomer().then(setIsFirstCustomer);

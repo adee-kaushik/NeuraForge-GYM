@@ -1,5 +1,3 @@
-import DashboardSkeleton from '@/components/DashboardSkeleton';
-
 export default function Loading() {
-  return <DashboardSkeleton />;
+  return <main className="min-h-screen flex items-center justify-center bg-background text-on-surface"><p role="status">Loading NeuraFitness…</p></main>;
 }

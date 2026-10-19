@@ -70,7 +70,7 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
 
   const members = useMemo(
     () => toMembers(memberRecords, plans, checkInRecords, txnRecords, now),
-    [memberRecords, checkInRecords, txnRecords, now]
+    [memberRecords, plans, checkInRecords, txnRecords, now]
   );
   const transactions = useMemo(() => toTransactions(txnRecords, now), [txnRecords, now]);
   const checkIns = useMemo(() => toCheckInLogs(checkInRecords, members), [checkInRecords, members]);

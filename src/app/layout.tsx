@@ -1,3 +1,4 @@
+import { siteOrigin } from '@/lib/site-url';
 import type { Metadata, Viewport } from 'next';
 import { Inter, Sora } from 'next/font/google';
 import './globals.css';
@@ -25,10 +26,10 @@ export const viewport: Viewport = {
 
 const title = 'NeuraFitness | Complete Gym Management Software';
 const description =
-  'All-in-one Gym Management Software for Indian Gyms. Manage member renewals, biometric & QR attendance, UPI/cash payments, automated WhatsApp reminders, and GST billing.';
+  'All-in-one Gym Management Software for Indian Gyms. Manage member renewals, biometric & QR attendance, UPI/cash payments, one-tap WhatsApp reminders, and GST billing.';
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://neurafitness.com'),
+  metadataBase: new URL(siteOrigin()),
   title: {
     default: title,
     template: '%s | NeuraFitness',
@@ -62,7 +63,7 @@ export const metadata: Metadata = {
   openGraph: {
     title,
     description,
-    url: 'https://neurafitness.com',
+    url: siteOrigin(),
     siteName: 'NeuraFitness',
     locale: 'en_IN',
     type: 'website',
@@ -78,7 +79,7 @@ export const metadata: Metadata = {
     apple: '/icon.png',
   },
   alternates: {
-    canonical: 'https://neura-forge-gym.vercel.app',
+    canonical: siteOrigin(),
   },
 };
 

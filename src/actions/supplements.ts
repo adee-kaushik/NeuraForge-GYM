@@ -5,97 +5,6 @@ import { requireStaff } from '@/lib/auth';
 import { ensureDatabaseSchema } from '@/lib/db-init';
 import type { SupplementItem, SupplementSale } from '@/types';
 
-const DEFAULT_SUPPLEMENTS: Omit<SupplementItem, 'id'>[] = [
-  {
-    name: 'Gold Standard 100% Whey (2 kg)',
-    brand: 'Optimum Nutrition',
-    category: 'Protein',
-    price: 6899,
-    costPrice: 5400,
-    stock: 14,
-    unit: 'tubs',
-    flavor: 'Double Rich Chocolate',
-    description: '24g blended whey protein (isolate, concentrate, peptides) per scoop.',
-  },
-  {
-    name: 'Biozyme Performance Whey (2 kg)',
-    brand: 'MuscleBlaze',
-    category: 'Protein',
-    price: 4999,
-    costPrice: 3800,
-    stock: 18,
-    unit: 'tubs',
-    flavor: 'Rich Chocolate',
-    description: 'Enhanced Absorption Formula (EAF) certified by Labdoor USA.',
-  },
-  {
-    name: 'Creapure Micronized Creatine (250g)',
-    brand: 'MuscleBlaze',
-    category: 'Creatine',
-    price: 1299,
-    costPrice: 900,
-    stock: 25,
-    unit: 'jars',
-    flavor: 'Unflavored',
-    description: '99.99% pure German Creapure for explosive strength and muscle fullness.',
-  },
-  {
-    name: 'C4 Original Pre-Workout (30 Servings)',
-    brand: 'Cellucor',
-    category: 'Pre-Workout',
-    price: 2499,
-    costPrice: 1800,
-    stock: 12,
-    unit: 'jars',
-    flavor: 'Fruit Punch',
-    description: 'Explosive energy, muscular endurance and sharp mental focus.',
-  },
-  {
-    name: 'Xtend Original BCAA (30 Servings)',
-    brand: 'Scivation',
-    category: 'BCAA',
-    price: 2199,
-    costPrice: 1600,
-    stock: 10,
-    unit: 'jars',
-    flavor: 'Blue Raspberry',
-    description: '7g BCAAs in 2:1:1 ratio plus electrolytes for intra-workout hydration.',
-  },
-  {
-    name: 'High Protein Peanut Butter (1 kg)',
-    brand: 'Pintola',
-    category: 'Snacks',
-    price: 499,
-    costPrice: 350,
-    stock: 30,
-    unit: 'jars',
-    flavor: 'Dark Chocolate Crunchy',
-    description: '30g protein per 100g, 100% roasted peanuts with zero added sugar.',
-  },
-  {
-    name: 'Pro 20g Protein Bar (Pack of 6)',
-    brand: 'RiteBite Max Protein',
-    category: 'Snacks',
-    price: 720,
-    costPrice: 500,
-    stock: 20,
-    unit: 'packs',
-    flavor: 'Choco Delite',
-    description: '20g protein, 5g fiber, 21 essential vitamins and minerals.',
-  },
-  {
-    name: 'Pro Matte Steel Shaker (750 ml)',
-    brand: 'NeuraFitness',
-    category: 'Accessories',
-    price: 699,
-    costPrice: 380,
-    stock: 22,
-    unit: 'bottles',
-    flavor: 'Matte Stealth Black',
-    description: '100% leakproof stainless steel gym shaker with mixer ball.',
-  },
-];
-
 export async function getSupplements(): Promise<SupplementItem[]> {
   const user = await requireStaff();
 
@@ -120,38 +29,10 @@ export async function getSupplements(): Promise<SupplementItem[]> {
       }));
     }
 
-    // Seed defaults if brand new gym
-    for (const def of DEFAULT_SUPPLEMENTS) {
-      const id = `sup_${Math.random().toString(36).substring(2, 9)}`;
-      await prisma.$executeRawUnsafe(`
-        INSERT INTO "Supplement" ("id", "gymId", "name", "brand", "category", "price", "costPrice", "stock", "unit", "flavor", "description")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      `, id, user.gymId, def.name, def.brand, def.category, def.price, def.costPrice ?? null, def.stock, def.unit, def.flavor ?? null, def.description ?? null).catch(() => {});
-    }
-
-    const reloaded = await prisma.$queryRawUnsafe<any[]>(`
-      SELECT * FROM "Supplement" WHERE "gymId" = $1 ORDER BY "category" ASC, "name" ASC
-    `, user.gymId).catch(() => []);
-
-    return (reloaded || []).map((r) => ({
-      id: r.id,
-      name: r.name,
-      brand: r.brand || '',
-      category: r.category as any,
-      price: Number(r.price),
-      costPrice: r.costPrice ? Number(r.costPrice) : undefined,
-      stock: Number(r.stock),
-      unit: r.unit || 'units',
-      flavor: r.flavor || undefined,
-      description: r.description || undefined,
-      imageUrl: r.imageUrl || undefined,
-    }));
+    return [];
   } catch (err) {
     console.error('getSupplements error:', err);
-    return DEFAULT_SUPPLEMENTS.map((d, i) => ({
-      ...d,
-      id: `default_${i}`,
-    }));
+    throw new Error('Could not load inventory. Please try again.');
   }
 }
 
@@ -244,25 +125,30 @@ export async function sellSupplement(
   const user = await requireStaff();
 
   const id = `sale_${Math.random().toString(36).substring(2, 9)}`;
-  const qty = Math.max(1, Math.round(Number(input.quantity) || 1));
-  const unitPrice = Math.max(0, Math.round(Number(input.unitPrice) || 0));
+  const qty = input.quantity;
+  const unitPrice = input.unitPrice;
   const totalAmount = qty * unitPrice;
+  if (!Number.isInteger(qty) || qty < 1 || qty > 100000 || !Number.isInteger(unitPrice) || unitPrice < 0 || !Number.isSafeInteger(totalAmount) || totalAmount > 2147483647) {
+    return { ok: false, error: 'Enter a valid quantity and price.' };
+  }
+  if (!input.customerName?.trim() || !input.supplementName?.trim() || !['UPI', 'Cash', 'Card'].includes(input.paymentMode)) {
+    return { ok: false, error: 'Enter customer, product and payment details.' };
+  }
 
   try {
-    // 1. Record the sale
-    await prisma.$executeRawUnsafe(`
-      INSERT INTO "SupplementSale" ("id", "gymId", "supplementId", "supplementName", "customerName", "customerPhone", "quantity", "unitPrice", "totalAmount", "paymentMode", "notes")
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-    `, id, user.gymId, input.supplementId || null, input.supplementName, input.customerName, input.customerPhone || null, qty, unitPrice, totalAmount, input.paymentMode, input.notes || null);
-
-    // 2. Decrement stock if linked to supplement
-    if (input.supplementId) {
-      await prisma.$executeRawUnsafe(`
-        UPDATE "Supplement"
-        SET "stock" = GREATEST(0, "stock" - $1)
-        WHERE "id" = $2 AND "gymId" = $3
-      `, qty, input.supplementId, user.gymId).catch(() => {});
-    }
+    await prisma.$transaction(async tx => {
+      if (input.supplementId) {
+        const updated = await tx.$executeRawUnsafe(`
+          UPDATE "Supplement" SET "stock" = "stock" - $1
+          WHERE "id" = $2 AND "gymId" = $3 AND "stock" >= $1
+        `, qty, input.supplementId, user.gymId);
+        if (updated !== 1) throw new Error('INSUFFICIENT_STOCK');
+      }
+      await tx.$executeRawUnsafe(`
+        INSERT INTO "SupplementSale" ("id", "gymId", "supplementId", "supplementName", "customerName", "customerPhone", "quantity", "unitPrice", "totalAmount", "paymentMode", "notes")
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      `, id, user.gymId, input.supplementId || null, input.supplementName, input.customerName, input.customerPhone || null, qty, unitPrice, totalAmount, input.paymentMode, input.notes || null);
+    });
 
     return {
       ok: true,
@@ -282,7 +168,7 @@ export async function sellSupplement(
     };
   } catch (err: any) {
     console.error('sellSupplement error:', err);
-    return { ok: false, error: err?.message || 'Failed to record sale' };
+    return { ok: false, error: err?.message === 'INSUFFICIENT_STOCK' ? 'Product not found or insufficient stock.' : 'Failed to record sale. No stock was deducted.' };
   }
 }
 

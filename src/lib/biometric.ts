@@ -193,11 +193,11 @@ export function clientIp(req: Request): string | null {
  * The registered machine for a serial number, or null. Updates "last seen" at most once a minute,
  * because machines poll every few seconds and we do not want a database write per poll.
  */
-export async function findRegisteredDevice(sn: string, ip: string | null) {
+export async function findRegisteredDevice(sn: string, ip: string | null, apiKey: string) {
   const serial = normalizeSerial(sn);
   if (!serial) return null;
-  const device = await prisma.device.findUnique({ where: { serialNumber: serial }, include: { gym: { select: { id: true, slug: true } } } });
-  if (!device || !device.isActive) return null;
+  const device = await prisma.device.findUnique({ where: { serialNumber: serial }, include: { gym: { select: { id: true, slug: true, biometricKeyHash: true } } } });
+  if (!device || !device.isActive || !keyMatches(apiKey, device.gym.biometricKeyHash)) return null;
 
   const stale = !device.lastSeenAt || Date.now() - device.lastSeenAt.getTime() > 60000;
   if (stale || (ip && device.lastIp !== ip)) {
@@ -313,7 +313,7 @@ export async function processPunches(opts: {
   const byPin = new Map<string, ResolvedMember>();
   const candidatePins = [...new Set(punches.map((p) => p.pin).filter(Boolean))];
 
-  const ints = candidatePins.filter(isDigits).map(Number);
+  const ints = candidatePins.filter(isDigits).map(Number).filter(n => Number.isSafeInteger(n) && n >= 0 && n <= 2147483647);
   if (ints.length) {
     const rows = await prisma.member.findMany({ where: { gymId, biometricId: { in: ints } }, include: memberInclude });
     for (const m of rows) if (m.biometricId !== null) byPin.set(String(m.biometricId), m);

@@ -3,6 +3,8 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
+import { hasAdminAccess } from '@/lib/admin-policy';
+import { clearMemberSession } from '@/lib/member-session';
 
 export type LoginState = { error?: string; success?: boolean };
 
@@ -36,18 +38,7 @@ export async function loginAdmin(_prev: LoginState, formData: FormData): Promise
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.user) return { error: 'Wrong admin email or password.' };
 
-  const adminEmails = (
-    process.env.ADMIN_EMAILS ||
-    'neura.fitness.crm@gmail.com,admin@neurafitness.com,founder@neurafitness.com,aditya@neurafitness.com,adityaamishra6002@gmail.com'
-  )
-    .split(',')
-    .map((e) => e.trim().toLowerCase());
-
-  const isAdmin =
-    data.user?.app_metadata?.neurafitness_admin === true ||
-    data.user?.app_metadata?.neuraforge_admin === true ||
-    data.user?.user_metadata?.is_admin === true ||
-    (data.user.email && adminEmails.includes(data.user.email.toLowerCase()));
+  const isAdmin = hasAdminAccess(data.user);
 
   if (!isAdmin) {
     await supabase.auth.signOut();
@@ -73,8 +64,9 @@ export async function logout() {
 
   try {
     const supabase = await createClient();
-    supabase.auth.signOut().catch(() => {});
+    await supabase.auth.signOut();
   } catch {}
 
+  await clearMemberSession();
   redirect('/login');
 }

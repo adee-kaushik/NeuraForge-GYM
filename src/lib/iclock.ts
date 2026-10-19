@@ -42,9 +42,11 @@ export async function requireRegisteredDevice(req: NextRequest) {
   const sn = serialFrom(req);
   if (!sn) return { device: null, sn, response: textResponse('ERROR: SN missing', 400) };
 
-  const device = await findRegisteredDevice(sn, clientIp(req));
+  const apiKey = (req.headers.get('x-api-key') || '').trim();
+  if (!apiKey) return { device: null, sn, response: textResponse('ERROR: authenticated relay required', 401) };
+  const device = await findRegisteredDevice(sn, clientIp(req), apiKey);
   if (!device) {
-    await logUnregisteredOnce(sn, clientIp(req), `${req.method} ${req.nextUrl.pathname}${req.nextUrl.search}`);
+    await logUnregisteredOnce(sn, clientIp(req), `${req.method} ${req.nextUrl.pathname}`);
     return { device: null, sn, response: textResponse('ERROR: device not registered', 403) };
   }
   return { device, sn, response: null };

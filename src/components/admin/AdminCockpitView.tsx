@@ -123,7 +123,7 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
   const [newOwnerName, setNewOwnerName] = useState('');
   const [newOwnerEmail, setNewOwnerEmail] = useState('');
   const [newOwnerPhone, setNewOwnerPhone] = useState('');
-  const [newPassword, setNewPassword] = useState('GymMaster@2026');
+  const [newPassword, setNewPassword] = useState('');
   const [newSaasPlan, setNewSaasPlan] = useState<string>('BASE_6M');
   const [newDurationMonths, setNewDurationMonths] = useState<number>(7);
   const [newSubscriptionAmount, setNewSubscriptionAmount] = useState<number>(2399);
@@ -1451,7 +1451,7 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="GymMaster@2026"
+                    placeholder="Unique password (12+ characters)"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="w-full px-3 py-2 rounded-xl bg-surface-container-low border border-surface-container-high text-xs text-on-surface focus:outline-none focus:border-secondary font-mono"

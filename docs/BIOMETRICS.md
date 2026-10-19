@@ -1,3 +1,5 @@
+> **Security update — 19 October 2026:** Direct serial-number-only ADMS uploads are disabled. Register the machine, generate its gym API key, and run `tools/adms-relay.js` on the gym LAN with `TARGET_URL=https://neurafitness.vercel.app` and `NF_API_KEY` set securely in the process environment. Point the machine to the relay IP and port. The relay adds the `x-api-key` header over HTTPS. Do not expose the relay port to the public internet. Older direct-cloud setup instructions below are historical; use the authenticated relay or the keyed REST bridge instead. Test on hardware before switching production attendance.
+
 # Biometric machines: how it works and how to set one up
 
 ## The idea in one paragraph

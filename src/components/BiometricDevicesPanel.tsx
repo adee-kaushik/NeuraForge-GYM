@@ -282,7 +282,7 @@ export const BiometricDevicesPanel: React.FC = () => {
               <span>Gym API key</span>
             </span>
             <p className="text-[11px] text-outline">
-              Only needed for the LAN bridge, Mantra or your own integration. Machines that push by themselves (eSSL / ZKTeco cloud) use the serial number instead.
+              Required for every device integration. For eSSL / ZKTeco ADMS, use the authenticated LAN relay with this gym API key; a serial number alone cannot authorize uploads.
             </p>
             {newKey ? (
               <div className="space-y-1.5">
