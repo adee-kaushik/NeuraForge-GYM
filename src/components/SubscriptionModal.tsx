@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { signupOwner } from '@/app/signup/actions';
 
 export type PlanType =
@@ -154,6 +154,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -163,6 +164,24 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       setPlan(initialPlan);
     }
   }, [isOpen, initialPlan]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const oldOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    dialogRef.current?.querySelector<HTMLElement>('button, input')?.focus();
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !busy) { event.preventDefault(); onClose(); }
+      if (event.key !== 'Tab') return;
+      const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), a[href], select, textarea, [tabindex="0"]') || []).filter(el => el.getClientRects().length > 0);
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => { document.body.style.overflow = oldOverflow; document.removeEventListener('keydown', handleKey); previous?.focus(); };
+  }, [isOpen, onClose, busy]);
 
   if (!isOpen) return null;
 
@@ -203,7 +222,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     formData.append('gymName', gymName.trim());
     formData.append(
       'slug',
-      (slug || gymName).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20) || 'gym'
+      slug.trim().toLowerCase()
     );
     formData.append('name', name.trim());
     formData.append('email', email.trim().toLowerCase());
@@ -234,9 +253,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm"
+      ref={dialogRef}
       role="dialog"
+      aria-labelledby="subscription-title"
       aria-modal="true"
-      onClick={onClose}
+      onClick={() => { if (!busy) onClose(); }}
     >
       <div
         className="w-full max-w-xl bg-surface-container-lowest border border-surface-container-high rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
@@ -251,17 +272,18 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 alt="NeuraFitness"
                 className="h-6 w-auto object-contain shrink-0"
               />
-              <h2 className="font-sora text-sm sm:text-base font-bold text-on-surface">
+              <h2 id="subscription-title" className="font-sora text-sm sm:text-base font-bold text-on-surface">
                 {plan === 'trial' ? 'Start 1-Month Free Trial' : 'Activate Gym Subscription'}
               </h2>
             </div>
             <p className="text-[11px] text-outline mt-0.5">
-              Instant activation with biometric setup & full WhatsApp automation
+              Activation after payment verification · Biometric setup & one-tap WhatsApp tools
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={() => { if (!busy) onClose(); }}
             disabled={busy}
+            aria-label="Close subscription form"
             className="text-outline hover:text-on-surface p-1 rounded-lg transition-colors cursor-pointer"
           >
             <span className="material-symbols-outlined text-xl">close</span>
@@ -271,7 +293,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs text-on-surface">
           {error && (
-            <div className="p-3 rounded-xl bg-error/10 border border-error/20 flex items-center gap-2 text-xs font-semibold text-error">
+            <div role="alert" className="p-3 rounded-xl bg-error/10 border border-error/20 flex items-center gap-2 text-xs font-semibold text-error">
               <span className="material-symbols-outlined text-base shrink-0">error</span>
               <span>{error}</span>
             </div>
@@ -433,11 +455,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelClass}>Gym Name *</label>
+                <label htmlFor="subscription-gymName" className={labelClass}>Gym Name *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Iron Fitness Arena"
+                  id="subscription-gymName"
                   value={gymName}
                   onChange={(e) => handleGymNameChange(e.target.value)}
                   className={inputClass}
@@ -445,11 +468,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </div>
 
               <div>
-                <label className={labelClass}>Gym URL Code / Slug *</label>
+                <label htmlFor="subscription-slug" className={labelClass}>Gym URL Code / Slug *</label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. ironfitness"
+                  id="subscription-slug"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
                   className={inputClass}
@@ -459,11 +483,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelClass}>Owner Full Name *</label>
+                <label htmlFor="subscription-name" className={labelClass}>Owner Full Name *</label>
                 <input
                   type="text"
                   required
                   placeholder="Aditya Sharma"
+                  id="subscription-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className={inputClass}
@@ -471,11 +496,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </div>
 
               <div>
-                <label className={labelClass}>WhatsApp / Mobile *</label>
+                <label htmlFor="subscription-phone" className={labelClass}>WhatsApp / Mobile *</label>
                 <input
                   type="tel"
                   required
                   placeholder="9876543210"
+                  id="subscription-phone"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className={inputClass}
@@ -485,11 +511,12 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelClass}>Email Address *</label>
+                <label htmlFor="subscription-email" className={labelClass}>Email Address *</label>
                 <input
                   type="email"
                   required
                   placeholder="owner@yourgym.com"
+                  id="subscription-email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className={inputClass}
@@ -497,14 +524,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </div>
 
               <div>
-                <label className={labelClass}>Create Password (min 8 chars) *</label>
+                <label htmlFor="subscription-password" className={labelClass}>Create Password (min 8 chars) *</label>
                 <div className="relative">
                   <input
                     type={showPassword ? 'text' : 'password'}
                     required
                     minLength={8}
                     placeholder="••••••••"
-                    value={password}
+                    id="subscription-password"
+                  value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className={`${inputClass} pr-10`}
                   />
@@ -536,7 +564,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-outline leading-relaxed">
-                We accept subscription activations directly via UPI on WhatsApp. Once you submit your gym details, you will be redirected to WhatsApp to send payment directly to our co-founders. Your Gym OS portal is approved and activated immediately.
+                We accept subscription activations directly via UPI on WhatsApp. Once you submit your gym details, you will be redirected to WhatsApp to send payment directly to our co-founders. Your Gym OS portal is activated after our team verifies your payment.
               </p>
               <div className="flex items-center gap-2 pt-1 text-[11px] font-semibold text-secondary">
                 <span className="material-symbols-outlined text-sm">security</span>

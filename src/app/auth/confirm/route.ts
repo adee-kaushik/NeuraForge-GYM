@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { siteOrigin } from '@/lib/site-url';
 import { createClient } from '@/utils/supabase/server';
 
 // The link in the password reset email opens here. It works on any device or browser
@@ -8,12 +9,7 @@ export async function GET(request: NextRequest) {
   const type = request.nextUrl.searchParams.get('type');
   const code = request.nextUrl.searchParams.get('code');
 
-  const host = request.headers.get('x-forwarded-host') || request.headers.get('host');
-  const proto = request.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
-  let origin = host ? `${proto}://${host}` : request.nextUrl.origin;
-  if (!origin || (process.env.NODE_ENV === 'production' && origin.includes('localhost'))) {
-    origin = 'https://neurafitness.vercel.app';
-  }
+  const origin = siteOrigin();
 
   const supabase = await createClient();
 

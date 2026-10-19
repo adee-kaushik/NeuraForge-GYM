@@ -1,7 +1,5 @@
 'use server';
 
-import { redirect } from 'next/navigation';
-import { timingSafeEqual } from 'node:crypto';
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { prisma } from '@/lib/prisma';
@@ -20,21 +18,8 @@ export type SignupState = {
 const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
 const RESERVED_SLUGS = new Set(['admin', 'api', 'app', 'login', 'signup', 'www', 'neuraforge', 'neurafitness']);
 
-// Compares two strings without leaking, through timing, how many characters matched
-const safeEqual = (a: string, b: string): boolean => {
-  const x = Buffer.from(a);
-  const y = Buffer.from(b);
-  return x.length === y.length && timingSafeEqual(x, y);
-};
-
-export async function checkIsFirstCustomer(): Promise<boolean> {
-  try {
-    const count = await prisma.gym.count();
-    return count <= 1;
-  } catch {
-    return false;
-  }
-}
+// Pilot activation is an administrator decision, never inferred from public signup counts.
+export async function checkIsFirstCustomer(): Promise<boolean> { return false; }
 
 export async function signupOwner(_prev: SignupState, formData: FormData): Promise<SignupState> {
   const gymName = String(formData.get('gymName') ?? '').trim();
@@ -45,11 +30,10 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
   const password = String(formData.get('password') ?? '');
 
   let plan = String(formData.get('plan') ?? 'monthly').trim();
-  if (!['trial', 'monthly', '6months', '1year', 'pilot'].includes(plan)) {
-    plan = 'monthly';
+  if (!['base_1m', 'base_6m', 'base_1y', 'pro_6m', 'pro_1y', 'monthly', '6months', '1year'].includes(plan)) {
+    return { error: 'Please select a valid paid plan.' };
   }
 
-  const isFirstCustomer = await checkIsFirstCustomer();
 
   if (!gymName || !name || !email) return { error: 'Please fill in all fields.' };
   if (!SLUG_RE.test(slug) || RESERVED_SLUGS.has(slug)) {
@@ -61,7 +45,7 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
   const taken = await prisma.gym.findUnique({ where: { slug } });
   if (taken) return { error: 'This gym code is already taken. Try another one.' };
 
-  // Create user in Supabase Auth (tries admin client, falls back to public signup)
+  // Create only a new auth account; never link a public-signup placeholder account.
   let authUserId = '';
   const admin = createAdminClient();
   const { data: created, error: createError } = await admin.auth.admin.createUser({
@@ -73,19 +57,13 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
   if (created?.user) {
     authUserId = created.user.id;
   } else {
-    const supabase = await createClient();
-    const { data: publicCreated, error: publicError } = await supabase.auth.signUp({ email, password });
-    if (publicError || !publicCreated.user) {
-      const exists = (createError?.message || publicError?.message)?.toLowerCase().includes('already');
-      return { error: exists ? 'An account with this email already exists.' : 'Could not create your account.' };
-    }
-    authUserId = publicCreated.user.id;
+    return { error: 'Could not create your account. If you already registered, please sign in.' };
   }
 
   // Pricing & Status calculation:
   // Base plan: 1m (₹999), 6m (₹2,399 + 1m free demo), 1y (₹3,499 + 1m free demo)
   // Pro plan: 6m (₹3,499 - 1 customization free), 1y (₹5,499 - 2 customization free)
-  const isPaid = plan !== 'trial' && plan !== 'pilot';
+  const isPaid = true;
   let basePrice = 0;
   let durationDays = 30;
   let planLabel = '1-Month Free Trial';
@@ -110,15 +88,13 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
     basePrice = 5499;
     durationDays = 365;
     planLabel = 'Pro Plan: 1 Year (2 Customizations Free - ₹5,499)';
-  } else if (isFirstCustomer) {
-    planLabel = 'Pilot Launch Partner (Free)';
   }
 
   const totalAmount = isPaid ? basePrice : 0;
 
   // Free trial and pilot partner are active immediately; paid plans await WhatsApp UPI approval
-  const saasStatus = isFirstCustomer || !isPaid ? 'ACTIVE' : 'PENDING_APPROVAL';
-  const saasPlan = isFirstCustomer ? 'PILOT_PARTNER' : plan === 'trial' ? 'TRIAL_14_DAYS' : plan.toUpperCase();
+  const saasStatus = 'PENDING_APPROVAL';
+  const saasPlan = plan.toUpperCase();
   const expiresAt = new Date(Date.now() + durationDays * 86400000);
 
   try {
@@ -129,8 +105,8 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
         saasPlan,
         saasStatus,
         subscriptionAmount: totalAmount,
-        saasApprovedAt: saasStatus === 'ACTIVE' ? new Date() : null,
-        saasExpiresAt: saasStatus === 'ACTIVE' ? expiresAt : null,
+        saasApprovedAt: null,
+        saasExpiresAt: null,
         isSuspended: saasStatus === 'PENDING_APPROVAL',
         users: { create: { authUserId, name, email, phone: phone || null, role: 'OWNER' } },
         plans: { create: DEFAULT_PLANS },

@@ -28,7 +28,8 @@ export const PendingEnrollmentsModal: React.FC<PendingEnrollmentsModalProps> = (
 
   const handleApprove = async (e: EnrollmentRecord) => {
     setBusyId(e.id);
-    const res = await approveEnrollment(e.id);
+    const paymentVerified = confirm(`Have you independently verified receipt of ₹${e.amount} for ${e.name}? OK records payment as paid. Cancel approves with payment still pending.`);
+    const res = await approveEnrollment(e.id, undefined, paymentVerified);
     setBusyId(null);
     if ('memberId' in res) {
       if (showToast) {

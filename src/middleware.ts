@@ -6,6 +6,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
+  if (!request.cookies.getAll().some(c => c.name.includes('-auth-token'))) return response;
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -23,17 +25,7 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Skip non-GET requests (Server Actions are POST and handle their own auth).
-  // This avoids double-authenticating and eliminates 300-500ms delay on every button click.
-  if (request.method !== 'GET') {
-    return response;
-  }
-
-  // Skip for visitors who have no auth cookies
-  const hasAuthCookie = request.cookies.getAll().some((c) => c.name.includes('-auth-token'));
-  if (hasAuthCookie) {
-    await supabase.auth.getUser();
-  }
+  await supabase.auth.getUser();
 
   return response;
 }

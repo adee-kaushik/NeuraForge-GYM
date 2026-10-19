@@ -1,7 +1,8 @@
+import { siteOrigin } from '@/lib/site-url';
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = 'https://neura-forge-gym.vercel.app';
+  const baseUrl = siteOrigin();
 
   return {
     rules: [

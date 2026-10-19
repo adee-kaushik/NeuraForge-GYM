@@ -261,7 +261,8 @@ export async function createGymByAdmin(input: {
   const ownerName = input.ownerName.trim();
   const email = input.email.trim().toLowerCase();
   const phone = input.phone?.trim() || null;
-  const password = input.password?.trim() || 'GymMaster@2026';
+  const password = input.password || '';
+  if (password.length < 12) return { ok: false, error: 'Provide a unique password of at least 12 characters.' };
   const saasPlan = input.saasPlan || 'SEMI_ANNUAL';
   const durationMonths = input.durationMonths || (saasPlan === 'ANNUAL' ? 12 : 6);
   const subscriptionAmount = input.subscriptionAmount ?? (saasPlan === 'ANNUAL' ? 5000 : 3000);

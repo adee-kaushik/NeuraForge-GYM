@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     deviceSerial: sn,
     kind: 'HANDSHAKE',
     summary: `${device.name} connected`,
-    rawPreview: req.nextUrl.search,
+    rawPreview: `SN=${sn}`,
   });
   return textResponse(handshakeOptions(sn));
 }
