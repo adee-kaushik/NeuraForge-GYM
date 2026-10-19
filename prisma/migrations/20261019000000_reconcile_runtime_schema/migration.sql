@@ -1,6 +1,19 @@
 -- Reconcile missing schema through deployment, never through web requests.
 -- Additive and idempotent for databases previously repaired at runtime.
 
+-- Older runtime repairs created attendanceMode as TEXT without the enum.
+-- Cast existing values rather than resetting gym attendance preferences.
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE t.typname = 'AttendanceMode' AND n.nspname = 'public') THEN
+    CREATE TYPE public."AttendanceMode" AS ENUM ('QR', 'BIOMETRIC');
+  END IF;
+  IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'Gym' AND column_name = 'attendanceMode' AND udt_name <> 'AttendanceMode') THEN
+    ALTER TABLE public."Gym" ALTER COLUMN "attendanceMode" DROP DEFAULT;
+    ALTER TABLE public."Gym" ALTER COLUMN "attendanceMode" TYPE public."AttendanceMode" USING "attendanceMode"::text::public."AttendanceMode";
+    ALTER TABLE public."Gym" ALTER COLUMN "attendanceMode" SET DEFAULT 'QR';
+  END IF;
+END $$;
+
 ALTER TABLE "Gym" ADD COLUMN IF NOT EXISTS "upiId" TEXT;
 
 ALTER TABLE "Gym" ADD COLUMN IF NOT EXISTS "paymentQrUrl" TEXT;

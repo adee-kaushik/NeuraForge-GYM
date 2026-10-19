@@ -17,6 +17,17 @@ try {
   assert.equal(tables.rows.length, 0, 'Every application table must enable RLS');
   await db.exec(`INSERT INTO "Gym" (id,name,slug) VALUES ('test-gym','Test Gym','test-gym');
     INSERT INTO "Supplement" (id,"gymId",name,price,stock) VALUES ('test-product','test-gym','Product',100,2);`);
+  // Reproduce the live legacy schema: a TEXT column and no enum type.
+  await db.exec(`ALTER TABLE "Gym" ALTER COLUMN "attendanceMode" DROP DEFAULT;
+    ALTER TABLE "Gym" ALTER COLUMN "attendanceMode" TYPE TEXT USING "attendanceMode"::text;
+    DROP TYPE "AttendanceMode";
+    UPDATE "Gym" SET "attendanceMode"='BIOMETRIC';`);
+  await db.exec(reconcile);
+  await db.exec(reconcile);
+  const mode = await db.query(`SELECT "attendanceMode", pg_typeof("attendanceMode")::text AS type FROM "Gym" WHERE id='test-gym'`);
+  assert.equal(mode.rows[0].attendanceMode, 'BIOMETRIC');
+  assert.equal(mode.rows[0].type, '"AttendanceMode"');
+  console.log('Legacy text attendance mode repaired without changing values.');
   // Execute the same guarded update used in the sales action.
   const sold = await db.query(`UPDATE "Supplement" SET stock=stock-$1 WHERE id=$2 AND "gymId"=$3 AND stock >= $1 RETURNING stock`,[2,'test-product','test-gym']);
   assert.equal(sold.rows[0].stock,0);
