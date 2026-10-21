@@ -3,9 +3,8 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/utils/supabase/server';
 import { prisma } from '@/lib/prisma';
-import { createAdminClient } from '@/utils/supabase/admin';
 import { startOfDayIST } from '@/lib/format';
-import { clearMemberSession } from '@/lib/member-session';
+import { clearMemberSession, setMemberSession } from '@/lib/member-session';
 import { getCurrentMember } from '@/lib/auth';
 import { membershipActiveAt } from '@/lib/biometric';
 import { ensureDatabaseSchema } from '@/lib/db-init';
@@ -15,23 +14,15 @@ export type MemberLoginState = { error?: string; success?: boolean };
 export async function loginMember(_prev: MemberLoginState, formData: FormData): Promise<MemberLoginState> {
   const gymCode = String(formData.get('gymCode') ?? '').trim().toLowerCase();
   const memberCode = String(formData.get('memberCode') ?? '').trim();
-  const password = String(formData.get('password') ?? '');
-  const invalid = { error: 'Invalid gym code, member ID or password. Ask reception for your login details.' };
-  if (!gymCode || !memberCode || !password || gymCode.length > 50 || memberCode.length > 80 || password.length > 256) return invalid;
+  const invalid = { error: 'Invalid gym code or Member ID. Ask reception for your details.' };
+  if (!gymCode || !memberCode || gymCode.length > 50 || memberCode.length > 80) return invalid;
   try {
     const member = await prisma.member.findFirst({
-      where: { gym: { slug: gymCode }, memberCode: { equals: memberCode, mode: 'insensitive' } },
-      select: { authUserId: true },
+      where: { gym: { slug: gymCode }, memberCode },
+      select: { id: true, gymId: true },
     });
-    if (!member?.authUserId) return invalid;
-    // Read the existing auth email so gym-code changes do not break established logins.
-    const admin = createAdminClient();
-    const { data: account, error: accountError } = await admin.auth.admin.getUserById(member.authUserId);
-    if (accountError || !account.user?.email) return invalid;
-    const supabase = await createClient();
-    const { data, error } = await supabase.auth.signInWithPassword({ email: account.user.email, password });
-    if (error || data.user?.id !== member.authUserId) return invalid;
-    await clearMemberSession();
+    if (!member) return invalid;
+    await setMemberSession(member.id, member.gymId);
     return { success: true };
   } catch (error) {
     console.error('Member login failed:', error);

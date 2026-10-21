@@ -1,3 +1,4 @@
+import { getMemberSession } from '@/lib/member-session';
 import { subscriptionActive } from '@/lib/subscription';
 import { cache } from 'react';
 import { cookies } from 'next/headers';
@@ -28,6 +29,10 @@ export async function requireStaff() {
 }
 
 export const getCurrentMember = cache(async () => {
+  const session = await getMemberSession();
+  if (session) {
+    return prisma.member.findFirst({ where: { id: session.memberId, gymId: session.gymId }, include: { gym: true } });
+  }
   const authUserId = await getAuthUserId();
   if (!authUserId) return null;
   await ensureDatabaseSchema();

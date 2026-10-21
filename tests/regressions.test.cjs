@@ -44,6 +44,7 @@ test('user-controlled metadata and built-in email guesses cannot grant admin acc
 
 test('anonymous and legacy member cookies never query the database or grant access', async () => {
   const auth = load('src/lib/auth.ts', {
+    '@/lib/member-session': { getMemberSession: async () => null },
     react: { cache: f => f }, 'next/headers': { cookies: async () => ({ getAll: () => [{ name: 'nf_member_session', value: 'old-token' }] }) },
     '@/lib/prisma': { prisma: new Proxy({}, { get() { throw new Error('Unexpected database access'); } }) },
     '@/utils/supabase/server': { createClient() { throw new Error('Unexpected authentication call'); } },
@@ -54,6 +55,7 @@ test('anonymous and legacy member cookies never query the database or grant acce
 
 test('revoked member auth link denies an otherwise valid Supabase user', async () => {
   const auth = load('src/lib/auth.ts', {
+    '@/lib/member-session': { getMemberSession: async () => null },
     react: { cache: f => f }, 'next/headers': { cookies: async () => ({ getAll: () => [{ name: 'sb-test-auth-token' }] }) },
     '@/utils/supabase/server': { createClient: async () => ({ auth: { getUser: async () => ({ data: { user: { id: 'revoked-user' } } }) } }) },
     '@/lib/prisma': { prisma: { member: { findUnique: async ({where}) => { assert.equal(where.authUserId, 'revoked-user'); return null; } } } },
@@ -61,26 +63,55 @@ test('revoked member auth link denies an otherwise valid Supabase user', async (
   assert.equal(await auth.getCurrentMember(), null);
 });
 
-test('member login requires a password; public reset cannot return or change credentials', async () => {
-  const actions = load('src/app/member/actions.ts', { ...inert, '@/lib/prisma': { prisma: {} } });
-  assert.ok((await actions.loginMember({}, form({gymCode:'gym',memberCode:'MEM-001'}))).error);
-  const reset = await actions.resetMemberPasswordByPhone('gym', '9999999999');
-  assert.equal(reset.ok, false); assert.equal(reset.password, undefined);
+test('member pass resolves only its gym-scoped member and cannot grant staff access', async () => {
+  const auth = load('src/lib/auth.ts', {
+    react: {cache:f=>f},
+    'next/headers': {cookies:async()=>({getAll:()=>[]})},
+    '@/lib/member-session': {getMemberSession:async()=>({memberId:'m1',gymId:'g1'})},
+    '@/lib/prisma': {prisma:{member:{findFirst:async q=>{assert.deepEqual(q.where,{id:'m1',gymId:'g1'});return {id:'m1'};}}}},
+  });
+  assert.equal(await auth.getCurrentStaff(),null);
+  assert.deepEqual(await auth.getCurrentMember(),{id:'m1'});
 });
 
-test('member login checks password and exact authenticated user before accepting', async () => {
-  let cleared = false;
-  let response = { data: { user: null }, error: { message: 'Invalid password' } };
+test('member login accepts only the exact gym-scoped Member ID without a password', async () => {
+  let session;
+  let found = null;
   const actions = load('src/app/member/actions.ts', { ...inert,
-    '@/lib/prisma': { prisma: { member: { findFirst: async q => { assert.equal(q.where.gym.slug, 'gym'); assert.equal(q.where.memberCode.equals, 'MEM-001'); return {authUserId:'member-auth'}; } } } },
-    '@/utils/supabase/admin': {createAdminClient: () => ({auth:{admin:{getUserById: async () => ({data:{user:{email:'internal@example.com'}}})}}})},
-    '@/utils/supabase/server': {createClient: async () => ({auth:{signInWithPassword: async credentials => { assert.equal(credentials.password,'secret'); return response; }}})},
-    '@/lib/member-session': {clearMemberSession: async () => {cleared = true;}},
+    '@/lib/prisma': { prisma: { member: { findFirst: async q => { assert.deepEqual(q.where, {gym:{slug:'gym'},memberCode:'MEM-001'}); return found; } } } },
+    '@/lib/member-session': {setMemberSession: async (...args) => {session=args;}},
   });
-  const f = form({gymCode:'GYM', memberCode:'MEM-001', password:'secret'});
-  assert.ok((await actions.loginMember({}, f)).error); assert.equal(cleared,false);
-  response = { data: {user:{id:'member-auth'}} };
-  assert.equal((await actions.loginMember({}, f)).success,true); assert.equal(cleared,true);
+  assert.ok((await actions.loginMember({}, form({gymCode:'gym'}))).error);
+  const f = form({gymCode:' GYM ',memberCode:'MEM-001'});
+  assert.ok((await actions.loginMember({}, f)).error);
+  assert.equal(session, undefined);
+  found = {id:'member-1',gymId:'gym-1'};
+  assert.equal((await actions.loginMember({}, f)).success,true);
+  assert.deepEqual(session,['member-1','gym-1']);
+});
+
+test('member sessions reject tampering and expiry and are cleared at logout', async () => {
+  const old = process.env.MEMBER_SESSION_SECRET;
+  process.env.MEMBER_SESSION_SECRET = 'test-only-key';
+  const jar = new Map();
+  let options;
+  try {
+    const session = load('src/lib/member-session.ts', {'next/headers':{cookies:async()=>({
+      get:key=>jar.has(key)?{value:jar.get(key)}:undefined,
+      set:(key,value,opts)=>{jar.set(key,value); options=opts;}, delete:key=>jar.delete(key),
+    })}});
+    await session.setMemberSession('m1','g1');
+    assert.equal(options.httpOnly,true); assert.equal(options.sameSite,'lax');
+    assert.deepEqual(await session.getMemberSession(),{memberId:'m1',gymId:'g1'});
+    const token=jar.get('nf_member_pass_v1');
+    jar.set('nf_member_pass_v1',token+'x');
+    assert.equal(await session.getMemberSession(),null);
+    jar.set('nf_member_pass_v1',token);
+    const now=Date.now; Date.now=()=>now()+86401000;
+    try { assert.equal(await session.getMemberSession(),null); } finally {Date.now=now;}
+    await session.clearMemberSession();
+    assert.equal(await session.getMemberSession(),null);
+  } finally {if(old===undefined)delete process.env.MEMBER_SESSION_SECRET;else process.env.MEMBER_SESSION_SECRET=old;}
 });
 
 for (const [plan, price] of Object.entries({base_1m:999,base_6m:2399,base_1y:3499,pro_6m:3499,pro_1y:5499})) {

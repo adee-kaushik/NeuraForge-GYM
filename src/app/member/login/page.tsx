@@ -50,7 +50,7 @@ export default function MemberLoginPage() {
           </div>
         </div>
 
-        {/* Member Login Card (Passwordless: Gym Code + ID/Phone only) */}
+        {/* Member Login Card (Gym Code + Member ID) */}
         <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -59,7 +59,7 @@ export default function MemberLoginPage() {
               </span>
               <span className="text-[11px] font-bold text-tertiary flex items-center gap-1">
                 <span className="material-symbols-outlined text-sm">bolt</span>
-                <span>Password protected</span>
+                <span>No password needed</span>
               </span>
             </div>
 
@@ -67,7 +67,7 @@ export default function MemberLoginPage() {
               Member Digital Pass
             </h1>
             <p className="text-xs sm:text-sm text-on-surface-variant mt-1 leading-relaxed">
-              Access your digital gym pass, QR code, active plan, and attendance using your Gym Code, Member ID and password from reception.
+              Access your digital gym pass, QR code, active plan, and attendance using your Gym Code and Member ID from reception.
             </p>
           </div>
 
@@ -108,11 +108,6 @@ export default function MemberLoginPage() {
               />
             </div>
 
-            <div>
-              <label className={labelClass} htmlFor="password">Password</label>
-              <input id="password" name="password" type="password" required autoComplete="current-password" maxLength={256} className={inputClass} />
-            </div>
-
             {state.error && (
               <div role="alert" className="p-3 rounded-xl bg-error/10 border border-error/20 flex items-center gap-2 text-xs font-semibold text-error">
                 <span className="material-symbols-outlined text-base shrink-0">error</span>
@@ -135,7 +130,7 @@ export default function MemberLoginPage() {
           {/* Quick tips & Footer */}
           <div className="pt-3 border-t border-surface-container-high text-center space-y-2">
             <p className="text-[11px] text-outline">
-              Forgot your password? Ask gym reception to reset it securely.
+              Need your Gym Code or Member ID? Ask gym reception.
             </p>
             <p className="text-xs text-outline">
               Gym owner or receptionist?{' '}
