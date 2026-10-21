@@ -13,15 +13,23 @@ export type MemberLoginState = { error?: string; success?: boolean };
 
 export async function loginMember(_prev: MemberLoginState, formData: FormData): Promise<MemberLoginState> {
   const gymCode = String(formData.get('gymCode') ?? '').trim().toLowerCase();
-  const memberCode = String(formData.get('memberCode') ?? '').trim();
-  const invalid = { error: 'Invalid gym code or Member ID. Ask reception for your details.' };
-  if (!gymCode || !memberCode || gymCode.length > 50 || memberCode.length > 80) return invalid;
+  const rawPhone = String(formData.get('phone') ?? '').trim();
+  const digits = rawPhone.replace(/[\s()+-]/g, '');
+  const phone = /^(?:91|0)?[0-9]{10}$/.test(digits) ? digits.slice(-10) : '';
+  const invalid = { error: 'Invalid gym code or phone number. Ask reception for your details.' };
+  if (!gymCode || !phone || gymCode.length > 50 || rawPhone.length > 30) return invalid;
   try {
-    const member = await prisma.member.findFirst({
-      where: { gym: { slug: gymCode }, memberCode },
-      select: { id: true, gymId: true },
-    });
-    if (!member) return invalid;
+    const matches = await prisma.$queryRaw<Array<{ id: string; gymId: string }>>`
+      SELECT m.id, m."gymId"
+      FROM "Member" m JOIN "Gym" g ON g.id = m."gymId"
+      WHERE g.slug = ${gymCode}
+        AND regexp_replace(m.phone, '[^0-9]', '', 'g') ~ '^(91|0)?[0-9]{10}$'
+        AND right(regexp_replace(m.phone, '[^0-9]', '', 'g'), 10) = ${phone}
+      LIMIT 2
+    `;
+    if (matches.length === 0) return invalid;
+    if (matches.length > 1) return { error: 'This phone number is linked to multiple members. Ask gym reception to update your registered number.' };
+    const member = matches[0];
     await setMemberSession(member.id, member.gymId);
     return { success: true };
   } catch (error) {

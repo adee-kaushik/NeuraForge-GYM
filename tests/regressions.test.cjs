@@ -74,20 +74,28 @@ test('member pass resolves only its gym-scoped member and cannot grant staff acc
   assert.deepEqual(await auth.getCurrentMember(),{id:'m1'});
 });
 
-test('member login accepts only the exact gym-scoped Member ID without a password', async () => {
+test('phone login normalizes country codes, scopes gym and rejects missing or duplicate matches', async () => {
   let session;
-  let found = null;
+  let matches = [];
+  let calls=0;
   const actions = load('src/app/member/actions.ts', { ...inert,
-    '@/lib/prisma': { prisma: { member: { findFirst: async q => { assert.deepEqual(q.where, {gym:{slug:'gym'},memberCode:'MEM-001'}); return found; } } } },
+    '@/lib/prisma': { prisma: { $queryRaw: async (strings,...values) => { calls++; assert.deepEqual(values,['gym','9876543210']); return matches; } } },
     '@/lib/member-session': {setMemberSession: async (...args) => {session=args;}},
   });
-  assert.ok((await actions.loginMember({}, form({gymCode:'gym'}))).error);
-  const f = form({gymCode:' GYM ',memberCode:'MEM-001'});
-  assert.ok((await actions.loginMember({}, f)).error);
-  assert.equal(session, undefined);
-  found = {id:'member-1',gymId:'gym-1'};
-  assert.equal((await actions.loginMember({}, f)).success,true);
-  assert.deepEqual(session,['member-1','gym-1']);
+  for(const phone of ['', 'MEM-001', 'abc9876543210', '123']) {
+    assert.ok((await actions.loginMember({},form({gymCode:'gym',phone}))).error);
+  }
+  assert.equal(calls,0);
+  assert.ok((await actions.loginMember({},form({gymCode:'gym',phone:'9876543210'}))).error);
+  assert.equal(session,undefined);
+  matches=[{id:'m1',gymId:'g1'},{id:'m2',gymId:'g1'}];
+  assert.match((await actions.loginMember({},form({gymCode:'gym',phone:'9876543210'}))).error,/multiple members/);
+  assert.equal(session,undefined);
+  matches=[{id:'m1',gymId:'g1'}];
+  for(const phone of ['9876543210','+91 98765 43210','09876543210']) {
+    assert.equal((await actions.loginMember({},form({gymCode:' GYM ',phone}))).success,true);
+    assert.deepEqual(session,['m1','g1']);
+  }
 });
 
 test('member sessions reject tampering and expiry and are cleared at logout', async () => {

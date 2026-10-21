@@ -50,7 +50,7 @@ export default function MemberLoginPage() {
           </div>
         </div>
 
-        {/* Member Login Card (Gym Code + Member ID) */}
+        {/* Member Login Card (Gym Code + Phone Number) */}
         <div className="bg-surface-container-lowest border border-surface-container-high rounded-2xl p-6 sm:p-8 space-y-6 shadow-sm">
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -67,7 +67,7 @@ export default function MemberLoginPage() {
               Member Digital Pass
             </h1>
             <p className="text-xs sm:text-sm text-on-surface-variant mt-1 leading-relaxed">
-              Access your digital gym pass, QR code, active plan, and attendance using your Gym Code and Member ID from reception.
+              Access your digital gym pass, QR code, active plan, and attendance using your Gym Code and registered phone number.
             </p>
           </div>
 
@@ -92,16 +92,20 @@ export default function MemberLoginPage() {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className={labelClass} htmlFor="memberCode">
-                  Member ID
+                <label className={labelClass} htmlFor="phone">
+                  Phone Number
                 </label>
-                <span className="text-[11px] text-secondary font-semibold">Provided by reception</span>
+                <span className="text-[11px] text-secondary font-semibold">Registered with your gym</span>
               </div>
               <input
-                id="memberCode"
-                name="memberCode"
+                id="phone"
+                name="phone"
                 required
-                placeholder="e.g. MEM-001"
+                placeholder="Your 10-digit phone number"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                maxLength={30}
                 autoCapitalize="none"
                 autoCorrect="off"
                 className={inputClass}
@@ -130,7 +134,7 @@ export default function MemberLoginPage() {
           {/* Quick tips & Footer */}
           <div className="pt-3 border-t border-surface-container-high text-center space-y-2">
             <p className="text-[11px] text-outline">
-              Need your Gym Code or Member ID? Ask gym reception.
+              Need your Gym Code or Phone Number? Ask gym reception.
             </p>
             <p className="text-xs text-outline">
               Gym owner or receptionist?{' '}
