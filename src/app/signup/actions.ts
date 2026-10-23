@@ -3,6 +3,7 @@
 import { createClient } from '@/utils/supabase/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { prisma } from '@/lib/prisma';
+import { accountCreationError, validateGymIdentity } from '@/lib/gym-onboarding';
 import { DEFAULT_PLANS } from '@/lib/default-plans';
 
 export type SignupState = {
@@ -13,10 +14,6 @@ export type SignupState = {
   slug?: string;
   requiresPayment?: boolean;
 };
-
-// 3-30 chars: lowercase letters, numbers, hyphens (not at the start or end)
-const SLUG_RE = /^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/;
-const RESERVED_SLUGS = new Set(['admin', 'api', 'app', 'login', 'signup', 'www', 'neuraforge', 'neurafitness']);
 
 // Pilot activation is an administrator decision, never inferred from public signup counts.
 export async function checkIsFirstCustomer(): Promise<boolean> { return false; }
@@ -36,11 +33,11 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
 
 
   if (!gymName || !name || !email) return { error: 'Please fill in all fields.' };
-  if (!SLUG_RE.test(slug) || RESERVED_SLUGS.has(slug)) {
-    return { error: 'Gym code must be 3-30 characters: lowercase letters, numbers and hyphens.' };
-  }
+  const validationError = validateGymIdentity(slug, email);
+  if (validationError) return { error: validationError };
   if (password.length < 8) return { error: 'Password must be at least 8 characters.' };
 
+  try {
   // Check the gym code first, so we don't create a login that we then can't use
   const taken = await prisma.gym.findUnique({ where: { slug } });
   if (taken) return { error: 'This gym code is already taken. Try another one.' };
@@ -54,10 +51,10 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
     email_confirm: true,
   });
 
-  if (created?.user) {
+  if (!createError && created?.user) {
     authUserId = created.user.id;
   } else {
-    return { error: 'Could not create your account. If you already registered, please sign in.' };
+    return { error: accountCreationError(createError) };
   }
 
   // Pricing & Status calculation:
@@ -122,8 +119,11 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
   }
 
   // Auto-login the owner session
-  const supabase = await createClient();
-  await supabase.auth.signInWithPassword({ email, password });
+  // The gym already exists: a session failure must not invite duplicate registration.
+  try {
+    const supabase = await createClient();
+    await supabase.auth.signInWithPassword({ email, password });
+  } catch { /* Owner can sign in after completing payment approval. */ }
 
   const whatsappMessage =
     `Hi NeuraFitness Team! I registered our gym on the portal and want to activate our SaaS via UPI payment.\n\n` +
@@ -145,5 +145,8 @@ export async function signupOwner(_prev: SignupState, formData: FormData): Promi
     slug,
     requiresPayment: isPaid,
   };
+  } catch {
+    return { error: 'Registration is temporarily unavailable. Please retry in a moment.' };
+  }
 }
 

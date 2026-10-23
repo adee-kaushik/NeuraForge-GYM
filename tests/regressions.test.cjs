@@ -204,3 +204,23 @@ test('password reset origin is server configuration, not a caller-supplied URL',
     assert.throws(()=>siteOrigin());
   } finally {if(before===undefined)delete process.env.NEXT_PUBLIC_SITE_URL;else process.env.NEXT_PUBLIC_SITE_URL=before;}
 });
+
+for (const flow of ['admin','public']) {
+  for (const failure of ['none','auth','database','lookup','session']) test(`${flow} onboarding handles ${failure} without session replacement or orphaned accounts`, async () => {
+    let saved=0, deleted=0, created=0;
+    const mocks={
+      '@/lib/admin':{isNeuraFitnessAdmin:async()=>true},
+      'next/cache':{revalidatePath(){}},
+      '@/lib/prisma':{prisma:{gym:{findUnique:async()=>{if(failure==='lookup')throw Error('offline');return null;},create:async()=>{if(failure==='database')throw Error('constraint');saved++;return {id:'gym'};}}}},
+      '@/utils/supabase/admin':{createAdminClient:()=>({auth:{admin:{createUser:async()=>{created++;return failure==='auth'?{data:{user:null},error:{code:'email_exists'}}:{data:{user:{id:'new-owner'}}};},deleteUser:async id=>{assert.equal(id,'new-owner');deleted++;}}}})},
+      '@/utils/supabase/server':{createClient:async()=>{assert.equal(flow,'public','admin session must not be replaced');if(failure==='session')throw Error('cookie failure');return {auth:{signInWithPassword:async()=>({})}};}},
+    };
+    const input={gymName:'Test Gym',slug:'test-gym',ownerName:'Owner',name:'Owner',email:'owner@example.com',password:'Unique-password-123',saasPlan:'BASE_6M',plan:'base_6m'};
+    const result=flow==='admin'?await load('src/actions/admin.ts',mocks).createGymByAdmin(input):await load('src/app/signup/actions.ts',mocks).signupOwner({},form(input));
+    assert.equal(Boolean(flow==='admin'?result.ok:result.success),['none','session'].includes(failure));
+    assert.equal(saved,['none','session'].includes(failure)?1:0);
+    assert.equal(deleted,failure==='database'?1:0);
+    assert.equal(created,failure==='lookup'?0:1);
+    if(failure==='auth')assert.match(result.error,/already has an account/);
+  });
+}

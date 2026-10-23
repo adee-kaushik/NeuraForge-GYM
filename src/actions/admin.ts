@@ -1,5 +1,6 @@
 'use server';
 
+import { accountCreationError, validateGymIdentity } from '@/lib/gym-onboarding';
 import { prisma } from '@/lib/prisma';
 import { isNeuraFitnessAdmin } from '@/lib/admin';
 import { revalidatePath } from 'next/cache';
@@ -271,50 +272,32 @@ export async function createGymByAdmin(input: {
     return { ok: false, error: 'Please provide Gym Name, Slug, Owner Name, and Email.' };
   }
 
+  try {
+  const validationError = validateGymIdentity(slug, email);
+  if (validationError) return { ok: false, error: validationError };
   const existingSlug = await prisma.gym.findUnique({ where: { slug } });
   if (existingSlug) {
     return { ok: false, error: `Gym code / slug "${slug}" is already taken.` };
   }
 
-  let authUserId = '';
-  try {
-    const { createAdminClient } = await import('@/utils/supabase/admin');
-    const admin = createAdminClient();
-    const { data: created } = await admin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
-    if (created?.user) {
-      authUserId = created.user.id;
-    }
-  } catch {}
-
-  if (!authUserId) {
-    try {
-      const { createClient } = await import('@/utils/supabase/server');
-      const supabase = await createClient();
-      const { data: publicCreated } = await supabase.auth.signUp({ email, password });
-      if (publicCreated?.user) {
-        authUserId = publicCreated.user.id;
-      }
-    } catch {}
+  const { createAdminClient } = await import('@/utils/supabase/admin');
+  const admin = createAdminClient();
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email, password, email_confirm: true,
+  });
+  if (error || !created?.user) {
+    return { ok: false, error: accountCreationError(error) };
   }
-
-  if (!authUserId) {
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return { ok: false, error: `A user with email "${email}" is already registered.` };
-    }
-    return { ok: false, error: 'Could not create auth account. Please verify credentials.' };
-  }
+  const authUserId = created.user.id;
 
   const now = new Date();
   const expiresAt = new Date(now.getTime() + durationMonths * 30 * DAY_MS);
 
   const { DEFAULT_PLANS } = await import('@/lib/default-plans');
 
-  const gym = await prisma.gym.create({
+  let gym;
+  try {
+  gym = await prisma.gym.create({
     data: {
       name: gymName,
       slug,
@@ -339,7 +322,15 @@ export async function createGymByAdmin(input: {
     },
   });
 
+  } catch (error) {
+    await admin.auth.admin.deleteUser(authUserId).catch(() => undefined);
+    throw error;
+  }
+
   revalidatePath('/admin');
   revalidatePath('/');
   return { ok: true, gymId: gym.id, message: `Gym "${gymName}" successfully created and approved!` };
+  } catch {
+    return { ok: false, error: 'Could not onboard this gym. Check that the gym code and owner email are unused, then try again.' };
+  }
 }

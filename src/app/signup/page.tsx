@@ -31,7 +31,7 @@ export default function SignupPage() {
     checkIsFirstCustomer().then(setIsFirstCustomer);
     const searchParams = new URLSearchParams(window.location.search);
     const p = searchParams.get('plan') as SignupPlanType | null;
-    if (p) {
+    if (p && ['base_1m', 'base_6m', 'base_1y', 'pro_6m', 'pro_1y', 'monthly', '6months', '1year'].includes(p)) {
       setPlan(p);
     }
   }, []);
@@ -219,25 +219,6 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                {/* Free Trial Option */}
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setPlan('trial')}
-                    className={`w-full py-2 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer flex items-center justify-between ${
-                      plan === 'trial'
-                        ? 'border-amber-500/50 bg-amber-500/10 text-amber-400'
-                        : 'border-surface-container-high bg-surface-container-low text-outline hover:text-on-surface'
-                    }`}
-                  >
-                    <span className="flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-sm">timer</span>
-                      <span>Or Start 30-Day Free Trial (₹0 Today)</span>
-                    </span>
-                    <span>Free</span>
-                  </button>
-                </div>
-
                 <input type="hidden" name="plan" value={plan} />
               </div>
 
@@ -380,7 +361,7 @@ export default function SignupPage() {
                 </span>
               </div>
               <p className="text-xs text-outline leading-relaxed">
-                We accept subscription activations directly via UPI on WhatsApp. Once you submit your gym registration, you will be redirected to WhatsApp to send payment directly to our co-founders. Your Gym OS portal is activated immediately.
+                We accept subscription activations directly via UPI on WhatsApp. Once you submit your gym registration, you will be redirected to WhatsApp to send payment directly to our co-founders. Your Gym OS portal is activated after our team verifies your payment.
               </p>
               <div className="flex items-center gap-2 pt-1 text-[11px] font-semibold text-secondary">
                 <span className="material-symbols-outlined text-sm">security</span>

@@ -128,6 +128,7 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
   const [newDurationMonths, setNewDurationMonths] = useState<number>(7);
   const [newSubscriptionAmount, setNewSubscriptionAmount] = useState<number>(2399);
   const [creatingGym, setCreatingGym] = useState(false);
+  const [createGymError, setCreateGymError] = useState('');
 
   const handlePlanChange = (p: string) => {
     setNewSaasPlan(p);
@@ -159,7 +160,7 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
       .trim()
       .replace(/[^a-z0-9]/g, '-')
       .replace(/-+/g, '-')
-      .slice(0, 20);
+      .slice(0, 20).replace(/^-+|-+$/g, '');
     if (!newGymSlug || newGymSlug === autoSlug.slice(0, newGymSlug.length)) {
       setNewGymSlug(autoSlug);
     }
@@ -171,7 +172,10 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
       showToast('Please fill in Gym Name, Slug, Owner Name, and Email.');
       return;
     }
+    if (creatingGym) return;
+    setCreateGymError('');
     setCreatingGym(true);
+    try {
     const res = await createGymByAdmin({
       gymName: newGymName,
       slug: newGymSlug,
@@ -214,8 +218,14 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
       setNewOwnerName('');
       setNewOwnerEmail('');
       setNewOwnerPhone('');
+      setNewPassword('');
     } else {
-      showToast(res.error || 'Failed to onboard gym.');
+      setCreateGymError(res.error || 'Failed to onboard gym.');
+    }
+    } catch {
+      setCreateGymError('Could not reach the server. Please retry.');
+    } finally {
+      setCreatingGym(false);
     }
   };
 
@@ -1368,6 +1378,7 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
             </div>
 
             <form onSubmit={handleCreateGym} className="space-y-3.5 text-xs">
+              {createGymError && <p role="alert" className="text-sm text-red-400">{createGymError}</p>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">
@@ -1451,6 +1462,8 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
                   <input
                     type="text"
                     required
+                    minLength={12}
+                    autoComplete="new-password"
                     placeholder="Unique password (12+ characters)"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}

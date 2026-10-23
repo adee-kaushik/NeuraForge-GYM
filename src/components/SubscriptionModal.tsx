@@ -196,7 +196,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       .trim()
       .replace(/[^a-z0-9]/g, '-')
       .replace(/-+/g, '-')
-      .slice(0, 24);
+      .slice(0, 24).replace(/^-+|-+$/g, '');
     if (!slug || slug === autoSlug.slice(0, slug.length)) {
       setSlug(autoSlug);
     }
