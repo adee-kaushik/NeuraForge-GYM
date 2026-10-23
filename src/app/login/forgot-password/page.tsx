@@ -14,8 +14,12 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
 
-  // /auth/confirm sends people back here when the email link is old or was already used
+  // If Supabase redirected here with a recovery hash fragment, forward to reset-password
   useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash && window.location.hash.includes('access_token')) {
+      window.location.href = `/login/reset-password${window.location.hash}`;
+      return;
+    }
     if (new URLSearchParams(window.location.search).get('expired')) {
       setError('That reset link has expired or was already used. Request a new one.');
     }

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import { requireStaff } from '@/lib/auth';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { generatePassword, MEMBER_EMAIL_DOMAIN } from '@/lib/member-auth';
+import { normalizeServerKey } from '@/lib/server-env';
 import type { StaffRecord } from '@/types';
 
 export type StaffListResult = { ok: true; staff: StaffRecord[] } | { ok: false; error: string };
@@ -78,8 +79,8 @@ export async function addStaff(input: {
   let authUserId = '';
 
   // 1. Try Admin Client if service role key is configured
-  const secretKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '').trim();
-  if (secretKey && secretKey.length > 30) {
+  const secretKey = normalizeServerKey(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '');
+  if (secretKey && secretKey.length > 20) {
     try {
       const admin = createAdminClient();
       const { data, error } = await admin.auth.admin.createUser({
@@ -92,6 +93,19 @@ export async function addStaff(input: {
         authUserId = data.user.id;
       } else if (error) {
         console.warn('Admin createUser notice:', error.message);
+        if (/already.*registered|already exists|email address is already/i.test(error.message)) {
+          const { data: userList } = await admin.auth.admin.listUsers();
+          const existing = (userList?.users as any[])?.find((u: any) => u.email?.toLowerCase() === email);
+          if (existing) {
+            const { error: updErr } = await admin.auth.admin.updateUserById(existing.id, {
+              password,
+              email_confirm: true,
+            });
+            if (!updErr) {
+              authUserId = existing.id;
+            }
+          }
+        }
       }
     } catch (err) {
       console.warn('Admin createUser exception:', err);
@@ -159,10 +173,13 @@ export async function resetStaffPassword(staffId: string): Promise<StaffLoginRes
   const password = generatePassword();
   let updated = false;
 
-  const secretKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '').trim();
-  if (secretKey && secretKey.length > 30) {
+  const secretKey = normalizeServerKey(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || '');
+  if (secretKey && secretKey.length > 20) {
     try {
-      const { error } = await createAdminClient().auth.admin.updateUserById(target.authUserId, { password });
+      const { error } = await createAdminClient().auth.admin.updateUserById(target.authUserId, {
+        password,
+        email_confirm: true,
+      });
       if (!error) updated = true;
     } catch {}
   }
