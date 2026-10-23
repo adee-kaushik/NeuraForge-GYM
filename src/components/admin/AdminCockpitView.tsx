@@ -129,6 +129,7 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
   const [newSubscriptionAmount, setNewSubscriptionAmount] = useState<number>(2399);
   const [creatingGym, setCreatingGym] = useState(false);
   const [createGymError, setCreateGymError] = useState('');
+  const [requiresAdminLogin, setRequiresAdminLogin] = useState(false);
 
   const handlePlanChange = (p: string) => {
     setNewSaasPlan(p);
@@ -174,6 +175,7 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
     }
     if (creatingGym) return;
     setCreateGymError('');
+    setRequiresAdminLogin(false);
     setCreatingGym(true);
     try {
     const res = await createGymByAdmin({
@@ -191,13 +193,15 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
     if (res.ok) {
       showToast(`⚡ Gym "${newGymName}" onboarded & activated successfully!`);
       setShowCreateGymModal(false);
+      setGymSearch('');
+      setStatusFilter('ALL');
       setGyms((prev) => [
         {
           id: res.gymId || String(Date.now()),
           name: newGymName,
-          slug: newGymSlug,
+          slug: res.slug || newGymSlug,
           ownerName: newOwnerName,
-          ownerEmail: newOwnerEmail,
+          ownerEmail: res.email || newOwnerEmail,
           ownerPhone: newOwnerPhone || '',
           joined: new Date().toISOString(),
           membersCount: 0,
@@ -221,6 +225,7 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
       setNewPassword('');
     } else {
       setCreateGymError(res.error || 'Failed to onboard gym.');
+      setRequiresAdminLogin(Boolean(res.requiresAdminLogin));
     }
     } catch {
       setCreateGymError('Could not reach the server. Please retry.');
@@ -1379,6 +1384,7 @@ export const AdminCockpitView: React.FC<AdminCockpitViewProps> = ({
 
             <form onSubmit={handleCreateGym} className="space-y-3.5 text-xs">
               {createGymError && <p role="alert" className="text-sm text-red-400">{createGymError}</p>}
+              {requiresAdminLogin && <a href="/admin/login" target="_blank" rel="noopener noreferrer" className="block text-sm text-secondary underline">Sign in as super admin in a new tab, then retry</a>}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold uppercase tracking-wider text-outline mb-1">

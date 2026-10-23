@@ -123,16 +123,19 @@ test('member sessions reject tampering and expiry and are cleared at logout', as
 });
 
 for (const [plan, price] of Object.entries({base_1m:999,base_6m:2399,base_1y:3499,pro_6m:3499,pro_1y:5499})) {
-  test(`signup preserves ${plan} price and awaits payment approval`, async () => {
-    let saved;
-    const actions = load('src/app/signup/actions.ts', {...inert,
-      '@/lib/prisma': {prisma:{gym:{findUnique:async()=>null,create:async q=>{saved=q.data;}}}},
-      '@/utils/supabase/admin': {createAdminClient:()=>({auth:{admin:{createUser:async()=>({data:{user:{id:'new-user'}}})}}})},
-      '@/utils/supabase/server': {createClient:async()=>({auth:{signInWithPassword:async()=>({})}})},
+  test(`public enquiry prepares ${plan} for co-founder without account creation or session changes`, async () => {
+    const actions=load('src/app/signup/actions.ts', {
+      '@/lib/prisma':new Proxy({}, {get(){throw Error('Public form must not use database');}}),
+      '@/utils/supabase/admin':new Proxy({}, {get(){throw Error('Public form must not use Auth');}}),
+      '@/utils/supabase/server':new Proxy({}, {get(){throw Error('Public form must not replace session');}}),
     });
-    const result = await actions.signupOwner({},form({gymName:'Test Gym',slug:'test-gym',name:'Test Owner',email:'test@example.com',password:'test-password',plan}));
-    assert.equal(result.success,true); assert.equal(saved.subscriptionAmount,price);
-    assert.equal(saved.saasPlan,plan.toUpperCase()); assert.equal(saved.saasStatus,'PENDING_APPROVAL'); assert.equal(saved.isSuspended,true);
+    const result=await actions.signupOwner({},form({gymName:'Test Gym',slug:'test-gym',name:'Test Owner',email:'test@example.com',phone:'9876543210',password:'must-not-be-sent',plan}));
+    assert.equal(result.success,true);
+    const url=new URL(result.whatsappUrl);
+    assert.equal(url.origin+url.pathname,'https://wa.me/919351219914');
+    const message=url.searchParams.get('text');
+    for(const detail of ['Test Gym','test-gym','Test Owner','test@example.com','9876543210',price.toLocaleString('en-IN')]) assert.ok(message.includes(detail));
+    assert.ok(!message.includes('must-not-be-sent'));
   });
 }
 
@@ -205,7 +208,7 @@ test('password reset origin is server configuration, not a caller-supplied URL',
   } finally {if(before===undefined)delete process.env.NEXT_PUBLIC_SITE_URL;else process.env.NEXT_PUBLIC_SITE_URL=before;}
 });
 
-for (const flow of ['admin','public']) {
+for (const flow of ['admin']) {
   for (const failure of ['none','auth','database','lookup','session']) test(`${flow} onboarding handles ${failure} without session replacement or orphaned accounts`, async () => {
     let saved=0, deleted=0, created=0;
     const mocks={
@@ -224,3 +227,34 @@ for (const flow of ['admin','public']) {
     if(failure==='auth')assert.match(result.error,/already has an account/);
   });
 }
+
+
+test('onboarding refuses expired or non-admin sessions before creating accounts', async()=>{
+  const action=load('src/actions/admin.ts',{
+    '@/lib/admin':{isNeuraFitnessAdmin:async()=>false},
+    '@/lib/prisma':{prisma:new Proxy({}, {get(){throw Error('No database access allowed');}})},
+    'next/cache':{revalidatePath(){}},
+  });
+  const result=await action.createGymByAdmin({});
+  assert.equal(result.ok,false); assert.equal(result.requiresAdminLogin,true);
+});
+
+test('server key normalization handles env assignment and quotes without changing real keys',()=>{
+  const {normalizeServerKey}=load('src/lib/server-env.ts');
+  for(const raw of ['sb_secret_test','  sb_secret_test  ','"sb_secret_test"',"'sb_secret_test'",'SUPABASE_SECRET_KEY="sb_secret_test"']) assert.equal(normalizeServerKey(raw),'sb_secret_test');
+});
+
+test('created owner can sign in and resolve their staff dashboard identity',async()=>{
+  let saved;
+  const authUser={id:'created-owner'};
+  const prisma={gym:{findUnique:async()=>null,create:async({data})=>{saved=data;return {id:'new-gym'};}},user:{findUnique:async({where})=>saved && where.authUserId===saved.users.create.authUserId?{gymId:'new-gym',role:'OWNER'}:null}};
+  const mocks={
+    '@/lib/admin':{isNeuraFitnessAdmin:async()=>true},'next/cache':{revalidatePath(){}},
+    '@/lib/prisma':{prisma},'next/navigation':{},'next/headers':{},'@/lib/member-session':{},
+    '@/utils/supabase/admin':{createAdminClient:()=>({auth:{admin:{createUser:async input=>{assert.equal(input.email_confirm,true);return {data:{user:authUser}};}}}})},
+    '@/utils/supabase/server':{createClient:async()=>({auth:{signInWithPassword:async()=>({data:{user:authUser}})}})},
+  };
+  const result=await load('src/actions/admin.ts',mocks).createGymByAdmin({gymName:'New Gym',slug:'new-gym',ownerName:'Owner',email:'owner@example.com',password:'Long-password123',saasPlan:'BASE_6M'});
+  assert.equal(result.ok,true);assert.equal(saved.isSuspended,false);assert.equal(saved.saasStatus,'ACTIVE');
+  assert.equal((await load('src/app/login/actions.ts',mocks).loginOwner({},form({email:'owner@example.com',password:'Long-password123'}))).success,true);
+});

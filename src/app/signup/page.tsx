@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState, useActionState } from 'react';
-import { signupOwner, checkIsFirstCustomer, type SignupState } from './actions';
+import { prepareGymEnquiry, type SignupState } from '@/lib/gym-enquiry';
 
 const initialState: SignupState = {};
 
@@ -22,13 +22,11 @@ export type SignupPlanType =
   | 'trial';
 
 export default function SignupPage() {
-  const [state, formAction, pending] = useActionState(signupOwner, initialState);
+  const [state, formAction, pending] = useActionState((_prev: SignupState, form: FormData) => prepareGymEnquiry(form), initialState);
   const [plan, setPlan] = useState<SignupPlanType>('base_1y');
-  const [showPassword, setShowPassword] = useState(false);
   const [isFirstCustomer, setIsFirstCustomer] = useState(false);
 
   useEffect(() => {
-    checkIsFirstCustomer().then(setIsFirstCustomer);
     const searchParams = new URLSearchParams(window.location.search);
     const p = searchParams.get('plan') as SignupPlanType | null;
     if (p && ['base_1m', 'base_6m', 'base_1y', 'pro_6m', 'pro_1y', 'monthly', '6months', '1year'].includes(p)) {
@@ -48,7 +46,7 @@ export default function SignupPage() {
 
 
 
-  const isBusy = pending || Boolean(state.success);
+  const isBusy = pending;
 
   // Pricing calculations
   let basePlanPrice = 0;
@@ -305,33 +303,6 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label className={labelClass} htmlFor="password">
-              Password (min 8 characters) *
-            </label>
-            <div className="relative">
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                required
-                minLength={8}
-                className={`${inputClass} pr-12`}
-                placeholder="••••••••"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface focus:outline-none p-1 transition-colors cursor-pointer"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                <span className="material-symbols-outlined text-xl select-none leading-none">
-                  {showPassword ? 'visibility_off' : 'visibility'}
-                </span>
-              </button>
-            </div>
-          </div>
-
-          <div>
             <label className={labelClass} htmlFor="phone">
               WhatsApp / Mobile Number *
             </label>
@@ -361,7 +332,7 @@ export default function SignupPage() {
                 </span>
               </div>
               <p className="text-xs text-outline leading-relaxed">
-                We accept subscription activations directly via UPI on WhatsApp. Once you submit your gym registration, you will be redirected to WhatsApp to send payment directly to our co-founders. Your Gym OS portal is activated after our team verifies your payment.
+                Continue to WhatsApp with your gym details prefilled, then tap Send to share them with our co-founder. Our team will verify payment and create your owner login. This form does not create an account or take payment.
               </p>
               <div className="flex items-center gap-2 pt-1 text-[11px] font-semibold text-secondary">
                 <span className="material-symbols-outlined text-sm">security</span>
@@ -369,6 +340,8 @@ export default function SignupPage() {
               </div>
             </div>
           )}
+
+          {state.whatsappUrl && <a href={state.whatsappUrl} className="block text-secondary underline">Open WhatsApp again — tap Send to complete your enquiry</a>}
 
           {state.error && (
             <div className="p-3 rounded-xl bg-error/10 border border-error/20 flex items-center gap-2 text-xs font-semibold text-error">
@@ -386,12 +359,12 @@ export default function SignupPage() {
               <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
             )}
             {state.success
-              ? 'Redirecting...'
+              ? 'Open WhatsApp Again'
               : pending
               ? 'Submitting Registration...'
               : isFirstCustomer || plan === 'trial'
               ? 'Register Gym & Start Free Access'
-              : `Proceed to Pay ₹${remainingTotalToPay.toLocaleString('en-IN')} via WhatsApp UPI`}
+              : `Send Gym Details · ₹${remainingTotalToPay.toLocaleString('en-IN')} Plan`}
           </button>
 
           <p className="text-xs text-outline text-center pt-2 border-t border-surface-container-high">

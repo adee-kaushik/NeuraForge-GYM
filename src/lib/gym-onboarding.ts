@@ -13,6 +13,7 @@ export function accountCreationError(error: { code?: string; status?: number } |
     return 'This owner email already has an account. Sign in to the existing account or use a different email for the new gym.';
   }
   if (error?.code === 'weak_password') return 'Choose a stronger owner password with uppercase, lowercase, numbers and symbols.';
+  if (error?.status === 401 || error?.status === 403) return 'Onboarding configuration error: the Supabase server key is invalid or lacks admin access. Update SUPABASE_SECRET_KEY in Vercel and redeploy.';
   if (error?.status === 429) return 'Too many registration attempts. Please wait a few minutes and retry.';
   return 'Account creation is temporarily unavailable. Please retry or contact the NeuraFitness administrator.';
 }

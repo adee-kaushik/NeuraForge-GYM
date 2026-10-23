@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { signupOwner } from '@/app/signup/actions';
+import { prepareGymEnquiry } from '@/lib/gym-enquiry';
 
 export type PlanType =
   | 'base_1m'
@@ -151,12 +151,11 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [whatsappUrl, setWhatsappUrl] = useState('');
 
   // Sync plan when modal opens or props change
   useEffect(() => {
@@ -206,13 +205,8 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     e.preventDefault();
     setError('');
 
-    if (!gymName.trim() || !name.trim() || !email.trim() || !password) {
+    if (!gymName.trim() || !name.trim() || !email.trim()) {
       setError('Please fill in all gym and account details.');
-      return;
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long.');
       return;
     }
 
@@ -227,11 +221,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
     formData.append('name', name.trim());
     formData.append('email', email.trim().toLowerCase());
     formData.append('phone', phone.trim());
-    formData.append('password', password);
     formData.append('plan', plan);
 
     try {
-      const res = await signupOwner({}, formData);
+      const res = prepareGymEnquiry(formData);
       setBusy(false);
 
       if (res.error) {
@@ -240,6 +233,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
       }
 
       if (res.whatsappUrl && res.requiresPayment) {
+        setWhatsappUrl(res.whatsappUrl);
         window.location.href = res.whatsappUrl;
       } else {
         window.location.href = '/';
@@ -292,6 +286,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
 
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs text-on-surface">
+          {whatsappUrl && <a href={whatsappUrl} className="block text-secondary underline">Open WhatsApp again — tap Send to complete your enquiry</a>}
           {error && (
             <div role="alert" className="p-3 rounded-xl bg-error/10 border border-error/20 flex items-center gap-2 text-xs font-semibold text-error">
               <span className="material-symbols-outlined text-base shrink-0">error</span>
@@ -523,31 +518,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 />
               </div>
 
-              <div>
-                <label htmlFor="subscription-password" className={labelClass}>Create Password (min 8 chars) *</label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    minLength={8}
-                    placeholder="••••••••"
-                    id="subscription-password"
-                  value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className={`${inputClass} pr-10`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-outline hover:text-on-surface focus:outline-none p-1 transition-colors cursor-pointer"
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                  >
-                    <span className="material-symbols-outlined text-base select-none leading-none">
-                      {showPassword ? 'visibility_off' : 'visibility'}
-                    </span>
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -564,7 +534,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-outline leading-relaxed">
-                We accept subscription activations directly via UPI on WhatsApp. Once you submit your gym details, you will be redirected to WhatsApp to send payment directly to our co-founders. Your Gym OS portal is activated after our team verifies your payment.
+                Continue to WhatsApp with your gym details prefilled, then tap Send to share them with our co-founder. Our team will verify payment and create your owner login. This form does not create an account or take payment.
               </p>
               <div className="flex items-center gap-2 pt-1 text-[11px] font-semibold text-secondary">
                 <span className="material-symbols-outlined text-sm">security</span>
@@ -592,10 +562,10 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               )}
               <span>
                 {busy
-                  ? 'Activating Subscription & Setting Up...'
+                  ? 'Preparing WhatsApp...'
                   : plan === 'trial'
                   ? 'Start 1-Month Free Trial (₹0 Today)'
-                  : `Proceed to Pay ₹${remainingTotalToPay.toLocaleString('en-IN')} via WhatsApp UPI`}
+                  : `Send Gym Details · ₹${remainingTotalToPay.toLocaleString('en-IN')} Plan`}
               </span>
             </button>
           </div>

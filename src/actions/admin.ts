@@ -254,7 +254,7 @@ export async function createGymByAdmin(input: {
   durationMonths?: number;
 }) {
   if (!(await isNeuraFitnessAdmin())) {
-    return { ok: false, error: 'Unauthorized: Admin cockpit clearance required.' };
+    return { ok: false, requiresAdminLogin: true, error: 'Your admin session has expired or changed. Sign in as super admin in a new tab, then retry this form.' };
   }
 
   const gymName = input.gymName.trim();
@@ -286,6 +286,7 @@ export async function createGymByAdmin(input: {
     email, password, email_confirm: true,
   });
   if (error || !created?.user) {
+    console.error('gym_onboarding_auth_failed', { status: error?.status, code: error?.code });
     return { ok: false, error: accountCreationError(error) };
   }
   const authUserId = created.user.id;
@@ -329,7 +330,7 @@ export async function createGymByAdmin(input: {
 
   revalidatePath('/admin');
   revalidatePath('/');
-  return { ok: true, gymId: gym.id, message: `Gym "${gymName}" successfully created and approved!` };
+  return { ok: true, gymId: gym.id, slug, email, message: `Gym "${gymName}" successfully created and approved!` };
   } catch {
     return { ok: false, error: 'Could not onboard this gym. Check that the gym code and owner email are unused, then try again.' };
   }
