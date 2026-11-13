@@ -489,6 +489,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({
       {sellingItem && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
+          role="dialog" aria-modal="true"
           onClick={() => setSellingItem(null)}
         >
           <div
@@ -732,6 +733,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({
       {receiptSale && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
+          role="dialog" aria-modal="true"
           onClick={() => setReceiptSale(null)}
         >
           <div
@@ -799,6 +801,7 @@ export const SupplementsView: React.FC<SupplementsViewProps> = ({
       {editingItem && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs"
+          role="dialog" aria-modal="true"
           onClick={() => setEditingItem(null)}
         >
           <form

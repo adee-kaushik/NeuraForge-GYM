@@ -76,7 +76,7 @@ export const MemberNotifications: React.FC<MemberNotificationsProps> = ({
         <div className="flex items-center gap-2">
           <div className="relative">
             <span className="material-symbols-outlined text-secondary text-xl">notifications_active</span>
-            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-error animate-pulse"></span>
+            <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-error "></span>
           </div>
           <span className="font-sora text-xs font-bold uppercase tracking-wider text-on-surface">
             Owner's Reminders &amp; Notices ({activeItems.length})

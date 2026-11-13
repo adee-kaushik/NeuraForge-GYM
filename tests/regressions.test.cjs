@@ -258,3 +258,69 @@ test('created owner can sign in and resolve their staff dashboard identity',asyn
   assert.equal(result.ok,true);assert.equal(saved.isSuspended,false);assert.equal(saved.saasStatus,'ACTIVE');
   assert.equal((await load('src/app/login/actions.ts',mocks).loginOwner({},form({email:'owner@example.com',password:'Long-password123'}))).success,true);
 });
+
+const wellnessProfile = { age:25,height:175,weight:72,preference:'vegetarian',activity:'seated',experience:'beginner',goal:'fitness',days:2,equipment:[],allergies:[],needsReview:false };
+test('wellness generates four distinct options per category, respects diet and equipment', () => {
+ const {buildWellnessPlans}=load('src/lib/wellness.ts');
+ const result=buildWellnessPlans(wellnessProfile);
+ assert.equal(result.workouts.length,4);assert.equal(result.diets.length,4);
+ assert.equal(new Set(result.diets.map(p=>p.title)).size,4);
+ const meals=result.diets.flatMap(p=>p.sections.filter(s=>['Breakfast','Lunch','Snack','Dinner'].includes(s.title)).flatMap(s=>s.lines)).join(' ');
+ assert.doesNotMatch(meals,/egg|chicken|fish/i);
+ const moves=result.workouts.flatMap(p=>p.sections.filter(s=>/^Session/.test(s.title)).flatMap(s=>s.lines)).join(' ');
+ assert.doesNotMatch(moves,/machine|dumbbell|cable|pulldown/i);
+ assert.ok(result.workouts.every(w=>w.summary.startsWith('2 strength days')));
+ assert.equal(result.bmi,23.5);
+});
+test('wellness excludes selected allergens and adapts loaded exercises to equipment', () => {
+ const {buildWellnessPlans}=load('src/lib/wellness.ts');
+ const result=buildWellnessPlans({...wellnessProfile,preference:'non-vegetarian',equipment:['leg-press','chest-press','cable-row'],allergies:['milk','soy','peanuts','wheat','eggs','fish']});
+ const meals=result.diets.flatMap(p=>p.sections.filter(s=>['Breakfast','Lunch','Snack','Dinner'].includes(s.title)).flatMap(s=>s.lines)).join(' ');
+ assert.doesNotMatch(meals,/curd|soya|peanut|whole-wheat|eggs|fish/i);
+ assert.match(meals,/chicken/);
+ assert.match(result.workouts[0].sections[1].lines.join(' '),/Leg press/);
+});
+test('wellness rejects malformed profiles and routes health constraints to professional review', () => {
+ const {validateProfile}=load('src/lib/wellness.ts');
+ for(const patch of [{age:17},{age:70},{weight:NaN},{height:0},{needsReview:true},{allergies:['other']},{equipment:['unsafe']},{days:7},{weight:40},{preference:'invalid'}]) assert.ok(validateProfile({...wellnessProfile,...patch}));
+ assert.equal(validateProfile(wellnessProfile),null);
+});
+test('campaign deliveries use authenticated gym and exact selected recipients, with personalized text', async () => {
+ let where,created;
+ const {sendMemberCampaign}=load('src/actions/reminders.ts',{
+  '@/lib/auth':{requireStaff:async()=>({gymId:'gym-a',gym:{name:'Gym A'}})},
+  '@/lib/prisma':{prisma:{member:{findMany:async q=>{where=q.where;return [{id:'m1',name:'Asha',memberships:[{expiresAt:new Date('2026-12-01'),plan:{name:'Monthly'}}]}];}},gymReminder:{createMany:async q=>{created=q.data;return {count:q.data.length};}}}}
+ });
+ const result=await sendMemberCampaign(['m1','m1','foreign-member'],'Hello {name}, {gym}: {plan}','welcome');
+ assert.equal(where.gymId,'gym-a');assert.deepEqual(where.id.in,['m1','foreign-member']);
+ assert.equal(created.length,1);assert.equal(created[0].memberId,'m1');assert.equal(created[0].gymId,'gym-a');assert.equal(created[0].message,'Hello Asha, Gym A: Monthly');assert.equal(result.count,1);
+});
+test('plan assignment rejects members outside authenticated gym before plan lookup or write', async () => {
+ let query;
+ const {assignPlanToMember}=load('src/actions/workout-plans.ts',{
+  '@/lib/auth':{requireStaff:async()=>({gymId:'gym-a'})},
+  '@/lib/db-init':{ensureDatabaseSchema:async()=>{}},
+  '@/lib/prisma':{prisma:{member:{findFirst:async q=>{query=q;return null;}}}}
+ });
+ const result=await assignPlanToMember('foreign-member','p1','workout');
+ assert.equal(result.ok,false);assert.deepEqual(query.where,{id:'foreign-member',gymId:'gym-a'});
+});
+test('member generated plans persist only to the signed-in identity', async () => {
+ let data,deleted;
+ const {generateMemberPlans}=load('src/actions/member-wellness.ts',{
+  '@/lib/auth':{getCurrentMember:async()=>({id:'m1',gymId:'gym-a'})},
+  'next/cache':{revalidatePath:()=>{}},
+  '@/lib/prisma':{prisma:{$transaction:async fn=>fn({gymReminder:{deleteMany:async q=>{deleted=q.where;},create:async q=>{data=q.data;}}})}}
+ });
+ const result=await generateMemberPlans({...wellnessProfile,memberId:'foreign'});
+ assert.equal(result.ok,true);assert.deepEqual(deleted,{gymId:'gym-a',memberId:'m1',type:'SELF_PLANS'});
+ assert.equal(data.memberId,'m1');assert.equal(JSON.parse(data.message).diets.length,4);assert.ok(!data.message.includes('"age"'));
+});
+test('member plan generation does not report delivery when persistence fails', async () => {
+ const {generateMemberPlans}=load('src/actions/member-wellness.ts',{
+  '@/lib/auth':{getCurrentMember:async()=>({id:'m1',gymId:'gym-a'})},
+  'next/cache':{revalidatePath:()=>{throw new Error('must not revalidate');}},
+  '@/lib/prisma':{prisma:{$transaction:async()=>{throw new Error('database unavailable');}}}
+ });
+ const result=await generateMemberPlans(wellnessProfile);assert.equal(result.ok,false);assert.equal(result.result,undefined);assert.match(result.error,/Could not save/);
+});

@@ -66,6 +66,7 @@ export const PendingEnrollmentsModal: React.FC<PendingEnrollmentsModalProps> = (
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in overflow-y-auto"
+      role="dialog" aria-modal="true"
       onClick={onClose}
     >
       <div

@@ -759,3 +759,24 @@ export async function getWorkoutAndDietPlans(): Promise<{
   ]);
   return { workoutPlans, dietPlans };
 }
+
+
+export async function assignPlanToMember(memberId: string, planId: string, kind: 'workout' | 'diet') {
+  const staff = await requireStaff();
+  const member = await prisma.member.findFirst({ where: { id: memberId, gymId: staff.gymId } });
+  if (!member || !['workout', 'diet'].includes(kind)) return { ok: false, error: 'Choose a member from your gym.' };
+  let title = '', message = '';
+  if (kind === 'workout') {
+    const plan = (await getWorkoutPlans()).find(p => p.id === planId);
+    if (!plan) return { ok: false, error: 'Plan no longer exists. Refresh and try again.' };
+    title = plan.title;
+    message = [plan.description, `${plan.daysPerWeek} days/week · ${plan.difficulty}`, ...plan.days.map(d => `${d.dayName} — ${d.targetMuscles}\n${d.exercises.map(e => `${e.name}: ${e.sets} × ${e.reps}, rest ${e.restSec}s. ${e.notes || ''}`).join('\n')}`)].join('\n\n');
+  } else {
+    const plan = (await getDietPlans()).find(p => p.id === planId);
+    if (!plan) return { ok: false, error: 'Plan no longer exists. Refresh and try again.' };
+    title = plan.title;
+    message = [plan.description, plan.dietaryPreference, ...plan.meals.map(m => `${m.mealName} ${m.time || ''}\n${m.items.map(i => `${i.name} — ${i.portion}`).join('\n')}\n${m.notes || ''}`)].join('\n\n');
+  }
+  await prisma.gymReminder.create({ data: { gymId: staff.gymId, memberId, type: kind === 'workout' ? 'WORKOUT_PLAN' : 'DIET_PLAN', title, message } });
+  return { ok: true };
+}

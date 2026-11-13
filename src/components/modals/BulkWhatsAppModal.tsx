@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Member } from '../../types';
-import { sendBulkMemberReminders, broadcastGymAnnouncement } from '@/actions/reminders';
+import { sendMemberCampaign } from '@/actions/reminders';
 
 export type CampaignType = 'renewal' | 'announcement' | 'birthday' | 'welcome' | 'inactivity';
 
@@ -90,10 +90,10 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
   });
   const [search, setSearch] = useState('');
 
-  // Bulk Sender Queue State
-  const [isBulkActive, setIsBulkActive] = useState(false);
-  const [bulkIndex, setBulkIndex] = useState(0);
-  const [autoAdvance, setAutoAdvance] = useState(true);
+  // Delivery State
+
+
+
   const [sentMemberIds, setSentMemberIds] = useState<Set<string>>(new Set());
   const [portalNoticeStatus, setPortalNoticeStatus] = useState<string>('');
   const [isSavingToPortal, setIsSavingToPortal] = useState(false);
@@ -101,8 +101,8 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       if (initialTab) setActiveTab(initialTab);
-      setIsBulkActive(false);
-      setBulkIndex(0);
+
+
       setPortalNoticeStatus('');
     }
   }, [isOpen, initialTab]);
@@ -115,7 +115,7 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
       case 'renewal':
         return members.filter((m) => m.status === 'expiring' || m.status === 'expired' || m.daysLeft <= 7);
       case 'announcement':
-        return members.filter((m) => m.status !== 'expired');
+        return members;
       case 'birthday':
         return members.filter((m) => m.isBirthdayToday);
       case 'welcome':
@@ -143,59 +143,35 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentBulkMember = filteredMembers[bulkIndex] || null;
 
-  const handleSendSingle = (m: Member) => {
-    const phone = m.phone.replace(/[^0-9]/g, '');
-    const message = fillTokens(currentTemplate, m, gymName);
-    window.open(
-      `https://api.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(message)}`,
-      '_blank'
-    );
-    setSentMemberIds((prev) => new Set(prev).add(m.id));
+
+  const handleSendSingle = async (m: Member) => {
+    if (isSavingToPortal) return;
+    const digits = m.phone.replace(/[^0-9]/g, '');
+    const phone = digits.length === 10 ? `91${digits}` : digits;
+    // Open synchronously so mobile browsers do not block the optional handoff.
+    const tab = window.open('about:blank', '_blank');
+    setIsSavingToPortal(true);
+    try {
+      const result = await sendMemberCampaign([m.id], currentTemplate, activeTab);
+      if (!result.ok) throw new Error(result.error);
+      const url = `https://wa.me/${phone}?text=${encodeURIComponent(fillTokens(currentTemplate, m, gymName))}`;
+      if (tab) { tab.opener = null; tab.location.href = url; }
+      setSentMemberIds(prev => new Set(prev).add(m.id));
+      setPortalNoticeStatus(tab ? 'Delivered to member panel. Confirm sending in WhatsApp.' : 'Delivered to member panel. Allow pop-ups to open WhatsApp.');
+    } catch { tab?.close(); setPortalNoticeStatus('Delivery failed. Please retry.'); }
+    finally { setIsSavingToPortal(false); }
   };
 
   const handleStartBulkSend = async () => {
-    if (filteredMembers.length === 0) return;
-
+    if (!filteredMembers.length || isSavingToPortal) return;
     setIsSavingToPortal(true);
-    setPortalNoticeStatus('Syncing notices to member passes...');
-
-    // Automatically create in-app notices for all target members
     try {
-      if (activeTab === 'renewal') {
-        const res = await sendBulkMemberReminders(
-          filteredMembers.map((m) => m.id),
-          currentTemplate
-        );
-        if (res.ok) {
-          setPortalNoticeStatus(`✓ Saved ${res.count} renewal notices to member portal`);
-        }
-      } else if (activeTab === 'announcement') {
-        const res = await broadcastGymAnnouncement('Gym Notice', currentTemplate);
-        if (res.ok) {
-          setPortalNoticeStatus('✓ Broadcasted gym notice to all member portals');
-        }
-      }
-    } catch {
-      // Continue even if in-app sync encounters an issue
-      setPortalNoticeStatus('');
-    } finally {
-      setIsSavingToPortal(false);
-    }
-
-    // Launch sequential bulk sender
-    setBulkIndex(0);
-    setIsBulkActive(true);
-  };
-
-  const handleBulkStepSend = (m: Member) => {
-    handleSendSingle(m);
-    if (autoAdvance) {
-      if (bulkIndex < filteredMembers.length - 1) {
-        setBulkIndex((prev) => prev + 1);
-      }
-    }
+      const result = await sendMemberCampaign(filteredMembers.map(m => m.id), currentTemplate, activeTab);
+      if (!result.ok) throw new Error(result.error);
+      setPortalNoticeStatus(`Delivered to ${result.count} member panels. WhatsApp is optional for individual members below.`);
+    } catch { setPortalNoticeStatus('Delivery failed. Please retry.'); }
+    finally { setIsSavingToPortal(false); }
   };
 
   const handleTextChange = (val: string) => {
@@ -212,6 +188,7 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in"
+      role="dialog" aria-modal="true"
       onClick={onClose}
     >
       <div
@@ -227,10 +204,10 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-sora text-sm sm:text-base font-bold text-on-surface">
-                  Bulk Communication Hub
+                  Send Reminder
                 </h3>
                 <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-[#25D366]/15 text-[#15803d] border border-[#25D366]/30 uppercase">
-                  WhatsApp Auto-Fill
+                  Member Panel + WhatsApp
                 </span>
               </div>
               <p className="text-[11px] text-outline mt-0.5">
@@ -254,7 +231,7 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
               t.id === 'renewal'
                 ? members.filter((m) => m.status === 'expiring' || m.status === 'expired' || m.daysLeft <= 7).length
                 : t.id === 'announcement'
-                ? members.filter((m) => m.status !== 'expired').length
+                ? members.length
                 : t.id === 'birthday'
                 ? members.filter((m) => m.isBirthdayToday).length
                 : t.id === 'welcome'
@@ -268,8 +245,8 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
                 onClick={() => {
                   setActiveTab(t.id);
                   setSearch('');
-                  setIsBulkActive(false);
-                  setBulkIndex(0);
+
+
                 }}
                 className={`pb-3 px-3 text-xs font-semibold flex items-center gap-2 border-b-2 whitespace-nowrap transition-all cursor-pointer ${
                   isActive
@@ -294,17 +271,16 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
         {/* Body */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-4 text-xs text-on-surface">
           {/* BULK SEND QUICK ACTION BAR */}
-          {!isBulkActive ? (
             <div className="p-4 rounded-xl bg-surface-container-lowest border border-[#25D366]/40 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#25D366] text-xl">bolt</span>
                   <span className="font-sora font-bold text-sm text-on-surface">
                     {activeTab === 'renewal'
-                      ? 'Send Bulk Renewal Reminder'
+                      ? 'Send Reminder'
                       : activeTab === 'announcement'
                       ? 'Broadcast Gym Notice to All'
-                      : `Bulk Send ${TEMPLATES.find((t) => t.id === activeTab)?.label}`}
+                      : `Send ${TEMPLATES.find((t) => t.id === activeTab)?.label}`}
                   </span>
                   <span className="px-2 py-0.5 rounded text-[10px] font-black bg-[#25D366]/20 text-[#15803d]">
                     {filteredMembers.length} Target Members
@@ -332,143 +308,11 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
                   {isSavingToPortal
                     ? 'Preparing...'
                     : activeTab === 'renewal'
-                    ? `Send All Reminders (${filteredMembers.length})`
-                    : `Broadcast to All (${filteredMembers.length})`}
+                    ? `Send Reminder (${filteredMembers.length})`
+                    : `Send to Selected (${filteredMembers.length})`}
                 </span>
               </button>
             </div>
-          ) : (
-            /* ACTIVE SEQUENTIAL SENDER QUEUE CARD */
-            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#25D366]/15 to-surface-container-lowest border-2 border-[#25D366]/50 shadow-md space-y-4 animate-in zoom-in-95">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#25D366]/30 pb-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#25D366] animate-ping" />
-                    <span className="font-sora font-extrabold text-sm sm:text-base text-on-surface">
-                      Bulk WhatsApp Queue: Member {bulkIndex + 1} of {filteredMembers.length}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-outline mt-0.5">
-                    Tap to open WhatsApp with pre-filled message customized for this member.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2 self-end sm:self-auto">
-                  <label className="flex items-center gap-1.5 text-[11px] text-outline cursor-pointer select-none">
-                    <input
-                      type="checkbox"
-                      checked={autoAdvance}
-                      onChange={(e) => setAutoAdvance(e.target.checked)}
-                      className="rounded accent-[#25D366]"
-                    />
-                    <span>Auto-advance</span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setIsBulkActive(false)}
-                    className="px-2.5 py-1 rounded-lg bg-surface-container hover:bg-surface-container-high text-[11px] font-bold text-outline hover:text-on-surface cursor-pointer"
-                  >
-                    Done / Exit Queue
-                  </button>
-                </div>
-              </div>
-
-              {/* Progress bar */}
-              <div className="w-full bg-surface-container-high rounded-full h-1.5 overflow-hidden">
-                <div
-                  className="bg-[#25D366] h-full transition-all duration-300"
-                  style={{
-                    width: `${Math.round(((bulkIndex + 1) / filteredMembers.length) * 100)}%`,
-                  }}
-                />
-              </div>
-
-              {currentBulkMember ? (
-                <div className="space-y-3 bg-surface-container-lowest p-4 rounded-xl border border-surface-container-high">
-                  {/* Current Member Info */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-full bg-secondary/15 text-secondary font-sora font-bold flex items-center justify-center text-xs">
-                        {currentBulkMember.name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="font-sora font-bold text-sm text-on-surface flex items-center gap-2">
-                          <span>{currentBulkMember.name}</span>
-                          {sentMemberIds.has(currentBulkMember.id) && (
-                            <span className="px-2 py-0.2 rounded text-[10px] font-bold bg-[#25D366]/20 text-[#15803d]">
-                              ✓ Sent
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-outline flex items-center gap-2">
-                          <span>{currentBulkMember.phone}</span>
-                          <span>·</span>
-                          <span className="text-secondary font-semibold">{currentBulkMember.planDuration}</span>
-                          <span>·</span>
-                          <span>{currentBulkMember.expiryDate}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-bold text-error">
-                      {currentBulkMember.daysLeft <= 0
-                        ? 'Expired'
-                        : `${currentBulkMember.daysLeft} days left`}
-                    </span>
-                  </div>
-
-                  {/* Personalized Message Preview */}
-                  <div className="p-3 rounded-lg bg-surface-container text-xs text-on-surface space-y-1 border border-surface-container-high">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-outline flex items-center justify-between">
-                      <span>Live Personalized Message</span>
-                      <span className="text-[#15803d]">Auto-Filled</span>
-                    </div>
-                    <p className="leading-relaxed font-sans select-all">
-                      {fillTokens(currentTemplate, currentBulkMember, gymName)}
-                    </p>
-                  </div>
-
-                  {/* Actions for current member */}
-                  <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-1">
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                      <button
-                        type="button"
-                        onClick={() => setBulkIndex((prev) => Math.max(0, prev - 1))}
-                        disabled={bulkIndex === 0}
-                        className="px-3 py-2 rounded-xl bg-surface-container disabled:opacity-40 text-on-surface font-semibold text-xs flex items-center gap-1 cursor-pointer"
-                      >
-                        <span className="material-symbols-outlined text-sm">chevron_left</span>
-                        <span>Previous</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setBulkIndex((prev) => Math.min(filteredMembers.length - 1, prev + 1))}
-                        disabled={bulkIndex >= filteredMembers.length - 1}
-                        className="px-3 py-2 rounded-xl bg-surface-container disabled:opacity-40 text-on-surface font-semibold text-xs flex items-center gap-1 cursor-pointer"
-                      >
-                        <span>Skip</span>
-                        <span className="material-symbols-outlined text-sm">chevron_right</span>
-                      </button>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleBulkStepSend(currentBulkMember)}
-                      className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#25D366] hover:bg-[#20ba59] text-[#002113] font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
-                    >
-                      <span className="material-symbols-outlined text-base">chat</span>
-                      <span>Open WhatsApp & Send to {currentBulkMember.name.split(' ')[0]}</span>
-                      <span className="material-symbols-outlined text-base">arrow_forward</span>
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4 text-center text-outline">
-                  No members in queue.
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Template Editor Box */}
           <div className="space-y-2 bg-surface-container-lowest p-3.5 rounded-xl border border-surface-container-high">
             <div className="flex items-center justify-between">
@@ -509,7 +353,7 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
                 </span>
                 {sentMemberIds.size > 0 && (
                   <span className="text-[10px] text-[#15803d] font-bold">
-                    ({sentMemberIds.size} sent in this session)
+                    ({sentMemberIds.size} delivered to member panels)
                   </span>
                 )}
               </div>
@@ -572,7 +416,7 @@ export const BulkWhatsAppModal: React.FC<BulkWhatsAppModalProps> = ({
                       title={`Send WhatsApp message with auto-filled name (${member.name}) and plan (${member.planDuration})`}
                     >
                       <span className="material-symbols-outlined text-sm">send</span>
-                      <span>Send</span>
+                      <span>WhatsApp</span>
                     </button>
                   </div>
                 );

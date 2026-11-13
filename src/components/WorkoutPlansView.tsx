@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import type { WorkoutPlanItem, WorkoutDay, WorkoutExercise, DietPlanItem, DietMeal, DietMealItem, Member } from '@/types';
 import {
+  assignPlanToMember,
   getWorkoutPlans,
   saveWorkoutPlan,
   deleteWorkoutPlan,
@@ -53,6 +54,7 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
   const [targetMemberId, setTargetMemberId] = useState<string>('');
   const [customPhone, setCustomPhone] = useState<string>('');
 
+  const [delivering, setDelivering] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
@@ -65,6 +67,18 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
       loadAllPlans();
     }
   }, []);
+
+  const deliverPlan = async (kind: 'workout' | 'diet') => {
+    const plan = kind === 'workout' ? sharingPlan : sharingDietPlan;
+    if (!targetMemberId || !plan || delivering) return;
+    setDelivering(true);
+    try {
+      const result = await assignPlanToMember(targetMemberId, plan.id, kind);
+      showToast(result.ok ? 'Plan delivered to the member’s Workout & Diet section.' : result.error || 'Delivery failed.');
+      if (result.ok) { setSharingPlan(null); setSharingDietPlan(null); }
+    } catch { showToast('Could not deliver plan. Please retry.'); }
+    finally { setDelivering(false); }
+  };
 
   const loadAllPlans = async () => {
     setLoading(true);
@@ -385,7 +399,7 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
     return text;
   };
 
-  const handleSendWorkoutWhatsApp = () => {
+  const handleSendWorkoutWhatsApp = async () => {
     if (!sharingPlan) return;
     let targetPhone = customPhone.trim();
     let memberName = '';
@@ -402,14 +416,24 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
     const url = fullPhone
       ? `https://wa.me/${fullPhone}?text=${encodeURIComponent(text)}`
       : `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
+    if (delivering) return;
+    const tab = window.open('about:blank', '_blank');
+    setDelivering(true);
+    try {
+      if (targetMemberId) {
+        const result = await assignPlanToMember(targetMemberId, sharingPlan.id, 'workout');
+        if (!result.ok) throw new Error(result.error);
+      }
+      if (tab) { tab.opener = null; tab.location.href = url; }
+    } catch { tab?.close(); showToast('Member panel delivery failed. Please retry.'); return; }
+    finally { setDelivering(false); }
     setSharingPlan(null);
     setTargetMemberId('');
     setCustomPhone('');
     showToast('🚀 WhatsApp opened with routine!');
   };
 
-  const handleSendDietWhatsApp = () => {
+  const handleSendDietWhatsApp = async () => {
     if (!sharingDietPlan) return;
     let targetPhone = customPhone.trim();
     let memberName = '';
@@ -426,7 +450,17 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
     const url = fullPhone
       ? `https://wa.me/${fullPhone}?text=${encodeURIComponent(text)}`
       : `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
+    if (delivering) return;
+    const tab = window.open('about:blank', '_blank');
+    setDelivering(true);
+    try {
+      if (targetMemberId) {
+        const result = await assignPlanToMember(targetMemberId, sharingDietPlan.id, 'diet');
+        if (!result.ok) throw new Error(result.error);
+      }
+      if (tab) { tab.opener = null; tab.location.href = url; }
+    } catch { tab?.close(); showToast('Member panel delivery failed. Please retry.'); return; }
+    finally { setDelivering(false); }
     setSharingDietPlan(null);
     setTargetMemberId('');
     setCustomPhone('');
@@ -451,7 +485,7 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
             <h1 className="font-sora text-xl sm:text-2xl font-bold text-on-surface">Workout &amp; Diet Plans</h1>
           </div>
           <p className="text-xs text-outline mt-1">
-            Build and share customized workout routines and daily nutrition diet charts with your gym members via 1-tap WhatsApp.
+            Build and share customized workout routines and daily nutrition diet charts directly to member panels, with optional WhatsApp sharing.
           </p>
         </div>
 
@@ -991,6 +1025,7 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
       {editingPlan && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          role="dialog" aria-modal="true"
           onClick={() => setEditingPlan(null)}
         >
           <div
@@ -1246,6 +1281,7 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
       {editingDietPlan && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          role="dialog" aria-modal="true"
           onClick={() => setEditingDietPlan(null)}
         >
           <div
@@ -1578,6 +1614,7 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
       {sharingPlan && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          role="dialog" aria-modal="true"
           onClick={() => setSharingPlan(null)}
         >
           <div
@@ -1587,7 +1624,7 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#25D366] text-2xl">send</span>
-                <h3 className="font-sora text-base font-bold text-on-surface">Share Routine via WhatsApp</h3>
+                <h3 className="font-sora text-base font-bold text-on-surface">Send Workout Routine</h3>
               </div>
               <button
                 onClick={() => setSharingPlan(null)}
@@ -1648,6 +1685,7 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
               >
                 Cancel
               </button>
+              <button disabled={!targetMemberId || delivering} onClick={() => deliverPlan('workout')} className="px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold disabled:opacity-50">{delivering ? 'Sending…' : 'Send to member panel'}</button>
               <button
                 onClick={handleSendWorkoutWhatsApp}
                 className="px-5 py-2 rounded-xl bg-[#25D366] text-white text-xs font-bold hover:bg-[#20ba59] transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
@@ -1666,6 +1704,7 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
       {sharingDietPlan && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in"
+          role="dialog" aria-modal="true"
           onClick={() => setSharingDietPlan(null)}
         >
           <div
@@ -1675,7 +1714,7 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
             <div className="flex items-center justify-between pb-3 border-b border-surface-container-high">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-[#25D366] text-2xl">send</span>
-                <h3 className="font-sora text-base font-bold text-on-surface">Share Diet Plan via WhatsApp</h3>
+                <h3 className="font-sora text-base font-bold text-on-surface">Send Diet Plan</h3>
               </div>
               <button
                 onClick={() => setSharingDietPlan(null)}
@@ -1736,6 +1775,7 @@ export const WorkoutPlansView: React.FC<WorkoutPlansViewProps> = ({
               >
                 Cancel
               </button>
+              <button disabled={!targetMemberId || delivering} onClick={() => deliverPlan('diet')} className="px-4 py-2 rounded-xl bg-primary text-on-primary text-xs font-bold disabled:opacity-50">{delivering ? 'Sending…' : 'Send to member panel'}</button>
               <button
                 onClick={handleSendDietWhatsApp}
                 className="px-5 py-2 rounded-xl bg-[#25D366] text-white text-xs font-bold hover:bg-[#20ba59] transition-all flex items-center gap-1.5 shadow-md cursor-pointer"

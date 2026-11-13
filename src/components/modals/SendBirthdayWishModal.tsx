@@ -80,11 +80,20 @@ export const SendBirthdayWishModal: React.FC<SendBirthdayWishModalProps> = ({
     return digits.length === 10 ? `91${digits}` : digits;
   };
 
-  const handleSendWhatsApp = () => {
-    const phone = cleanPhone(member.phone);
-    const url = `https://api.whatsapp.com/send?phone=${encodeURIComponent(phone)}&text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-    if (onToast) onToast(`Opened WhatsApp with birthday wish for ${member.name}!`);
+  const handleSendWhatsApp = async () => {
+    if (savingAppNotification) return;
+    const tab = window.open('about:blank', '_blank');
+    setSavingAppNotification(true);
+    try {
+      if (!appSentSuccess) {
+        const result = await sendMemberBirthdayWish(member.id, message);
+        if (!result.ok) throw new Error(result.error);
+        setAppSentSuccess(true);
+      }
+      if (tab) { tab.opener = null; tab.location.href = `https://wa.me/${cleanPhone(member.phone)}?text=${encodeURIComponent(message)}`; }
+      onToast?.('Delivered to member panel. Confirm sending in WhatsApp.');
+    } catch { tab?.close(); onToast?.('Could not deliver birthday wish. Please retry.'); }
+    finally { setSavingAppNotification(false); }
   };
 
   const handleSendToAppPass = async () => {
@@ -105,8 +114,7 @@ export const SendBirthdayWishModal: React.FC<SendBirthdayWishModalProps> = ({
   };
 
   const handleSendBoth = async () => {
-    await handleSendToAppPass();
-    handleSendWhatsApp();
+    await handleSendWhatsApp();
   };
 
   const ageText = typeof member.age === 'number' ? `Turning ${member.age} years` : null;
@@ -114,6 +122,7 @@ export const SendBirthdayWishModal: React.FC<SendBirthdayWishModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in"
+      role="dialog" aria-modal="true"
       onClick={onClose}
     >
       <div
@@ -138,7 +147,7 @@ export const SendBirthdayWishModal: React.FC<SendBirthdayWishModalProps> = ({
                   Wish Happy Birthday 🎂
                 </h3>
                 {member.isBirthdayToday && (
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-secondary/20 text-secondary border border-secondary/40 animate-pulse">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-secondary/20 text-secondary border border-secondary/40 ">
                     Today!
                   </span>
                 )}

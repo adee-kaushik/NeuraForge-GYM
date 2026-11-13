@@ -81,6 +81,7 @@ export const FrontDeskQrModal: React.FC<FrontDeskQrModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-in fade-in overflow-y-auto"
+      role="dialog" aria-modal="true"
       onClick={onClose}
     >
       <div
@@ -112,7 +113,7 @@ export const FrontDeskQrModal: React.FC<FrontDeskQrModalProps> = ({
         <div className="p-4 sm:p-6 overflow-y-auto space-y-4">
           {/* Pending Approvals Notice if any */}
           {pendingCount > 0 && (
-            <div className="p-3 rounded-xl bg-secondary/15 border border-secondary/40 flex items-center justify-between gap-3 text-xs animate-pulse">
+            <div className="p-3 rounded-xl bg-secondary/15 border border-secondary/40 flex items-center justify-between gap-3 text-xs ">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-lg text-secondary">notifications_active</span>
                 <span className="font-bold text-secondary">

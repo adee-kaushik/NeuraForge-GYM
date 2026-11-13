@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { requireStaff } from '@/lib/auth';
+import { startOfDayIST } from '@/lib/format';
 
 export async function sendMemberReminder(
   memberId: string,
@@ -45,7 +46,7 @@ export async function sendMemberReminder(
       memberId: member.id,
       title,
       message,
-      type: 'EXPIRY',
+      type: customTitle === 'Payment Reminder' ? 'PAYMENT_DUE' : 'EXPIRY',
     },
   });
 
@@ -169,4 +170,22 @@ export async function sendMemberBirthdayWish(
   });
 
   return { ok: true };
+}
+
+/** Deliver one campaign to exactly the selected, gym-scoped recipients. */
+export async function sendMemberCampaign(memberIds: string[], template: string, campaign = 'announcement') {
+  const staff = await requireStaff();
+  if (!Array.isArray(memberIds) || !memberIds.length || memberIds.length > 2000 || memberIds.some(id => typeof id !== 'string' || id.length > 100) || typeof template !== 'string' || !template.trim() || template.length > 5000) {
+    return { ok: false, count: 0, error: 'Choose 1–2000 members and enter a message (up to 5000 characters).' };
+  }
+  const members = await prisma.member.findMany({ where: { id: { in: [...new Set(memberIds)] }, gymId: staff.gymId }, include: { memberships: { orderBy: { expiresAt: 'desc' }, take: 1, include: { plan: true } } } });
+  if (!members.length) return { ok: false, count: 0, error: 'No matching gym members.' };
+  const titles: Record<string, string> = { renewal: 'Membership Renewal Reminder', announcement: 'Gym Notice', birthday: 'Birthday wishes', welcome: 'Welcome to your gym', inactivity: 'We miss you at the gym' };
+  const data = members.map(member => {
+    const latest = member.memberships[0];
+    const tokens: Record<string, string> = { daysLeft: latest ? String(Math.round((startOfDayIST(latest.expiresAt).getTime() - startOfDayIST(new Date()).getTime()) / 86400000)) : '0', name: member.name, gym: staff.gym.name, plan: latest?.plan?.name || 'Membership', expiryDate: latest?.expiresAt.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }) || 'Please contact reception' };
+    return { gymId: staff.gymId, memberId: member.id, title: titles[campaign] || 'Gym Message', type: campaign === 'renewal' ? 'EXPIRY' : campaign === 'birthday' ? 'BIRTHDAY' : 'GENERAL', message: template.trim().replace(/\{(name|gym|plan|expiryDate|daysLeft)\}/g, (_, key) => tokens[key]) };
+  });
+  const result = await prisma.gymReminder.createMany({ data });
+  return { ok: true, count: result.count };
 }

@@ -13,23 +13,23 @@ interface GymBannerProps {
 const BANNER_PRESETS = [
   {
     name: 'Modern Athletic Club',
-    url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1600&auto=format&fit=crop&q=80',
+    url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=960&auto=format&fit=crop&q=65',
   },
   {
     name: 'Dark Obsidian Iron Den',
-    url: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=1600&auto=format&fit=crop&q=80',
+    url: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?w=960&auto=format&fit=crop&q=65',
   },
   {
     name: 'High-Velocity CrossFit Arena',
-    url: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=1600&auto=format&fit=crop&q=80',
+    url: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=960&auto=format&fit=crop&q=65',
   },
   {
     name: 'Luxury Fitness & Wellness',
-    url: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=1600&auto=format&fit=crop&q=80',
+    url: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?w=960&auto=format&fit=crop&q=65',
   },
   {
     name: 'Urban Strength Studio',
-    url: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=1600&auto=format&fit=crop&q=80',
+    url: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=960&auto=format&fit=crop&q=65',
   },
 ];
 
@@ -105,7 +105,7 @@ export const GymBanner: React.FC<GymBannerProps> = ({ gym, onGymUpdate, canEdit 
                 🏢 Code: <span className="text-secondary">{gym.slug}</span>
               </span>
               <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-tertiary/20 backdrop-blur-md border border-tertiary/40 text-[11px] font-bold text-[#4edea3]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] animate-pulse"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#4edea3] "></span>
                 <span>Active Facility</span>
               </span>
             </div>
@@ -153,6 +153,7 @@ export const GymBanner: React.FC<GymBannerProps> = ({ gym, onGymUpdate, canEdit 
       {isModalOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in"
+          role="dialog" aria-modal="true"
           onClick={() => setIsModalOpen(false)}
         >
           <div

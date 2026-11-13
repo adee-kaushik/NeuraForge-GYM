@@ -341,7 +341,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
                 <div className="relative w-full max-w-sm mx-auto h-60 bg-black rounded-xl overflow-hidden border-2 border-[#25D366] flex items-center justify-center shadow-[0_0_24px_rgba(37,211,102,0.3)]">
                   <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
                   <div className="absolute inset-x-8 inset-y-8 border-2 border-dashed border-[#25D366] rounded-lg pointer-events-none flex items-center justify-center">
-                    <div className="w-full h-0.5 bg-[#25D366] shadow-[0_0_8px_#25D366] animate-pulse"></div>
+                    <div className="w-full h-0.5 bg-[#25D366] shadow-[0_0_8px_#25D366] "></div>
                   </div>
                   <span className="absolute bottom-2 text-[10px] bg-black/70 px-2 py-0.5 rounded text-[#25D366] font-mono">
                     Align Member QR code inside box
@@ -400,7 +400,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
 
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-1 rounded-full bg-tertiary/15 text-tertiary text-[11px] font-bold border border-tertiary/30 flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-tertiary "></span>
                     Universal Cloud Gateway Active
                   </span>
                 </div>
@@ -695,7 +695,7 @@ export const AttendanceView: React.FC<AttendanceViewProps> = ({
       <div className="rounded-xl bg-surface-container-low border border-surface-container-high overflow-hidden shadow-[0_4px_20px_rgba(0,0,0,0.25)]">
         <div className="p-4 border-b border-surface-container-high flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#4edea3] animate-pulse"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-[#4edea3] "></span>
             <h2 className="font-sora text-sm font-semibold text-on-surface">
               Today&apos;s Floor Attendance ({checkIns.length})
             </h2>

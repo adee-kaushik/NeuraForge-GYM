@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { ActiveScreen, CheckInRecord, Member, MemberRecord, MembershipPlan, NewMemberInput, NewPaymentInput, Transaction, TransactionRecord } from '../types';
 import { CurrentUser, GymConfig, GymSettingsInput } from '../config/gym';
@@ -14,28 +15,26 @@ import { sendMemberReminder } from '../actions/reminders';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { DashboardView } from './DashboardView';
-import { MembersView } from './MembersView';
-import { MembershipsView } from './MembershipsView';
-import { PaymentsView } from './PaymentsView';
-import { SettingsView } from './SettingsView';
-import { EnquiriesView } from './EnquiriesView';
-import { SupplementsView } from './SupplementsView';
-import { WorkoutPlansView } from './WorkoutPlansView';
-import { FloorVelocityView } from './FloorVelocityView';
-import { AddMemberModal } from './modals/AddMemberModal';
-import { BulkWhatsAppModal } from './modals/BulkWhatsAppModal';
-import { MemberDetailModal } from './modals/MemberDetailModal';
-import { EditMemberModal } from './modals/EditMemberModal';
-import { ImportMembersModal } from './modals/ImportMembersModal';
-import { OwnerFeedbackModal } from './modals/OwnerFeedbackModal';
-import { QuickSearchModal } from './QuickSearchModal';
-import { SendBirthdayWishModal } from './modals/SendBirthdayWishModal';
-import { FrontDeskQrModal } from './modals/FrontDeskQrModal';
-import { PendingEnrollmentsModal } from './modals/PendingEnrollmentsModal';
-import { GymRenewalModal } from './modals/GymRenewalModal';
+const MembersView = dynamic(() => import('./MembersView').then(m => m.MembersView));
+const MembershipsView = dynamic(() => import('./MembershipsView').then(m => m.MembershipsView));
+const PaymentsView = dynamic(() => import('./PaymentsView').then(m => m.PaymentsView));
+const SettingsView = dynamic(() => import('./SettingsView').then(m => m.SettingsView));
+const EnquiriesView = dynamic(() => import('./EnquiriesView').then(m => m.EnquiriesView));
+const SupplementsView = dynamic(() => import('./SupplementsView').then(m => m.SupplementsView));
+const WorkoutPlansView = dynamic(() => import('./WorkoutPlansView').then(m => m.WorkoutPlansView));
+const FloorVelocityView = dynamic(() => import('./FloorVelocityView').then(m => m.FloorVelocityView));
+const AddMemberModal = dynamic(() => import('./modals/AddMemberModal').then(m => m.AddMemberModal));
+const BulkWhatsAppModal = dynamic(() => import('./modals/BulkWhatsAppModal').then(m => m.BulkWhatsAppModal));
+const MemberDetailModal = dynamic(() => import('./modals/MemberDetailModal').then(m => m.MemberDetailModal));
+const EditMemberModal = dynamic(() => import('./modals/EditMemberModal').then(m => m.EditMemberModal));
+const ImportMembersModal = dynamic(() => import('./modals/ImportMembersModal').then(m => m.ImportMembersModal));
+const OwnerFeedbackModal = dynamic(() => import('./modals/OwnerFeedbackModal').then(m => m.OwnerFeedbackModal));
+const QuickSearchModal = dynamic(() => import('./QuickSearchModal').then(m => m.QuickSearchModal));
+const SendBirthdayWishModal = dynamic(() => import('./modals/SendBirthdayWishModal').then(m => m.SendBirthdayWishModal));
+const FrontDeskQrModal = dynamic(() => import('./modals/FrontDeskQrModal').then(m => m.FrontDeskQrModal));
+const PendingEnrollmentsModal = dynamic(() => import('./modals/PendingEnrollmentsModal').then(m => m.PendingEnrollmentsModal));
+const GymRenewalModal = dynamic(() => import('./modals/GymRenewalModal').then(m => m.GymRenewalModal));
 import { getPendingEnrollments } from '@/actions/enrollments';
-import { getSupplementsAndSales } from '@/actions/supplements';
-import { getWorkoutAndDietPlans } from '@/actions/workout-plans';
 import type { EnrollmentRecord, SupplementItem, SupplementSale, WorkoutPlanItem, DietPlanItem } from '../types';
 
 interface AppProps {
@@ -49,7 +48,7 @@ interface AppProps {
 
 export default function App({ initialGym, currentUser, plans: initialPlans, initialMembers, initialTransactions, initialCheckIns }: AppProps) {
   const isStaff = currentUser.role === 'Staff';
-  const [activeScreen, setActiveScreen] = useState<ActiveScreen>(isStaff ? 'members' : 'dashboard');
+  const [activeScreen, setActiveScreen] = useState<ActiveScreen>('dashboard');
 
   // Records come from the database (loaded on the server). Everything the UI shows is derived from them.
   const [now, setNow] = useState(() => new Date());
@@ -121,20 +120,6 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
   useEffect(() => {
     fetchPending();
 
-    // Background preloading to eliminate loading delay on POS and Workout Plans tabs
-    getSupplementsAndSales()
-      .then((data) => {
-        setCachedSupplements(data.supplements);
-        setCachedSupplementSales(data.sales);
-      })
-      .catch((err) => console.error('Background prefetch supplements error:', err));
-
-    getWorkoutAndDietPlans()
-      .then((data) => {
-        setCachedWorkoutPlans(data.workoutPlans);
-        setCachedDietPlans(data.dietPlans);
-      })
-      .catch((err) => console.error('Background prefetch workout/diet plans error:', err));
   }, []);
 
   // Toast notifications
@@ -351,16 +336,14 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
     };
   };
 
-  const handleSendSingleReminder = (member: Member) => {
-    // Also save reminder to database so it shows in member portal notifications
-    sendMemberReminder(member.id).catch((err) => console.error('Failed to create member reminder record:', err));
-
-    const cleanPhone = member.phone.replace(/[^0-9]/g, '');
-    const text = encodeURIComponent(
-      `Hi ${member.name}, your ${gym.name} membership expires on ${member.expiryDate}. Please renew to keep your membership active.`
-    );
-    window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${text}`, '_blank');
-    showToast(`Reminder sent to ${member.name} (WhatsApp & Member Portal).`);
+  const handleSendSingleReminder = async (member: Member) => {
+    if (inFlight.current.has(`reminder:${member.id}`)) return;
+    inFlight.current.add(`reminder:${member.id}`);
+    try {
+      const result = await sendMemberReminder(member.id);
+      showToast(result.ok ? `Reminder delivered to ${member.name}'s panel.` : result.error || 'Could not send reminder.');
+    } catch { showToast('Could not send reminder. Please try again.'); }
+    finally { inFlight.current.delete(`reminder:${member.id}`); }
   };
 
   const handleSaveSettings = async (input: GymSettingsInput): Promise<boolean> => {
@@ -417,30 +400,12 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
 
         {/* View Routing */}
         <main className="w-full pt-16 min-h-screen">
-          {/* Staff Panel is restricted: if staff tries to open dashboard/payments/settings, fall back to members */}
+          {/* Both roles have a gym dashboard; owner-only screens remain gated below. */}
           {activeScreen === 'dashboard' && (
-            isStaff ? (
-              <MembersView
-                members={members}
-                plans={plans}
-                checkIns={checkIns}
-                todayCheckInsCount={todayCheckIns.length}
-                onSelectMember={(m) => setSelectedMember(m)}
-                onOpenAddMember={() => setIsAddMemberOpen(true)}
-                onOpenImport={() => setIsImportOpen(true)}
-                onOpenBulkWhatsApp={handleOpenBulkWhatsApp}
-                onSendSingleReminder={handleSendSingleReminder}
-                onWishBirthday={(m) => setWishingMember(m)}
-                gymSlug={gym.slug}
-                onCheckInByCode={handleCheckInByCode}
-                onOpenFrontDeskQr={() => setIsFrontDeskQrOpen(true)}
-                onOpenPendingEnrollments={() => setIsPendingEnrollmentsOpen(true)}
-                pendingEnrollmentsCount={pendingEnrollments.length}
-              />
-            ) : (
               <DashboardView
                 gym={gym}
-                onGymUpdate={setGym}
+                onGymUpdate={isStaff ? undefined : setGym}
+                isStaff={isStaff}
                 stats={stats}
                 members={members}
                 transactions={transactions}
@@ -456,7 +421,6 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
                 onOpenPendingEnrollments={() => setIsPendingEnrollmentsOpen(true)}
                 onOpenFrontDeskQr={() => setIsFrontDeskQrOpen(true)}
               />
-            )
           )}
 
           {(activeScreen === 'members' || activeScreen === 'attendance') && (
@@ -564,14 +528,14 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
       </div>
 
       {/* Modals & Drawers */}
-      <AddMemberModal
+      {isAddMemberOpen && (<AddMemberModal
         isOpen={isAddMemberOpen}
         plans={plans}
         onClose={() => setIsAddMemberOpen(false)}
         onAddMember={handleAddMember}
-      />
+      />)}
 
-      <ImportMembersModal
+      {isImportOpen && (<ImportMembersModal
         isOpen={isImportOpen}
         plans={plans}
         members={members}
@@ -583,17 +547,17 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
           }
           showToast(`${imported.length} members imported${newPlans?.length ? ` and ${newPlans.length} plans created.` : '.'}`);
         }}
-      />
+      />)}
 
-      <BulkWhatsAppModal
+      {isBulkWhatsAppOpen && (<BulkWhatsAppModal
         isOpen={isBulkWhatsAppOpen}
         gymName={gym.name}
         onClose={() => setIsBulkWhatsAppOpen(false)}
         members={members}
         initialTab={bulkWhatsAppTab}
-      />
+      />)}
 
-      <MemberDetailModal
+      {selectedMemberLive && (<MemberDetailModal
         member={selectedMemberLive}
         gymName={gym.name}
         onClose={() => setSelectedMember(null)}
@@ -603,15 +567,15 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
         onEdit={(m) => setEditingMemberId(m.id)}
         onWishBirthday={(m) => setWishingMember(m)}
         recentLogs={checkIns}
-      />
+      />)}
 
-      <SendBirthdayWishModal
+      {wishingMember && (<SendBirthdayWishModal
         isOpen={!!wishingMember}
         member={wishingMember}
         gymName={gym.name}
         onClose={() => setWishingMember(null)}
         onToast={showToast}
-      />
+      />)}
 
       {editingMemberId && members.find((m) => m.id === editingMemberId) && (
         <EditMemberModal
@@ -622,31 +586,31 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
         />
       )}
 
-      <QuickSearchModal
+      {isQuickSearchOpen && (<QuickSearchModal
         isOpen={isQuickSearchOpen}
         onClose={() => setIsQuickSearchOpen(false)}
         members={members}
         onSelectMember={(m) => setSelectedMember(m)}
         onNavigateScreen={(screen) => setActiveScreen(screen)}
-      />
+      />)}
 
-      <OwnerFeedbackModal
+      {isFeedbackModalOpen && (<OwnerFeedbackModal
         isOpen={isFeedbackModalOpen}
         onClose={() => setIsFeedbackModalOpen(false)}
         gymName={gym.name}
-      />
+      />)}
 
       {/* Front Desk Downloadable Standee QR Modal */}
-      <FrontDeskQrModal
+      {isFrontDeskQrOpen && (<FrontDeskQrModal
         gym={gym}
         isOpen={isFrontDeskQrOpen}
         onClose={() => setIsFrontDeskQrOpen(false)}
         pendingCount={pendingEnrollments.length}
         onOpenPendingList={() => setIsPendingEnrollmentsOpen(true)}
-      />
+      />)}
 
       {/* Pending Self-Enrollments Review & Approval Modal */}
-      <PendingEnrollmentsModal
+      {isPendingEnrollmentsOpen && (<PendingEnrollmentsModal
         isOpen={isPendingEnrollmentsOpen}
         onClose={() => setIsPendingEnrollmentsOpen(false)}
         enrollments={pendingEnrollments}
@@ -656,15 +620,15 @@ export default function App({ initialGym, currentUser, plans: initialPlans, init
           window.location.reload();
         }}
         showToast={showToast}
-      />
+      />)}
 
       {/* Gym Owner SaaS Subscription Renewal Modal */}
-      <GymRenewalModal
+      {isRenewalOpen && (<GymRenewalModal
         isOpen={isRenewalOpen}
         onClose={() => setIsRenewalOpen(false)}
         gym={gym}
         user={currentUser}
-      />
+      />)}
     </div>
   );
 }
