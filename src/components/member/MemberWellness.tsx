@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { generateMemberPlans } from '@/actions/member-wellness';
+import { generateMemberPlans, deleteMemberPlans } from '@/actions/member-wellness';
 import { ALLERGENS, EQUIPMENT, type WellnessOption, type WellnessProfile, type WellnessResult } from '@/lib/wellness';
 
 const field = 'w-full rounded-xl border border-surface-container-high bg-white px-3 py-3 text-sm mt-1';
@@ -13,6 +13,7 @@ function Option({ option }: { option: WellnessOption }) {
 export function MemberWellness({ initialResult }: { initialResult: WellnessResult | null }) {
   const [result,setResult] = useState(initialResult);
   const [edit,setEdit] = useState(!initialResult);
+  const [confirmDelete,setConfirmDelete] = useState(false);
   const [busy,setBusy] = useState(false);
   const [error,setError] = useState('');
   const [p,setP] = useState<WellnessProfile>({age:0,height:0,weight:0,preference:'vegetarian',activity:'seated',experience:'beginner',goal:'fitness',days:2,equipment:[],allergies:[],needsReview:false});
@@ -20,12 +21,23 @@ export function MemberWellness({ initialResult }: { initialResult: WellnessResul
   const bmi = p.height && p.weight ? (p.weight/(p.height/100)**2).toFixed(1) : '—';
   const toggle = (key:'equipment'|'allergies',value:string) => set(key,p[key].includes(value) ? p[key].filter(v=>v!==value) : [...p[key],value]);
   return <section className="space-y-5">
-    <div className="flex items-center justify-between gap-3"><h2 className="font-sora text-xl font-bold">Your personal options</h2>{result && <button onClick={()=>setEdit(!edit)} className="text-sm underline p-2">{edit?'Close form':'Update answers'}</button>}</div>
+    <div className="flex items-center justify-between gap-3"><h2 className="font-sora text-xl font-bold">Your personal options</h2>{result && <button disabled={busy} onClick={()=>setEdit(!edit)} className="text-sm underline p-2">{edit?'Close form':'Update answers'}</button>}</div>
+    {result && <div className="flex flex-wrap gap-3">
+      <button disabled={busy} className="rounded-xl bg-primary text-on-primary px-4 py-3 text-sm font-semibold disabled:opacity-50" onClick={()=>{setEdit(true);setConfirmDelete(false);setError('');}}>Recreate different plans</button>
+      <button disabled={busy} className="rounded-xl border border-rose-200 text-rose-800 px-4 py-3 text-sm disabled:opacity-50" onClick={()=>setConfirmDelete(true)}>Delete my plans</button>
+    </div>}
+    {confirmDelete && <div className="rounded-xl bg-rose-50 p-4 space-y-3" role="alert">
+      <p className="text-sm">Delete your generated workout and diet options? Plans sent by your gym will stay.</p>
+      <button disabled={busy} className="rounded-lg bg-rose-800 text-white px-4 py-2 mr-3" onClick={async()=>{if(busy)return;setBusy(true);setError('');try{const r=await deleteMemberPlans();if(r.ok){setResult(null);setEdit(true);setConfirmDelete(false);}else setError(r.error||'Could not delete plans.');}catch{setError('Connection interrupted. Please retry.');}finally{setBusy(false);}}}>{busy?'Deleting…':'Confirm delete'}</button>
+      <button disabled={busy} onClick={()=>setConfirmDelete(false)}>Cancel</button>
+    </div>}
+    {error && <p role="alert" className="p-3 rounded-xl bg-amber-50 text-amber-900 text-sm">{error}</p>}
     {edit && <form className="p-5 rounded-2xl border border-surface-container-high bg-white space-y-5" onSubmit={async e=>{
       e.preventDefault(); if(busy)return; setBusy(true);setError('');
       try {const r=await generateMemberPlans(p);if(r.ok&&r.result){setResult(r.result);setEdit(false);}else setError(r.error||'Could not generate plans.');}
       catch{setError('Connection interrupted. Please retry.');}finally{setBusy(false);}
     }}>
+      {result && <p className="text-sm font-semibold">Confirm your answers below to replace your saved options with a different set. Your current plans stay until the new set saves successfully.</p>}
       <p className="text-sm text-outline">Get four workout options and four meal-day options using affordable Indian staples. For adults 18–64. Choose the option that fits your week.</p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">{(['age','height','weight'] as const).map((key)=><label className="text-sm font-semibold" key={key}>{key==='age'?'Age (years)':key==='height'?'Height (cm)':'Weight (kg)'}<input className={field} type="number" required min={key==='age'?18:key==='height'?120:30} max={key==='age'?64:key==='height'?230:250} step={key==='age'?1:0.1} value={p[key]||''} onChange={e=>set(key,Number(e.target.value))}/></label>)}</div>
       <p className="text-sm">Calculated BMI: <strong>{bmi}</strong> <span className="text-outline">· a screening number, not a diagnosis.</span></p>
@@ -33,15 +45,14 @@ export function MemberWellness({ initialResult }: { initialResult: WellnessResul
         <label className="text-sm font-semibold">Food preference<select className={field} value={p.preference} onChange={e=>set('preference',e.target.value as WellnessProfile['preference'])}><option value="vegetarian">Vegetarian (no eggs)</option><option value="non-vegetarian">Non-vegetarian</option></select></label>
         <label className="text-sm font-semibold">Daily physical activity<select className={field} value={p.activity} onChange={e=>set('activity',e.target.value as WellnessProfile['activity'])}><option value="seated">Mostly seated / studying / desk work</option><option value="mixed">Some walking and standing</option><option value="physical">Physical work / on my feet most of the day</option></select></label>
         <label className="text-sm font-semibold">Training experience<select className={field} value={p.experience} onChange={e=>set('experience',e.target.value as WellnessProfile['experience'])}><option value="beginner">Beginner / returning after a break</option><option value="regular">Regular strength training</option></select></label>
-        <label className="text-sm font-semibold">Main goal<select className={field} value={p.goal} onChange={e=>set('goal',e.target.value as WellnessProfile['goal'])}><option value="fitness">General fitness</option><option value="strength">Build strength</option><option value="weight-management">Manage weight sustainably</option></select></label>
-        <label className="text-sm font-semibold">Days available each week<select className={field} value={p.days} onChange={e=>set('days',Number(e.target.value))}>{[2,3,4].map(d=><option key={d} value={d}>{d} days</option>)}</select></label>
+        <label className="text-sm font-semibold">Main goal<select className={field} value={p.goal} onChange={e=>set('goal',e.target.value as WellnessProfile['goal'])}><option value="fitness">General fitness</option><option value="strength">Build strength</option><option value="weight-loss">Weight loss</option><option value="weight-gain">Weight gain</option><option value="weight-management">Maintain / manage weight</option></select></label>
+        <label className="text-sm font-semibold">Days available each week<select className={field} value={p.days} onChange={e=>set('days',Number(e.target.value))}>{[1,2,3,4,5,6,7].map(d=><option key={d} value={d}>{d} {d===1?'day':'days'}</option>)}</select></label>
       </div>
       <fieldset><legend className="font-semibold text-sm mb-2">Available equipment (leave empty for bodyweight)</legend><div className="grid grid-cols-2 gap-2">{EQUIPMENT.map(eq=><label className="flex items-center gap-2 text-sm min-h-11" key={eq}><input type="checkbox" checked={p.equipment.includes(eq)} onChange={()=>toggle('equipment',eq)}/>{eq.replaceAll('-',' ')}</label>)}</div></fieldset>
       <fieldset><legend className="font-semibold text-sm mb-2">Allergies / foods to exclude (select all that apply)</legend><div className="grid grid-cols-2 gap-2">{ALLERGENS.map(a=><label className="flex items-center gap-2 text-sm min-h-11" key={a}><input type="checkbox" checked={p.allergies.includes(a)} onChange={()=>toggle('allergies',a)}/>{a}</label>)}</div></fieldset>
       <label className="flex items-start gap-3 text-sm"><input className="mt-1" type="checkbox" checked={p.needsReview} onChange={e=>set('needsReview',e.target.checked)}/><span>I have an injury, pregnancy/postpartum needs, an eating disorder, a medical condition, or a prescribed diet/exercise restriction that needs professional guidance.</span></label>
       <p className="text-xs text-outline">Your resulting plans and BMI are saved to your member account. The raw questionnaire answers are not saved. General templates do not replace a clinician, dietitian or trainer.</p>
-      {error && <p role="alert" className="p-3 rounded-xl bg-amber-50 text-amber-900 text-sm">{error}</p>}
-      <button disabled={busy} className="w-full rounded-xl bg-primary text-on-primary py-3 font-bold disabled:opacity-50">{busy?'Preparing your options…':'Create my 4 workout + 4 diet options'}</button>
+      <button disabled={busy} className="w-full rounded-xl bg-primary text-on-primary py-3 font-bold disabled:opacity-50">{busy?'Preparing your options…':result?'Replace with different workout + diet options':'Create my 4 workout + 4 diet options'}</button>
     </form>}
     {result && <div className="space-y-5">
       <div className="p-4 bg-secondary-container rounded-2xl text-sm space-y-2"><p className="font-semibold">BMI {result.bmi} · Your saved options</p><p>{result.summary}</p>{result.notes.map(n=><p key={n}>{n}</p>)}</div>

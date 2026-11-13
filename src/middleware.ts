@@ -2,7 +2,8 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // Keeps the Supabase login session fresh on every request.
-// getClaims() checks the token locally and only contacts Supabase when the token has expired and must be refreshed.
+// getClaims validates locally with cached asymmetric keys; legacy symmetric keys still require a network check.
+// Pages/actions retain getUser() and tenant authorization before returning private data.
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -25,7 +26,7 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  await supabase.auth.getClaims();
 
   return response;
 }

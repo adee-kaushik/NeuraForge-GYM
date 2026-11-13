@@ -98,10 +98,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         {/* Preload and non-blocking load of Material Symbols */}
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@400&display=swap"
-        />
+
       </head>
       <body className="bg-background text-on-surface antialiased selection:bg-secondary/20 selection:text-on-surface min-h-screen">
         <div aria-hidden="true" className="nf-ambient" />

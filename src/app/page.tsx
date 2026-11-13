@@ -13,8 +13,8 @@ export const dynamic = 'force-dynamic';
 
 export default async function Page() {
   // Logged-in owner/staff get the dashboard. Everyone else sees the public landing page.
-  const staff = await getCurrentStaff();
-  if (!staff && await getMemberSession()) redirect('/member');
+  const [staff, memberSession] = await Promise.all([getCurrentStaff(), getMemberSession()]);
+  if (!staff && memberSession) redirect('/member');
   if (!staff?.gym) return <Landing />;
   if (!subscriptionActive(staff.gym)) return (
     <main className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-background text-on-surface text-center">

@@ -22,3 +22,11 @@ The existing owner-editable template catalogue is preserved. Owner-assigned plan
 Run `npm test`, `npm run typecheck`, `npm run build`. Additional integration testing should use an owner/staff and two member test accounts across different gyms: deliver a campaign, assign each plan type, verify the correct member receives it and another gym does not, regenerate options, check server-save errors and mobile outside-click dismissal.
 
 PWA caching includes only public hashed Next static assets; it never caches authenticated HTML, server actions or API responses. Initial startup still requires network and database availability. Member screens refresh on return to foreground and every 30 seconds while visible. WhatsApp opens a prepared message; the user still confirms sending in WhatsApp.
+
+## Follow-up: goals, schedules and recreation
+
+Availability now accepts 1–7 days. Full-body strength is capped at three nonconsecutive days; extra available days contain comfortable cardio or gentle recovery. One-day availability alternates A/B weekly. Weight loss and weight gain have separate, gradual food-first guidance, informed by NHS guidance (https://www.nhs.uk/live-well/healthy-weight/managing-your-weight/tips-to-help-you-lose-weight/ and https://www.nhs.uk/live-well/healthy-weight/managing-your-weight/healthy-ways-to-gain-weight/). Existing professional-review exclusions still apply.
+
+Recreate rotates through three curated variations, changing movements and meals. It replaces the saved set transactionally, after the member confirms their answers; answers are not persisted. Delete removes only the signed-in member's SELF_PLANS snapshots and leaves gym-authored assignments untouched. The UI asks for confirmation. Failed saves/deletes retain the visible current plans.
+
+Startup follow-up: middleware uses verified getClaims for refresh (asymmetric keys can avoid a network round-trip; symmetric keys may still call Auth), while private pages/actions retain getUser and tenant checks. Root session checks run concurrently. The member header and navigation stream before activity queries finish, and the external decorative icon stylesheet loads after hydration instead of blocking paint. Existing loading boundaries remain. No private response caching was added. Physical-device cold-start timing remains unverified.

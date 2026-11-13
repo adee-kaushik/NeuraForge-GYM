@@ -282,7 +282,7 @@ test('wellness excludes selected allergens and adapts loaded exercises to equipm
 });
 test('wellness rejects malformed profiles and routes health constraints to professional review', () => {
  const {validateProfile}=load('src/lib/wellness.ts');
- for(const patch of [{age:17},{age:70},{weight:NaN},{height:0},{needsReview:true},{allergies:['other']},{equipment:['unsafe']},{days:7},{weight:40},{preference:'invalid'}]) assert.ok(validateProfile({...wellnessProfile,...patch}));
+ for(const patch of [{age:17},{age:70},{weight:NaN},{height:0},{needsReview:true},{allergies:['other']},{equipment:['unsafe']},{days:8},{weight:40},{preference:'invalid'}]) assert.ok(validateProfile({...wellnessProfile,...patch}));
  assert.equal(validateProfile(wellnessProfile),null);
 });
 test('campaign deliveries use authenticated gym and exact selected recipients, with personalized text', async () => {
@@ -310,7 +310,7 @@ test('member generated plans persist only to the signed-in identity', async () =
  const {generateMemberPlans}=load('src/actions/member-wellness.ts',{
   '@/lib/auth':{getCurrentMember:async()=>({id:'m1',gymId:'gym-a'})},
   'next/cache':{revalidatePath:()=>{}},
-  '@/lib/prisma':{prisma:{$transaction:async fn=>fn({gymReminder:{deleteMany:async q=>{deleted=q.where;},create:async q=>{data=q.data;}}})}}
+  '@/lib/prisma':{prisma:{$transaction:async fn=>fn({gymReminder:{findFirst:async()=>null,deleteMany:async q=>{deleted=q.where;},create:async q=>{data=q.data;}}})}}
  });
  const result=await generateMemberPlans({...wellnessProfile,memberId:'foreign'});
  assert.equal(result.ok,true);assert.deepEqual(deleted,{gymId:'gym-a',memberId:'m1',type:'SELF_PLANS'});
@@ -323,4 +323,66 @@ test('member plan generation does not report delivery when persistence fails', a
   '@/lib/prisma':{prisma:{$transaction:async()=>{throw new Error('database unavailable');}}}
  });
  const result=await generateMemberPlans(wellnessProfile);assert.equal(result.ok,false);assert.equal(result.result,undefined);assert.match(result.error,/Could not save/);
+});
+
+test('all 1–7 availability choices produce a seven-day schedule with recovery and distinct weight goals',()=>{
+ const {buildWellnessPlans,validateProfile}=load('src/lib/wellness.ts');
+ for(let days=1;days<=7;days++){
+  const p={...wellnessProfile,days};assert.equal(validateProfile(p),null);
+  for(const w of buildWellnessPlans(p).workouts){
+   const week=w.sections[0].lines.slice(0,7);
+   assert.equal(week.filter(x=>!x.includes(': rest;')).length,days);
+   assert.ok(week.filter(x=>x.includes(': strength')).length<=3);
+   assert.equal(week.length,7);
+  }
+ }
+ for(const days of [0,8,2.5])assert.ok(validateProfile({...wellnessProfile,days}));
+ const loss=buildWellnessPlans({...wellnessProfile,goal:'weight-loss'});
+ const gain=buildWellnessPlans({...wellnessProfile,goal:'weight-gain'});
+ assert.match(JSON.stringify(loss.diets),/gradual weight loss/);
+ assert.match(JSON.stringify(gain.diets),/gradual weight gain/);
+});
+
+test('recreation changes actual movements and meals without violating food exclusions',()=>{
+ const {buildWellnessPlans}=load('src/lib/wellness.ts');
+ const p={...wellnessProfile,allergies:['milk','soy','peanuts','wheat','eggs','fish']};
+ const results=[0,1,2].map(v=>buildWellnessPlans(p,v));
+ const movements=r=>JSON.stringify(r.workouts.map(w=>w.sections.filter(s=>s.title.startsWith('Session'))));
+ const meals=r=>JSON.stringify(r.diets.map(d=>d.sections.filter(s=>['Breakfast','Lunch','Dinner','Snack'].includes(s.title))));
+ assert.equal(new Set(results.map(movements)).size,3);assert.equal(new Set(results.map(meals)).size,3);
+ for(const result of results){assert.equal(new Set(result.diets.map(d=>JSON.stringify(d.sections))).size,4);assert.doesNotMatch(meals(result),/curd|soya|peanut|whole-wheat|eggs|fish|chicken/i);}
+});
+
+test('recreate reads only the current member snapshot and advances its variation',async()=>{
+ let saved;
+ const scope={gymId:'g1',memberId:'m1',type:'SELF_PLANS'};
+ const {generateMemberPlans}=load('src/actions/member-wellness.ts',{
+  '@/lib/auth':{getCurrentMember:async()=>({id:'m1',gymId:'g1'})},'next/cache':{revalidatePath(){}},
+  '@/lib/prisma':{prisma:{$transaction:async fn=>fn({gymReminder:{findFirst:async q=>{assert.deepEqual(q.where,scope);return {message:'{"variant":1}'};},deleteMany:async q=>assert.deepEqual(q.where,scope),create:async q=>{saved=JSON.parse(q.data.message);}}})}}
+ });
+ assert.equal((await generateMemberPlans(wellnessProfile)).ok,true);assert.equal(saved.variant,2);
+});
+
+test('plan deletion is scoped, preserves gym-assigned plans and reports errors honestly',async()=>{
+ let writes=0;
+ for(const mode of ['ok','signed-out','failure']){
+  const {deleteMemberPlans}=load('src/actions/member-wellness.ts',{
+   '@/lib/auth':{getCurrentMember:async()=>mode==='signed-out'?null:{id:'m1',gymId:'g1'}},'next/cache':{revalidatePath(){}},
+   '@/lib/prisma':{prisma:{gymReminder:{deleteMany:async q=>{writes++;assert.deepEqual(q.where,{gymId:'g1',memberId:'m1',type:'SELF_PLANS'});if(mode==='failure')throw Error('offline');}}}}
+  });
+  assert.equal((await deleteMemberPlans()).ok,mode==='ok');
+ }
+ assert.equal(writes,2);
+});
+
+test('middleware refreshes verified claims and forwards refreshed cookies without a duplicate user lookup',async()=>{
+ let claims=0;const requestCookies=new Map([['sb-test-auth-token','old']]);
+ const response=()=>({cookies:{set:(name,value)=>requestCookies.set('response:'+name,value)}});
+ const {middleware}=load('src/middleware.ts',{
+  'next/server':{NextResponse:{next:response}},
+  '@supabase/ssr':{createServerClient:(_url,_key,options)=>({auth:{getClaims:async()=>{claims++;options.cookies.setAll([{name:'sb-test-auth-token',value:'new',options:{httpOnly:true}}]);return {data:{claims:{sub:'u'}}};},getUser:()=>{throw Error('duplicate lookup');}}})}
+ });
+ await middleware({cookies:{getAll:()=>[...requestCookies].map(([name,value])=>({name,value})),set:(name,value)=>requestCookies.set(name,value)}});
+ assert.equal(claims,1);assert.equal(requestCookies.get('sb-test-auth-token'),'new');assert.equal(requestCookies.get('response:sb-test-auth-token'),'new');
+ await middleware({cookies:{getAll:()=>[]}});assert.equal(claims,1);
 });
