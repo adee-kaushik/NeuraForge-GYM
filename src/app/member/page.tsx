@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
@@ -41,6 +42,14 @@ export default async function MemberPage() {
   const member = await getCurrentMember();
   if (!member) redirect('/member/login');
 
+  return <main className="min-h-screen bg-background text-on-surface px-4 sm:px-6 py-6 sm:py-10"><div className="mx-auto w-full max-w-md space-y-6 sm:space-y-7">
+    <MemberBannerHeader gymName={member.gym.name} gymSlug={member.gym.slug} gymBannerUrl={member.gym.bannerUrl} gymTagline={member.gym.tagline} memberName={member.name || 'Member'} memberPhone={member.phone || ''} memberPhotoUrl={member.photoUrl}/>
+    <MemberNav/>
+    <Suspense fallback={<p role="status" className="rounded-xl bg-surface-container-low p-5">Loading your pass and recent activity…</p>}><MemberDetails member={member}/></Suspense>
+  </div></main>;
+}
+
+async function MemberDetails({member}: {member: NonNullable<Awaited<ReturnType<typeof getCurrentMember>>>}) {
   const { id: memberId, gymId } = member;
   const now = new Date();
   const ist = new Date(now.getTime() + 330 * 60000);
@@ -88,22 +97,7 @@ export default async function MemberPage() {
   const memberPhotoUrl = (member as any)?.photoUrl || null;
 
   return (
-    <main className="min-h-screen bg-background text-on-surface px-4 sm:px-6 py-6 sm:py-10">
-      <div className="mx-auto w-full max-w-md space-y-6 sm:space-y-7">
-        {/* Gym Banner & Member Profile Picture Header */}
-        <MemberBannerHeader
-          gymName={gymName}
-          gymSlug={gymSlug}
-          gymBannerUrl={gymBannerUrl}
-          gymTagline={gymTagline}
-          memberName={member.name || 'Member'}
-          memberPhone={member.phone || ''}
-          memberPhotoUrl={memberPhotoUrl}
-        />
-
-        {/* Member Portal Navigation Tabs */}
-        <MemberNav />
-
+    <>
         {/* Notifications & Owner Reminders Alert Banner (Requirement 5) */}
         <MemberNotifications
           notifications={formattedReminders}
@@ -220,7 +214,6 @@ export default async function MemberPage() {
             )}
           </div>
         </section>
-      </div>
-    </main>
+    </>
   );
 }
