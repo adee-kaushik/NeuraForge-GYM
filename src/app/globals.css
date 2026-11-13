@@ -5,14 +5,14 @@
   --font-inter: var(--font-inter), 'Inter', sans-serif;
 
   /* Luxury Warm Beige Theme: rich calm sand, warm roasted beige, crisp cards, deep espresso obsidian text */
-  --color-background: #EAE3D2;
-  --color-surface: #E4DCC9;
+  --color-background: #F8F7F3;
+  --color-surface: #F3F1EB;
   --color-surface-bright: #FFFFFF;
   --color-surface-container-lowest: #FFFFFF;
-  --color-surface-container-low: #F5EFE3;
-  --color-surface-container: #DED5C1;
-  --color-surface-container-high: #D3C9B3;
-  --color-surface-container-highest: #C7BCA4;
+  --color-surface-container-low: #FCFBF8;
+  --color-surface-container: #F0EDE6;
+  --color-surface-container-high: #E2DED5;
+  --color-surface-container-highest: #D2CCC0;
 
   --color-on-surface: #1C1917;
   --color-on-surface-variant: #4A4641;
@@ -150,3 +150,20 @@ html, body {
     box-shadow: none !important;
   }
 }
+
+/* A 30% decorative wash; content and controls stay crisp. */
+.nf-ambient { position: fixed; inset: -5%; pointer-events: none; z-index: -1; opacity: .3; filter: blur(30px); background: radial-gradient(ellipse at 15% 25%, #b5d9e9, transparent 55%), radial-gradient(ellipse at 85% 75%, #ded3b7, transparent 55%); }
+body { isolation: isolate; }
+@supports (animation-timeline: scroll()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .nf-ambient { animation: nf-depth linear both; animation-timeline: scroll(root); }
+    @keyframes nf-depth { from { transform: perspective(1000px) rotateX(0deg) rotateY(-3deg) translateY(-2%); } to { transform: perspective(1000px) rotateX(3deg) rotateY(3deg) translateY(2%); } }
+  }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+:focus-visible { outline: 2px solid #0369a1; outline-offset: 3px; }
+.nf-tile { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:.6rem; min-height:110px; padding:1rem .5rem; border:1px solid #e2ded5; border-radius:1rem; background:rgba(255,255,255,.85); font-size:.8rem; font-weight:600; }
+.nf-tile:hover { background:#eaf4f8; border-color:#86b6ca; }
+
+
+.bg-background { background-color: rgb(248 247 243 / .7); }

@@ -202,7 +202,7 @@ export const FloorVelocityView: React.FC<FloorVelocityViewProps> = ({
 
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-tertiary/15 text-tertiary border border-tertiary/30 text-xs font-bold shadow-xs">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#4edea3] animate-ping" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#4edea3] " />
             <span>Biometrics Live</span>
           </div>
         </div>
@@ -453,7 +453,7 @@ export const FloorVelocityView: React.FC<FloorVelocityViewProps> = ({
                 <span className="text-amber-400 uppercase text-[10px] font-bold tracking-wider flex items-center gap-1">
                   <span>🌅 Morning Peak Rush</span>
                   {selectedSlot === 'MORNING' && (
-                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-amber-400 " />
                   )}
                 </span>
                 <span
@@ -491,7 +491,7 @@ export const FloorVelocityView: React.FC<FloorVelocityViewProps> = ({
                 <span className="text-[#947dff] uppercase text-[10px] font-bold tracking-wider flex items-center gap-1">
                   <span>🌆 Evening Peak Rush</span>
                   {selectedSlot === 'EVENING' && (
-                    <span className="w-2 h-2 rounded-full bg-[#947dff] animate-pulse" />
+                    <span className="w-2 h-2 rounded-full bg-[#947dff] " />
                   )}
                 </span>
                 <span
@@ -666,7 +666,7 @@ export const FloorVelocityView: React.FC<FloorVelocityViewProps> = ({
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              isRecent ? 'bg-[#4edea3] animate-pulse' : 'bg-outline'
+                              isRecent ? 'bg-[#4edea3] ' : 'bg-outline'
                             }`}
                           />
                           <span>{isRecent ? 'On Floor' : 'Exited'}</span>

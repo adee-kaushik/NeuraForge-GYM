@@ -61,6 +61,7 @@ export const PlanModal: React.FC<PlanModalProps> = ({ plan, onClose, onSaved }) 
   return (
     <div
       className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+      role="dialog" aria-modal="true"
       onClick={onClose}
     >
       <form

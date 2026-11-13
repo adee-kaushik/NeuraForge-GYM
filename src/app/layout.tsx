@@ -1,3 +1,5 @@
+import { ModalAccessibility } from '@/components/ModalAccessibility';
+import { PwaRegistration } from '@/components/PwaRegistration';
 import { siteOrigin } from '@/lib/site-url';
 import type { Metadata, Viewport } from 'next';
 import { Inter, Sora } from 'next/font/google';
@@ -20,7 +22,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
-  themeColor: '#EAE3D2',
+  themeColor: '#F8F7F3',
   colorScheme: 'light',
 };
 
@@ -29,6 +31,8 @@ const description =
   'All-in-one Gym Management Software for Indian Gyms. Manage member renewals, biometric & QR attendance, UPI/cash payments, one-tap WhatsApp reminders, and GST billing.';
 
 export const metadata: Metadata = {
+  manifest: '/manifest.webmanifest',
+  appleWebApp: { capable: true, statusBarStyle: 'default', title: 'NeuraFitness' },
   metadataBase: new URL(siteOrigin()),
   title: {
     default: title,
@@ -100,7 +104,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="bg-background text-on-surface antialiased selection:bg-secondary/20 selection:text-on-surface min-h-screen">
+        <div aria-hidden="true" className="nf-ambient" />
         {children}
+        <PwaRegistration />
+        <ModalAccessibility />
       </body>
     </html>
   );

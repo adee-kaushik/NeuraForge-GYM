@@ -187,7 +187,7 @@ export const BiometricDevicesPanel: React.FC = () => {
                   <li key={d.id} className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-surface-container border border-surface-container-high">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${online ? 'bg-[#4edea3] animate-pulse' : 'bg-outline'}`} />
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${online ? 'bg-[#4edea3] ' : 'bg-outline'}`} />
                         <span className="text-xs font-bold text-on-surface truncate">{d.name}</span>
                         <span className={`text-[10px] font-bold ${online ? 'text-[#4edea3]' : 'text-outline'}`}>{online ? 'Online' : 'Offline'}</span>
                       </div>

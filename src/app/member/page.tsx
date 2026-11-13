@@ -56,10 +56,11 @@ export default async function MemberPage() {
     prisma.gymReminder.findMany({
       where: {
         gymId,
+        type: { not: 'SELF_PLANS' },
         OR: [{ memberId }, { memberId: null }],
       },
       orderBy: { createdAt: 'desc' },
-      take: 5,
+      take: 50,
     }).catch(() => []),
   ]);
 

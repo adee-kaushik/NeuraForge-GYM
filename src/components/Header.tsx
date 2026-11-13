@@ -6,7 +6,8 @@ import { inr } from '../lib/format';
 import { ActiveScreen } from '../types';
 import { getOwnerAdminNotifications, markAdminMessageAsRead } from '@/actions/feedback';
 import { updateOwnerAvatar } from '@/actions/settings';
-import { GymRenewalModal } from './modals/GymRenewalModal';
+import dynamic from 'next/dynamic';
+const GymRenewalModal = dynamic(() => import('./modals/GymRenewalModal').then(m => m.GymRenewalModal));
 
 interface HeaderProps {
   user: CurrentUser;
@@ -181,7 +182,7 @@ export const Header: React.FC<HeaderProps> = ({
               {unreadCount > 0 ? 'notifications_active' : 'notifications'}
             </span>
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-error text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-surface-container-lowest animate-pulse">
+              <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-error text-white text-[10px] flex items-center justify-center font-bold ring-2 ring-surface-container-lowest ">
                 {unreadCount}
               </span>
             )}
@@ -193,6 +194,7 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Outside click backdrop */}
               <div
                 className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[2px]"
+                role="dialog" aria-modal="true"
                 onClick={() => setShowNotifications(false)}
               />
 
@@ -300,7 +302,7 @@ export const Header: React.FC<HeaderProps> = ({
                       className="py-3 px-2 hover:bg-surface-container-low rounded-xl cursor-pointer transition-colors"
                     >
                       <div className="flex items-start gap-2.5">
-                        <span className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${notificationsRead ? 'bg-error/40' : 'bg-error animate-ping'}`} />
+                        <span className={`w-2.5 h-2.5 rounded-full mt-1 shrink-0 ${notificationsRead ? 'bg-error/40' : 'bg-error '}`} />
                         <div>
                           <p className="text-xs sm:text-sm text-error font-bold">
                             {stats.expiringIn48h} {stats.expiringIn48h === 1 ? 'membership expires' : 'memberships expire'} in 2 days
@@ -342,7 +344,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="material-symbols-outlined text-lg text-secondary">qr_code_2</span>
             <span className="hidden sm:inline whitespace-nowrap">Desk QR</span>
             {pendingEnrollmentsCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-error text-white text-[10px] font-bold animate-pulse">
+              <span className="px-1.5 py-0.2 rounded-full bg-error text-white text-[10px] font-bold ">
                 {pendingEnrollmentsCount}
               </span>
             )}
@@ -385,6 +387,7 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Outside click backdrop */}
               <div
                 className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[2px]"
+                role="dialog" aria-modal="true"
                 onClick={() => setShowProfileMenu(false)}
               />
 

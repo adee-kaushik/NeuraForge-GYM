@@ -1,4 +1,5 @@
 'use client';
+import { sendMemberReminder } from '@/actions/reminders';
 
 import React, { useState, useMemo } from 'react';
 import { Member, MembershipPlan, NewPaymentInput, PaymentMode, Transaction } from '../types';
@@ -133,14 +134,21 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
     setBusyPaidId(null);
   };
 
-  const handleSendWhatsAppReminder = (memberName: string, phone: string, amountNum: number, planName?: string) => {
+  const handleSendWhatsAppReminder = async (memberName: string, phone: string, amountNum: number, planName?: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
     const text = encodeURIComponent(
       `Hi ${memberName}, your gym payment of ₹${amountNum.toLocaleString('en-IN')}${
         planName ? ` for ${planName}` : ''
       } at ${gym.name} is currently pending. Please clear your dues or pay via UPI to keep your membership uninterrupted.`
     );
-    window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${text}`, '_blank');
+    const recipient = members.find(m => m.phone.replace(/\D/g, '') === cleanPhone);
+    if (!recipient) { alert('Could not find the member. Refresh and try again.'); return; }
+    const tab = window.open('about:blank', '_blank');
+    try {
+      const result = await sendMemberReminder(recipient.id, 'Payment Reminder', decodeURIComponent(text));
+      if (!result.ok) throw new Error(result.error);
+      if (tab) { tab.opener = null; tab.location.href = `https://wa.me/${cleanPhone.length === 10 ? '91' : ''}${cleanPhone}?text=${text}`; }
+    } catch { tab?.close(); alert('Reminder delivery failed. Please retry.'); }
   };
 
   const handlePrintAndDownloadReceipt = (r: Transaction) => {
@@ -635,6 +643,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
       {activeKpiModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+          role="dialog" aria-modal="true"
           onClick={() => setActiveKpiModal(null)}
         >
           <div
@@ -953,6 +962,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
       {showManualModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+          role="dialog" aria-modal="true"
           onClick={() => setShowManualModal(false)}
         >
           <div
@@ -1034,6 +1044,7 @@ export const PaymentsView: React.FC<PaymentsViewProps> = ({
       {selectedReceipt && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in"
+          role="dialog" aria-modal="true"
           onClick={() => setSelectedReceipt(null)}
         >
           <div

@@ -1,3 +1,4 @@
+import { sendMemberReminder } from '@/actions/reminders';
 import React, { useState } from 'react';
 import { Member, CheckInLog } from '../../types';
 import { formatTimestamp } from '../../lib/format';
@@ -94,14 +95,19 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
 
   const memberLogs = recentLogs.filter((log) => log.memberId === member.id).slice(0, 5);
 
-  const handleCopyWhatsAppLink = () => {
+  const handleCopyWhatsAppLink = async () => {
     const text = member.status === 'expired'
       ? `Hi ${member.name}, your ${gymName} membership expired on ${member.expiryDate}. Please renew to continue your workouts.`
       : `Hi ${member.name}, your ${gymName} membership expires on ${member.expiryDate}. Please renew to keep your membership active.`;
     const url = `https://api.whatsapp.com/send?phone=${encodeURIComponent(
-      member.phone.replace(/[^0-9]/g, '')
+      (member.phone.replace(/[^0-9]/g, '').length === 10 ? '91' : '') + member.phone.replace(/[^0-9]/g, '')
     )}&text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
+    const tab = window.open('about:blank', '_blank');
+    try {
+      const result = await sendMemberReminder(member.id, 'Membership Renewal Reminder', text);
+      if (!result.ok) throw new Error(result.error);
+      if (tab) { tab.opener = null; tab.location.href = url; }
+    } catch { tab?.close(); alert('Could not deliver reminder to the member panel. Please retry.'); return; }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -151,6 +157,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in"
+      role="dialog" aria-modal="true"
       onClick={onClose}
     >
       <div
@@ -276,7 +283,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
           {member.isBirthdayToday && (
             <div className="p-3.5 rounded-xl bg-gradient-to-r from-primary/20 via-secondary/20 to-tertiary/20 border border-secondary/50 flex items-center justify-between gap-3 animate-in fade-in">
               <div className="flex items-center gap-2.5">
-                <span className="text-2xl animate-bounce">🎂</span>
+                <span className="text-2xl ">🎂</span>
                 <div>
                   <p className="font-sora text-xs font-bold text-on-surface">
                     It's {member.name}'s Birthday Today!
@@ -742,7 +749,7 @@ export const MemberDetailModal: React.FC<MemberDetailModalProps> = ({
             {onWishBirthday && member.isBirthdayToday && (
               <button
                 onClick={() => onWishBirthday(member)}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary text-[#001f28] hover:bg-secondary/90 text-xs font-bold transition-all border border-secondary cursor-pointer shadow-xs active:scale-95 animate-pulse"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary text-[#001f28] hover:bg-secondary/90 text-xs font-bold transition-all border border-secondary cursor-pointer shadow-xs active:scale-95 "
                 title="Wish Happy Birthday Today!"
               >
                 <span className="material-symbols-outlined text-base">cake</span>

@@ -74,6 +74,7 @@ export const EditMemberModal: React.FC<EditMemberModalProps> = ({ member, onClos
   return (
     <div
       className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+      role="dialog" aria-modal="true"
       onClick={onClose}
     >
       <form

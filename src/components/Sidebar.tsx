@@ -34,6 +34,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // 5. Floor velocity
   const navItems: { id: ActiveScreen; label: string; icon: string; badge?: string }[] = isStaff
     ? [
+        { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
         { id: 'members', label: 'Members & Add Member', icon: 'person_add' },
         { id: 'memberships', label: 'Memberships & Plans', icon: 'card_membership' },
         { id: 'supplements', label: 'Supplements POS', icon: 'medication' },
@@ -58,6 +59,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {mobileOpen && (
         <div
           className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:hidden"
+          role="dialog" aria-modal="true"
           onClick={() => setMobileOpen(false)}
         />
       )}

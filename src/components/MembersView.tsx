@@ -306,7 +306,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
               <span className="material-symbols-outlined text-base sm:text-lg">qr_code_2</span>
               <span>Desk QR</span>
               {pendingEnrollmentsCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-error text-white text-[10px] font-bold animate-pulse">
+                <span className="px-1.5 py-0.2 rounded-full bg-error text-white text-[10px] font-bold ">
                   {pendingEnrollmentsCount}
                 </span>
               )}
@@ -316,7 +316,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
           {pendingEnrollmentsCount > 0 && onOpenPendingEnrollments && (
             <button
               onClick={onOpenPendingEnrollments}
-              className="min-h-[40px] px-3.5 py-2 rounded-xl bg-gradient-to-r from-secondary to-[#4edea3] text-slate-950 text-xs sm:text-sm font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 animate-pulse"
+              className="min-h-[40px] px-3.5 py-2 rounded-xl bg-gradient-to-r from-secondary to-[#4edea3] text-slate-950 text-xs sm:text-sm font-bold shadow-sm hover:opacity-90 active:scale-95 transition-all cursor-pointer flex items-center gap-1.5 "
               title="Review candidates waiting for approval"
             >
               <span className="material-symbols-outlined text-base sm:text-lg">how_to_reg</span>
@@ -367,7 +367,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
         <div className="p-4 sm:p-5 rounded-2xl bg-surface-container-low border border-secondary/40 shadow-[0_0_30px_rgba(123,208,255,0.15)] flex flex-col gap-4 animate-in fade-in slide-in-from-top-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-surface-container-high">
             <div className="flex items-center gap-2.5">
-              <span className="w-3 h-3 rounded-full bg-secondary animate-pulse" />
+              <span className="w-3 h-3 rounded-full bg-secondary " />
               <div>
                 <h3 className="font-sora text-sm sm:text-base font-bold text-on-surface">
                   Biometric Device Sync &amp; Cloud Push Hub
@@ -602,7 +602,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
       {birthdayMembersToday.length > 0 && (
         <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-primary/15 via-secondary/15 to-[#25D366]/15 border border-secondary/40 shadow-[0_0_35px_rgba(123,208,255,0.18)] flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2">
           <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-secondary text-[#001f28] flex items-center justify-center font-bold text-2xl shadow-sm shrink-0 animate-bounce">
+            <div className="w-12 h-12 rounded-2xl bg-secondary text-[#001f28] flex items-center justify-center font-bold text-2xl shadow-sm shrink-0 ">
               🎂
             </div>
             <div>
@@ -730,16 +730,16 @@ export const MembersView: React.FC<MembersViewProps> = ({
           }}
           className={`p-3.5 rounded-xl border cursor-pointer transition-all ${
             expiryFilter === 'expired' || statusFilter === 'Expired'
-              ? 'bg-rose-950/40 border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.35)]'
-              : 'bg-surface-container-low border-surface-container-high hover:bg-rose-950/20 hover:border-rose-500/40'
+              ? 'bg-rose-100 border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.35)]'
+              : 'bg-surface-container-low border-surface-container-high hover:bg-rose-100 hover:border-rose-500/40'
           }`}
         >
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-300">Expired</span>
-            <span className="material-symbols-outlined text-rose-400 text-xl">fingerprint_off</span>
+            <span className="text-[11px] font-bold uppercase tracking-wider text-rose-800">Expired</span>
+            <span className="material-symbols-outlined text-rose-700 text-xl">fingerprint_off</span>
           </div>
-          <p className="font-sora text-2xl font-bold text-rose-300 mt-1">{expiredCount}</p>
-          <span className="text-[10px] text-rose-400/80 mt-0.5 block">Bio Access Locked</span>
+          <p className="font-sora text-2xl font-bold text-rose-800 mt-1">{expiredCount}</p>
+          <span className="text-[10px] text-rose-700/80 mt-0.5 block">Bio Access Locked</span>
         </div>
 
         {/* Here Today (Requirement 7: Clicks to jump to Check-in activity) */}
@@ -835,7 +835,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       ? 'bg-rose-600 text-white font-bold shadow-xs'
                       : 'bg-error text-[#410002] font-bold shadow-xs'
                     : f.id === 'expired' && expiredCount > 0
-                    ? 'bg-rose-950/30 text-rose-300 hover:bg-rose-950/50 border border-rose-500/40 font-semibold'
+                    ? 'bg-rose-950/30 text-rose-800 hover:bg-rose-950/50 border border-rose-500/40 font-semibold'
                     : 'bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container border border-surface-container-high'
                 }`}
               >
@@ -949,7 +949,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     onClick={() => onSelectMember(member)}
                     className={`transition-all group cursor-pointer border-l-4 ${
                       isExpired
-                        ? 'bg-rose-950/25 hover:bg-rose-950/40 border-l-rose-500 shadow-[inset_0_1px_0_rgba(244,63,94,0.2)]'
+                        ? 'bg-rose-50 hover:bg-rose-100 border-l-rose-500 shadow-[inset_0_1px_0_rgba(244,63,94,0.2)]'
                         : 'hover:bg-surface-container/70 border-l-transparent'
                     }`}
                   >
@@ -958,7 +958,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                         <div
                           className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs border shrink-0 ${
                             isExpired
-                              ? 'bg-rose-500/25 text-rose-100 border-rose-400/50 ring-2 ring-rose-500/25 font-bold'
+                              ? 'bg-rose-100 text-rose-900 border-rose-400/50 ring-2 ring-rose-500/25 font-bold'
                               : 'bg-primary/20 text-primary border-primary/30'
                           }`}
                         >
@@ -968,13 +968,13 @@ export const MembersView: React.FC<MembersViewProps> = ({
                           <div className="font-bold text-on-surface group-hover:text-secondary transition-colors flex items-center gap-1.5 flex-wrap">
                             <span className="text-on-surface font-bold text-xs sm:text-sm">{member.name}</span>
                             {isExpired && (
-                              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-rose-500/30 text-rose-100 border border-rose-400/60 inline-flex items-center gap-0.5 shadow-xs">
-                                <span className="material-symbols-outlined text-[11px] text-rose-300">fingerprint_off</span>
+                              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-rose-100 text-rose-900 border border-rose-400/60 inline-flex items-center gap-0.5 shadow-xs">
+                                <span className="material-symbols-outlined text-[11px] text-rose-800">fingerprint_off</span>
                                 <span>Bio Locked</span>
                               </span>
                             )}
                             {member.isBirthdayToday ? (
-                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-secondary/20 text-secondary border border-secondary/40 inline-flex items-center gap-0.5 animate-pulse">
+                              <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-secondary/20 text-secondary border border-secondary/40 inline-flex items-center gap-0.5 ">
                                 🎂 Birthday Today!
                               </span>
                             ) : typeof member.daysUntilBirthday === 'number' && member.daysUntilBirthday <= 7 ? (
@@ -989,21 +989,21 @@ export const MembersView: React.FC<MembersViewProps> = ({
                             )}
                           </div>
                           <div className="text-xs text-on-surface-variant flex items-center gap-1.5 flex-wrap font-medium">
-                            <span className="text-slate-200">{member.phone}</span>
+                            <span className="text-slate-700">{member.phone}</span>
                             {member.memberCode && (
                               <span className="font-mono text-[10px] text-secondary font-bold">({member.memberCode})</span>
                             )}
                             {member.biometricId != null && (
                               <span
                                 title="Number this member is enrolled under on the biometric machine"
-                                className="font-mono text-[10px] text-slate-300 font-bold inline-flex items-center gap-0.5"
+                                className="font-mono text-[10px] text-slate-600 font-bold inline-flex items-center gap-0.5"
                               >
                                 <span className="material-symbols-outlined text-[11px]">fingerprint</span>
                                 ID {member.biometricId}
                               </span>
                             )}
                             {member.dobFormatted && (
-                              <span className="text-[10px] text-slate-300 font-medium">· DOB: {member.dobFormatted}</span>
+                              <span className="text-[10px] text-slate-600 font-medium">· DOB: {member.dobFormatted}</span>
                             )}
                           </div>
                         </div>
@@ -1013,7 +1013,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       <div className="flex flex-col gap-1 items-start">
                         <span className={`px-2 py-0.5 rounded text-xs font-bold border ${
                           isExpired
-                            ? 'bg-rose-500/25 text-rose-100 border-rose-400/50'
+                            ? 'bg-rose-100 text-rose-900 border-rose-400/50'
                             : 'bg-primary/15 text-primary border-primary/30'
                         }`}>
                           {member.planName}
@@ -1033,7 +1033,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                     </td>
                     <td data-label="Expiry Date" className="py-3.5 px-3 font-mono">
                       {isExpired ? (
-                        <span className="text-rose-300 font-bold inline-flex items-center gap-1">
+                        <span className="text-rose-800 font-bold inline-flex items-center gap-1">
                           <span className="material-symbols-outlined text-[13px]">event_busy</span>
                           <span>{member.expiryDate}</span>
                         </span>
@@ -1045,7 +1045,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       <span
                         className={`px-2 py-0.5 rounded text-xs font-bold inline-flex items-center gap-1 ${
                           isExpired
-                            ? 'bg-rose-500/30 text-rose-100 border border-rose-400/60 shadow-xs font-bold'
+                            ? 'bg-rose-100 text-rose-900 border border-rose-400/60 shadow-xs font-bold'
                             : member.daysLeft <= 3
                             ? 'bg-error-container/50 text-error border border-error/30'
                             : member.daysLeft <= 7
@@ -1055,7 +1055,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                       >
                         {isExpired ? (
                           <>
-                            <span className="material-symbols-outlined text-xs text-rose-300">lock</span>
+                            <span className="material-symbols-outlined text-xs text-rose-800">lock</span>
                             <span>Expired {Math.abs(member.daysLeft)}d ago</span>
                           </>
                         ) : (
@@ -1083,7 +1083,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                         {isExpired && (
                           <button
                             onClick={() => onSelectMember(member)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500 text-rose-300 hover:text-white text-xs font-bold transition-all border border-rose-500/40 cursor-pointer shadow-xs active:scale-95"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500 text-rose-800 hover:text-white text-xs font-bold transition-all border border-rose-500/40 cursor-pointer shadow-xs active:scale-95"
                             title="Membership expired - Click to renew"
                           >
                             <span className="material-symbols-outlined text-sm">autorenew</span>
@@ -1095,7 +1095,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
                         {onWishBirthday && member.isBirthdayToday && (
                           <button
                             onClick={() => onWishBirthday(member)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer shadow-xs active:scale-95 bg-secondary text-[#001f28] hover:bg-secondary/90 border-secondary animate-pulse"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer shadow-xs active:scale-95 bg-secondary text-[#001f28] hover:bg-secondary/90 border-secondary "
                             title="Wish Happy Birthday Today!"
                           >
                             <span className="material-symbols-outlined text-sm">cake</span>
@@ -1161,7 +1161,7 @@ export const MembersView: React.FC<MembersViewProps> = ({
       >
         <div className="p-4 sm:p-5 border-b border-surface-container-high flex flex-col md:flex-row md:items-center justify-between gap-4 bg-surface-container-lowest">
           <div className="flex items-center gap-3">
-            <span className="w-3 h-3 rounded-full bg-[#4edea3] animate-pulse" />
+            <span className="w-3 h-3 rounded-full bg-[#4edea3] " />
             <div>
               <h2 className="font-sora text-base sm:text-lg font-bold text-on-surface">
                 Floor Attendance &amp; Check-in Log

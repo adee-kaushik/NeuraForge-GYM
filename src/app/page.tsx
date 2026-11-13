@@ -1,3 +1,5 @@
+import { getMemberSession } from '@/lib/member-session';
+import { redirect } from 'next/navigation';
 import { subscriptionActive } from '@/lib/subscription';
 import { logout } from '@/app/login/actions';
 import AppLoader from '@/components/AppLoader';
@@ -12,6 +14,7 @@ export const dynamic = 'force-dynamic';
 export default async function Page() {
   // Logged-in owner/staff get the dashboard. Everyone else sees the public landing page.
   const staff = await getCurrentStaff();
+  if (!staff && await getMemberSession()) redirect('/member');
   if (!staff?.gym) return <Landing />;
   if (!subscriptionActive(staff.gym)) return (
     <main className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 bg-background text-on-surface text-center">

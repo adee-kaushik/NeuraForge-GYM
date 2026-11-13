@@ -176,6 +176,7 @@ export const MemberPaymentsHistoryView: React.FC<MemberPaymentsHistoryViewProps>
       {selectedReceipt && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in"
+          role="dialog" aria-modal="true"
           onClick={() => setSelectedReceipt(null)}
         >
           <div
